@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAGeo Install Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh;}
+a{color:inherit;}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f4f4f0;}
+.login-card{background:#fff;border-radius:16px;border:0.5px solid #ddd;padding:2rem;width:340px;text-align:center;}
+.login-logo{font-size:22px;font-weight:600;margin-bottom:4px;color:#1a1a1a;}
+.login-sub{font-size:13px;color:#888;margin-bottom:2rem;}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem;}
+.user-btn{padding:12px;border:0.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#1a1a1a;transition:all 0.15s;}
+.user-btn:hover{background:#f4f4f0;border-color:#bbb;}
+.user-btn.selected{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+.pin-row{display:flex;gap:8px;margin-bottom:1rem;}
+.pin-input{flex:1;padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;font-size:16px;text-align:center;letter-spacing:6px;background:#f9f9f7;}
+.pin-input:focus{outline:none;border-color:#2563eb;}
+.login-btn{width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
+.login-btn:hover{background:#1d4ed8;}
+.login-btn:disabled{background:#93c5fd;cursor:default;}
+.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
+
+/* APP SHELL */
+#app{display:none;}
+.topbar{background:#fff;border-bottom:0.5px solid #e5e5e5;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:52px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-size:15px;font-weight:600;color:#1a1a1a;flex:1;}
+.topbar-logo span{color:#2563eb;}
+.topbar-user{font-size:12px;color:#888;display:flex;align-items:center;gap:6px;}
+.topbar-user strong{color:#1a1a1a;}
+.logout-btn{font-size:12px;padding:4px 10px;border:0.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#888;}
+.logout-btn:hover{background:#f4f4f0;}
+.sync-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:6px;background:#fff;cursor:pointer;color:#2563eb;display:flex;align-items:center;gap:4px;}
+.sync-btn:hover{background:#eff6ff;}
+.settings-btn{font-size:18px;background:none;border:none;cursor:pointer;color:#888;padding:4px;}
+
+.main{max-width:1200px;margin:0 auto;padding:1.5rem;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem;}
+.stat{background:#fff;border-radius:10px;border:0.5px solid #e5e5e5;padding:12px 16px;}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px;}
+.stat-value{font-size:24px;font-weight:600;color:#1a1a1a;}
+
+/* VIEW TOGGLE */
+.view-toggle{display:flex;gap:6px;margin-bottom:1.25rem;}
+.vbtn{padding:6px 14px;font-size:13px;border-radius:8px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;}
+.vbtn.active{background:#f4f4f0;color:#1a1a1a;font-weight:500;border-color:#bbb;}
+
+/* OVERVIEW TABLE */
+.overview-wrap{overflow-x:auto;background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{border-bottom:0.5px solid #e5e5e5;}
+th{padding:10px 12px;text-align:left;color:#888;font-weight:400;white-space:nowrap;}
+td{padding:9px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.job-name-cell{font-weight:500;color:#1a1a1a;font-size:13px;}
+.job-addr-cell{font-size:11px;color:#888;margin-top:1px;}
+.equip-cell{font-size:11px;color:#555;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
+.dot-done{background:#dcfce7;color:#16a34a;}
+.dot-inprog{background:#fef9c3;color:#ca8a04;}
+.dot-delayed{background:#fee2e2;color:#dc2626;}
+.dot-none{background:#f4f4f0;color:#bbb;}
+.delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;white-space:nowrap;}
+
+/* CARDS */
+.cards{display:flex;flex-direction:column;gap:10px;}
+.card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;}
+.card-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
+.card-header:hover{background:#fafaf8;}
+.avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.card-meta{flex:1;min-width:0;}
+.card-name{font-size:14px;font-weight:600;color:#1a1a1a;}
+.card-addr{font-size:12px;color:#888;margin-top:1px;}
+.card-equip{font-size:11px;color:#2563eb;margin-top:2px;}
+.card-pills{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.pill{font-size:11px;padding:3px 9px;border-radius:6px;}
+.pill-prog{background:#f4f4f0;color:#555;}
+.pill-delayed{background:#fee2e2;color:#dc2626;}
+.pill-done{background:#dcfce7;color:#16a34a;}
+.chevron{font-size:14px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}
+.chevron.open{transform:rotate(180deg);}
+
+.card-body{display:none;border-top:0.5px solid #f0f0f0;}
+.card-body.open{display:block;}
+
+.equip-section{padding:12px 16px;border-bottom:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;}
+.equip-label{font-size:11px;color:#888;white-space:nowrap;}
+.equip-input{flex:1;font-size:13px;padding:6px 10px;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.equip-input:focus{outline:none;border-color:#2563eb;}
+
+.ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
+.ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
+.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}
+.ms-row.inprog-row{border-color:#fde047;}
+.ms-row.delayed-row{border-color:#fca5a5;}
+.ms-main{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
+.ms-main:hover{background:rgba(0,0,0,0.02);}
+.si{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;}
+.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}
+.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}
+.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+.ms-label{flex:1;font-size:13px;color:#1a1a1a;}
+.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
+.ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
+.ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.ms-chevron{font-size:12px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}
+.ms-chevron.open{transform:rotate(180deg);}
+
+.ms-detail{padding:0 12px 10px 42px;display:flex;flex-direction:column;gap:8px;}
+.det-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.det-lbl{font-size:11px;color:#888;width:72px;flex-shrink:0;}
+.state-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.sbtn{font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.sbtn:hover{background:#f4f4f0;}
+.sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}
+.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
+.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+.det-input{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.det-input:focus{outline:none;border-color:#2563eb;}
+.det-input.wide{flex:1;min-width:0;}
+.pinned-note-box{flex:1;font-size:12px;color:#2563eb;line-height:1.4;}
+.unpin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;cursor:pointer;color:#888;white-space:nowrap;}
+
+/* NOTES */
+.notes-section{padding:12px 16px;border-top:0.5px solid #f0f0f0;}
+.notes-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:0;}
+.notes-title{font-size:12px;color:#888;display:flex;align-items:center;gap:6px;}
+.notes-body{margin-top:10px;display:none;}
+.notes-body.open{display:block;}
+.note-item{padding:8px 10px;border:0.5px solid #e5e5e5;border-radius:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.note-text{flex:1;font-size:12px;color:#1a1a1a;line-height:1.5;}
+.note-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.pin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;white-space:nowrap;font-family:inherit;}
+.pin-btn:hover{background:#f4f4f0;}
+.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
+.pin-select{font-size:10px;padding:2px 6px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+
+/* ACTIVITY LOG */
+.log-section{margin-top:1.5rem;}
+.log-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;}
+.log-list{background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden;}
+.log-item{padding:10px 16px;border-bottom:0.5px solid #f0f0f0;display:flex;gap:10px;align-items:flex-start;}
+.log-item:last-child{border-bottom:none;}
+.log-who{font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;}
+.log-what{flex:1;font-size:12px;color:#555;}
+.log-when{font-size:11px;color:#aaa;white-space:nowrap;}
+
+/* SETTINGS MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:1.5rem;width:420px;max-width:95vw;}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1.25rem;color:#1a1a1a;}
+.modal-row{margin-bottom:1rem;}
+.modal-label{font-size:12px;color:#888;margin-bottom:4px;}
+.modal-input{width:100%;padding:8px 12px;border:0.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;background:#f9f9f7;color:#1a1a1a;}
+.modal-input:focus{outline:none;border-color:#2563eb;}
+.modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;}
+.modal-cancel{padding:8px 16px;border:0.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit;color:#888;}
+.modal-save{padding:8px 16px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;}
+.modal-save:hover{background:#1d4ed8;}
+
+/* ADD JOB */
+.add-btn{margin-top:1rem;width:100%;padding:11px;background:#fff;border:0.5px dashed #ccc;border-radius:12px;color:#888;cursor:pointer;font-size:13px;font-family:inherit;}
+.add-btn:hover{background:#f4f4f0;color:#1a1a1a;}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+.empty{padding:2rem;text-align:center;color:#aaa;font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">NAGeo <span>Tracker</span></div>
+    <div class="login-sub">North American GeoThermal — Install Management</div>
+    <div class="user-grid" id="user-grid"></div>
+    <div class="pin-row">
+      <input type="password" class="pin-input" id="pin-input" placeholder="PIN" maxlength="6" inputmode="numeric">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">NAGeo <span>Tracker</span></div>
+    <button class="sync-btn" onclick="syncHCP()">&#8635; Sync HCP</button>
+    <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
+    <div class="topbar-user">Signed in as <strong id="topbar-name"></strong></div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Active jobs</div><div class="stat-value" id="s-active">0</div></div>
+      <div class="stat"><div class="stat-label">Jobs with delays</div><div class="stat-value" id="s-delayed" style="color:#dc2626">0</div></div>
+      <div class="stat"><div class="stat-label">In progress</div><div class="stat-value" id="s-inprog" style="color:#ca8a04">0</div></div>
+      <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" id="s-complete" style="color:#16a34a">0</div></div>
+    </div>
+
+    <div class="view-toggle">
+      <button class="vbtn active" id="btn-overview" onclick="setView('overview')">&#9776; Overview</button>
+      <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Job cards</button>
+      <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
+    </div>
+
+    <div id="view-overview"></div>
+    <div id="view-cards" style="display:none"></div>
+    <div id="view-log" style="display:none"></div>
+
+    <button class="add-btn" id="add-job-btn" onclick="addJob()">+ Add job</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">Settings</div>
+    <div class="modal-row">
+      <div class="modal-label">HCP API Key</div>
+      <input type="password" class="modal-input" id="hcp-key-input" placeholder="Paste your Housecall Pro API key">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">HCP Install Tag (jobs with this tag will sync)</div>
+      <input type="text" class="modal-input" id="hcp-tag-input" placeholder="e.g. geo-install">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="modal-save" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
+const MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
+
+let currentUser = null;
+let users = [];
+let jobs = [];
+let activityLog = [];
+let openCards = new Set();
+let openMS = new Set();
+let openNotes = new Set();
+let currentView = 'overview';
+let selectedUserId = null;
+
+// ── INIT ──────────────────────────────────────────────
+async function init() {
+  const saved = localStorage.getItem('nageo_user');
+  if (saved) { currentUser = JSON.parse(saved); showApp(); }
+  else { await loadUsers(); showLogin(); }
+}
+
+async function loadUsers() {
+  const { data } = await sb.from('users').select('*').order('name');
+  users = data || [];
+  renderUserGrid();
+}
+
+function renderUserGrid() {
+  const grid = document.getElementById('user-grid');
+  grid.innerHTML = users.map(u => `
+    <button class="user-btn" id="ubtn-${u.id}" onclick="selectUser('${u.id}')">${u.name}</button>
+  `).join('');
+}
+
+function selectUser(id) {
+  selectedUserId = id;
+  document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('ubtn-' + id).classList.add('selected');
+  document.getElementById('pin-input').focus();
+}
+
+async function doLogin() {
+  if (!selectedUserId) { document.getElementById('login-error').textContent = 'Please select your name.'; return; }
+  const pin = document.getElementById('pin-input').value;
+  const user = users.find(u => u.id === selectedUserId);
+  if (!user || user.pin !== pin) {
+    document.getElementById('login-error').textContent = 'Incorrect PIN. Try again.';
+    document.getElementById('pin-input').value = '';
+    return;
+  }
+  currentUser = user;
+  localStorage.setItem('nageo_user', JSON.stringify(user));
+  document.getElementById('login-error').textContent = '';
+  showApp();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('nageo_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+  selectedUserId = null;
+  document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
+}
+
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-name').textContent = currentUser.name;
+  await loadAll();
+}
+
+// ── DATA ──────────────────────────────────────────────
+async function loadAll() {
+  const [{ data: jData }, { data: mData }, { data: lData }] = await Promise.all([
+    sb.from('jobs').select('*').order('created_at', { ascending: false }),
+    sb.from('milestones').select('*').order('index'),
+    sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50)
+  ]);
+  const rawJobs = jData || [];
+  const allMS = mData || [];
+  activityLog = lData || [];
+  jobs = rawJobs.map(j => ({
+    ...j,
+    hcp_notes: j.hcp_notes || [],
+    milestones: MS.map((_, i) => {
+      const found = allMS.find(m => m.job_id === j.id && m.index === i);
+      return found || { job_id: j.id, index: i, state: 'none', date: '', notes: '', pinned_note: null };
+    })
+  }));
+  render();
+}
+
+async function saveMilestone(jobId, idx, fields) {
+  const job = jobs.find(j => j.id === jobId);
+  const m = job.milestones[idx];
+  Object.assign(m, fields);
+  const payload = { job_id: jobId, index: idx, state: m.state, date: m.date || null, notes: m.notes || null, pinned_note: m.pinned_note || null, updated_by: currentUser.id, updated_at: new Date().toISOString() };
+  if (m.id) { await sb.from('milestones').update(payload).eq('id', m.id); }
+  else {
+    const { data } = await sb.from('milestones').insert(payload).select().single();
+    if (data) m.id = data.id;
+  }
+  await logActivity(jobId, `Updated "${MS[idx]}" → ${m.state}${m.notes ? ': ' + m.notes : ''}`);
+  render();
+}
+
+async function saveJobField(jobId, field, value) {
+  await sb.from('jobs').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', jobId);
+  jobs.find(j => j.id === jobId)[field] = value;
+  await logActivity(jobId, `Updated ${field}: ${value}`);
+  render();
+}
+
+async function logActivity(jobId, action) {
+  const entry = { job_id: jobId, user_id: currentUser.id, user_name: currentUser.name, action, created_at: new Date().toISOString() };
+  await sb.from('activity_log').insert(entry);
+  activityLog.unshift(entry);
+}
+
+async function addJob() {
+  const name = prompt('Customer last name:');
+  if (!name) return;
+  const address = prompt('Job address:');
+  const { data } = await sb.from('jobs').insert({ name, address: address || '', equipment: '', hcp_notes: [], updated_at: new Date().toISOString() }).select().single();
+  if (data) {
+    data.milestones = MS.map((_, i) => ({ job_id: data.id, index: i, state: 'none', date: '', notes: '', pinned_note: null }));
+    data.hcp_notes = [];
+    jobs.unshift(data);
+    openCards.add(data.id);
+    await logActivity(data.id, 'Job created');
+    setView('cards');
+    render();
+  }
+}
+
+// ── HCP SYNC ──────────────────────────────────────────
+async function syncHCP() {
+  const settings = getSettings();
+  if (!settings.hcpKey) { openSettings(); showToast('Enter your HCP API key in settings first.'); return; }
+  showToast('Syncing from Housecall Pro...');
+  try {
+    const res = await fetch(`https://api.housecallpro.com/jobs?tags=${encodeURIComponent(settings.hcpTag || 'geo-install')}&page_size=50`, {
+      headers: { Authorization: `Token ${settings.hcpKey}`, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) { showToast('HCP sync failed — check your API key.'); return; }
+    const data = await res.json();
+    const hcpJobs = data.jobs || data.results || [];
+    let added = 0;
+    for (const hj of hcpJobs) {
+      const existing = jobs.find(j => j.hcp_job_id === hj.id);
+      if (!existing) {
+        const name = hj.customer?.last_name || hj.customer?.name || 'Unknown';
+        const address = [hj.address?.street, hj.address?.city, hj.address?.state].filter(Boolean).join(', ');
+        const hcp_notes = (hj.notes || []).map((n, i) => ({ id: 'hcp-' + i, text: typeof n === 'string' ? n : n.content || n.text || '' })).filter(n => n.text);
+        const { data: newJob } = await sb.from('jobs').insert({ hcp_job_id: hj.id, name, address, equipment: '', hcp_notes, updated_at: new Date().toISOString() }).select().single();
+        if (newJob) {
+          newJob.milestones = MS.map((_, i) => ({ job_id: newJob.id, index: i, state: 'none', date: '', notes: '', pinned_note: null }));
+          newJob.hcp_notes = hcp_notes;
+          jobs.unshift(newJob);
+          await logActivity(newJob.id, 'Imported from HCP');
+          added++;
+        }
+      }
+    }
+    showToast(added > 0 ? `Synced ${added} new job(s) from HCP.` : 'No new jobs found in HCP.');
+    render();
+  } catch (e) { showToast('HCP sync error. Check your API key and tag.'); }
+}
+
+// ── SETTINGS ──────────────────────────────────────────
+function getSettings() { return JSON.parse(localStorage.getItem('nageo_settings') || '{}'); }
+function openSettings() {
+  const s = getSettings();
+  document.getElementById('hcp-key-input').value = s.hcpKey || '';
+  document.getElementById('hcp-tag-input').value = s.hcpTag || 'geo-install';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+function saveSettings() {
+  localStorage.setItem('nageo_settings', JSON.stringify({ hcpKey: document.getElementById('hcp-key-input').value.trim(), hcpTag: document.getElementById('hcp-tag-input').value.trim() || 'geo-install' }));
+  closeSettings();
+  showToast('Settings saved.');
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function initials(n) { return n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2); }
+function doneCount(j) { return j.milestones.filter(m => m.state === 'done').length; }
+function hasDelay(j) { return j.milestones.some(m => m.state === 'delayed'); }
+function isComplete(j) { return j.milestones.every(m => m.state === 'done'); }
+function currentMSName(j) { const i = j.milestones.findIndex(m => m.state !== 'done'); return i === -1 ? MS[MS.length - 1] : MS[i]; }
+function getNoteText(job, nid) { const n = (job.hcp_notes || []).find(n => n.id === nid); return n ? n.text : null; }
+function timeAgo(ts) {
+  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d / 60) + 'm ago';
+  if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+  return Math.floor(d / 86400) + 'd ago';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function dotClass(s) { return 'ms-dot ' + (s === 'done' ? 'dot-done' : s === 'inprog' ? 'dot-inprog' : s === 'delayed' ? 'dot-delayed' : 'dot-none'); }
+function dotIcon(s) { return s === 'done' ? '✓' : s === 'inprog' ? '◎' : s === 'delayed' ? '!' : ''; }
+function siClass(s) { return 'si ' + (s === 'done' ? 'si-done' : s === 'inprog' ? 'si-inprog' : s === 'delayed' ? 'si-delayed' : ''); }
+function siIcon(s) { return s === 'done' ? '✓' : s === 'inprog' ? '◎' : s === 'delayed' ? '!' : ''; }
+function rowClass(s) { return 'ms-row ' + (s === 'done' ? 'done-row' : s === 'inprog' ? 'inprog-row' : s === 'delayed' ? 'delayed-row' : ''); }
+
+// ── RENDER ────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('s-active').textContent = jobs.filter(j => !isComplete(j)).length;
+  document.getElementById('s-delayed').textContent = jobs.filter(j => hasDelay(j)).length;
+  document.getElementById('s-inprog').textContent = jobs.filter(j => j.milestones.some(m => m.state === 'inprog')).length;
+  document.getElementById('s-complete').textContent = jobs.filter(j => isComplete(j)).length;
+}
+
+function setView(v) {
+  currentView = v;
+  ['overview','cards','log'].forEach(n => {
+    document.getElementById('view-' + n).style.display = v === n ? 'block' : 'none';
+    document.getElementById('btn-' + n).className = 'vbtn' + (v === n ? ' active' : '');
+  });
+  document.getElementById('add-job-btn').style.display = v === 'log' ? 'none' : 'block';
+}
+
+function renderOverview() {
+  const el = document.getElementById('view-overview');
+  if (!jobs.length) { el.innerHTML = '<div class="overview-wrap"><div class="empty">No jobs yet. Add one below or sync from HCP.</div></div>'; return; }
+  let html = `<div class="overview-wrap"><table><thead><tr>
+    <th>Job</th><th>Equipment</th><th>Current milestone</th><th>Progress</th>
+    ${MS_SHORT.map(s => `<th style="font-size:10px">${s}</th>`).join('')}
+    <th>Delay</th></tr></thead><tbody>`;
+  jobs.forEach(j => {
+    html += `<tr>
+      <td><div class="job-name-cell">${j.name}</div><div class="job-addr-cell">${j.address || ''}</div></td>
+      <td><div class="equip-cell" title="${j.equipment || ''}">${j.equipment || '<span style="color:#ccc">—</span>'}</div></td>
+      <td style="font-size:12px">${currentMSName(j)}</td>
+      <td style="font-size:12px;color:#888">${doneCount(j)}/9</td>
+      ${j.milestones.map(m => `<td><span class="${dotClass(m.state)}" title="${m.state}">${dotIcon(m.state)}</span></td>`).join('')}
+      <td>${hasDelay(j) ? '<span class="delay-badge">! Yes</span>' : '<span style="color:#ccc;font-size:12px">—</span>'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function renderCards() {
+  const el = document.getElementById('view-cards');
+  if (!jobs.length) { el.innerHTML = '<div class="empty">No jobs yet.</div>'; return; }
+  let html = '<div class="cards">';
+  jobs.forEach(j => {
+    const isOpen = openCards.has(j.id);
+    const notesOpen = openNotes.has(j.id);
+    html += `<div class="card">
+      <div class="card-header" onclick="toggleCard('${j.id}')">
+        <div class="avatar">${initials(j.name)}</div>
+        <div class="card-meta">
+          <div class="card-name">${j.name}</div>
+          <div class="card-addr">${j.address || ''}</div>
+          ${j.equipment ? `<div class="card-equip">⚙ ${j.equipment}</div>` : ''}
+        </div>
+        <div class="card-pills">
+          <span class="pill pill-prog">${doneCount(j)}/9</span>
+          ${hasDelay(j) ? '<span class="pill pill-delayed">! Delayed</span>' : ''}
+          ${isComplete(j) ? '<span class="pill pill-done">✓ Complete</span>' : ''}
+        </div>
+        <span class="chevron ${isOpen ? 'open' : ''}">▾</span>
+      </div>
+      <div class="card-body ${isOpen ? 'open' : ''}">
+        <div class="equip-section">
+          <span class="equip-label">⚙ Equipment</span>
+          <input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="${j.equipment || ''}" onchange="saveJobField('${j.id}','equipment',this.value)">
+        </div>
+        <div class="ms-list">`;
+
+    j.milestones.forEach((m, i) => {
+      const key = j.id + '-' + i;
+      const msOpen = openMS.has(key);
+      const pinnedText = m.pinned_note ? getNoteText(j, m.pinned_note) : null;
+      html += `<div class="${rowClass(m.state)}">
+        <div class="ms-main" onclick="toggleMS('${key}')">
+          <div class="${siClass(m.state)}">${siIcon(m.state)}</div>
+          <span class="ms-label ${m.state === 'done' ? 'done-lbl' : ''}">${MS[i]}</span>
+          ${pinnedText ? `<span class="ms-pinned-tag">📌 ${pinnedText.length > 40 ? pinnedText.slice(0, 40) + '…' : pinnedText}</span>` : ''}
+          ${m.state === 'done' && m.date ? `<span class="ms-date-tag">${m.date}</span>` : ''}
+          <span class="ms-chevron ${msOpen ? 'open' : ''}">▾</span>
+        </div>
+        <div class="ms-detail" style="display:${msOpen ? 'flex' : 'none'}">
+          <div class="det-row">
+            <span class="det-lbl">Status</span>
+            <div class="state-btns">
+              <button class="sbtn ${m.state === 'none' ? 'a-none' : ''}" onclick="setState('${j.id}',${i},'none')">Not started</button>
+              <button class="sbtn ${m.state === 'inprog' ? 'a-inprog' : ''}" onclick="setState('${j.id}',${i},'inprog')">In progress</button>
+              <button class="sbtn ${m.state === 'delayed' ? 'a-delayed' : ''}" onclick="setState('${j.id}',${i},'delayed')">Delayed</button>
+              <button class="sbtn ${m.state === 'done' ? 'a-done' : ''}" onclick="setState('${j.id}',${i},'done')">Done</button>
+            </div>
+          </div>
+          ${m.state === 'done' ? `<div class="det-row">
+            <span class="det-lbl">Date done</span>
+            <input type="date" class="det-input" value="${m.date || ''}" onchange="setMSField('${j.id}',${i},'date',this.value)">
+          </div>` : ''}
+          ${(m.state === 'inprog' || m.state === 'delayed') ? `<div class="det-row">
+            <span class="det-lbl">Notes</span>
+            <input type="text" class="det-input wide" placeholder="What's happening..." value="${m.notes || ''}" onchange="setMSField('${j.id}',${i},'notes',this.value)">
+          </div>` : ''}
+          ${pinnedText ? `<div class="det-row">
+            <span class="det-lbl">Pinned</span>
+            <span class="pinned-note-box">${pinnedText}</span>
+            <button class="unpin-btn" onclick="unpinMS('${j.id}',${i})">Unpin</button>
+          </div>` : ''}
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+
+    if (j.hcp_notes && j.hcp_notes.length) {
+      html += `<div class="notes-section">
+        <div class="notes-hdr" onclick="toggleNotes('${j.id}')">
+          <span class="notes-title">📋 HCP notes (${j.hcp_notes.length}) — click to pin to equipment or a milestone</span>
+          <span class="chevron ${notesOpen ? 'open' : ''}">▾</span>
+        </div>
+        <div class="notes-body ${notesOpen ? 'open' : ''}">`;
+      j.hcp_notes.forEach(note => {
+        const isPinnedEquip = j.pinned_equip_note === note.id;
+        const pinnedMSIdx = j.milestones.findIndex(m => m.pinned_note === note.id);
+        html += `<div class="note-item">
+          <span class="note-text">${note.text}</span>
+          <div class="note-actions">
+            <button class="pin-btn ${isPinnedEquip ? 'pinned' : ''}" onclick="pinToEquip('${j.id}','${note.id}')">
+              ⚙ ${isPinnedEquip ? 'Pinned to equip.' : 'Pin to equipment'}
+            </button>
+            <select class="pin-select" onchange="pinToMS('${j.id}','${note.id}',this.value)" title="Pin to milestone">
+              <option value="">Pin to milestone…</option>
+              ${MS.map((name, i) => `<option value="${i}" ${pinnedMSIdx === i ? 'selected' : ''}>${name}</option>`).join('')}
+            </select>
+          </div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    html += `</div></div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderLog() {
+  const el = document.getElementById('view-log');
+  if (!activityLog.length) { el.innerHTML = '<div class="empty">No activity yet.</div>'; return; }
+  const jobMap = {};
+  jobs.forEach(j => jobMap[j.id] = j.name);
+  let html = '<div class="log-section"><div class="log-title">Recent activity</div><div class="log-list">';
+  activityLog.slice(0, 50).forEach(l => {
+    html += `<div class="log-item">
+      <span class="log-who">${l.user_name}</span>
+      <span class="log-what">${jobMap[l.job_id] ? '<strong>' + jobMap[l.job_id] + '</strong> — ' : ''}${l.action}</span>
+      <span class="log-when">${timeAgo(l.created_at)}</span>
+    </div>`;
+  });
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+function render() {
+  updateStats();
+  renderOverview();
+  renderCards();
+  renderLog();
+}
+
+// ── INTERACTIONS ──────────────────────────────────────
+function toggleCard(id) { if (openCards.has(id)) openCards.delete(id); else openCards.add(id); render(); }
+function toggleMS(key) { if (openMS.has(key)) openMS.delete(key); else openMS.add(key); render(); }
+function toggleNotes(id) { if (openNotes.has(id)) openNotes.delete(id); else openNotes.add(id); render(); }
+
+function setState(jobId, idx, state) {
+  const m = jobs.find(j => j.id === jobId).milestones[idx];
+  const date = state === 'done' ? (m.date || new Date().toISOString().slice(0, 10)) : '';
+  saveMilestone(jobId, idx, { state, date });
+}
+function setMSField(jobId, idx, field, val) { saveMilestone(jobId, idx, { [field]: val }); }
+
+async function pinToEquip(jobId, noteId) {
+  const job = jobs.find(j => j.id === jobId);
+  const isPinned = job.pinned_equip_note === noteId;
+  job.pinned_equip_note = isPinned ? null : noteId;
+  if (!isPinned) { const note = job.hcp_notes.find(n => n.id === noteId); if (note) job.equipment = note.text; }
+  await sb.from('jobs').update({ pinned_equip_note: job.pinned_equip_note, equipment: job.equipment, updated_at: new Date().toISOString() }).eq('id', jobId);
+  await logActivity(jobId, isPinned ? 'Unpinned equipment note' : 'Pinned note to equipment');
+  render();
+}
+
+async function pinToMS(jobId, noteId, msIdx) {
+  if (msIdx === '') return;
+  const job = jobs.find(j => j.id === jobId);
+  const idx = parseInt(msIdx);
+  for (let i = 0; i < job.milestones.length; i++) {
+    if (job.milestones[i].pinned_note === noteId) await saveMilestone(jobId, i, { pinned_note: null });
+  }
+  await saveMilestone(jobId, idx, { pinned_note: noteId });
+  await logActivity(jobId, `Pinned note to "${MS[idx]}"`);
+}
+
+async function unpinMS(jobId, idx) {
+  await saveMilestone(jobId, idx, { pinned_note: null });
+  await logActivity(jobId, `Unpinned note from "${MS[idx]}"`);
+}
+
+// ── START ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
