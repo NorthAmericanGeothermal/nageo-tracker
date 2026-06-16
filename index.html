@@ -682,7 +682,7 @@ let dragOverId = null;
 function dragStart(e, id) {
   dragId = id;
   setTimeout(() => {
-    const el = document.querySelector(\`[data-job-id="\${id}"]\`);
+    const el = document.querySelector(`[data-job-id="${id}"]`);
     if (el) el.classList.add('dragging');
   }, 0);
   e.dataTransfer.effectAllowed = 'move';
