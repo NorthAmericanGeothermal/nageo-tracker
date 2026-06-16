@@ -334,6 +334,8 @@ async function addInstall() {
   }
 }
 
+var pendingHCPCustomers = [];
+
 async function syncHCP() {
   var settings = getSettings();
   if (!settings.hcpKey) { openSettings(); showToast('Enter your HCP API key in settings first.'); return; }
@@ -348,36 +350,81 @@ async function syncHCP() {
     var data = await res.json();
     var customers = data.customers || [];
     if (!customers.length) { showToast('No customers found with that tag.'); return; }
-    var added = 0;
-    var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+    var toImport = [];
     for (var i=0;i<customers.length;i++) {
       var c = customers[i];
       var hcpId = 'cust-'+c.id;
       var existing = installs.find(function(j){return j.hcp_job_id===hcpId;});
-      if (!existing) {
-        var firstName = c.first_name||'';
-        var lastName = c.last_name||'';
-        var fullName = (firstName+' '+lastName).trim()||c.name||'Unknown';
-        var addr = '';
-        if (c.addresses && c.addresses.length) {
-          var a = c.addresses[0];
-          addr = [a.street,a.city,a.state].filter(Boolean).join(', ');
-        }
-        var hcpNotes = [];
-        if (c.notes) hcpNotes.push({id:'note-0',text:c.notes});
-        var r2 = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addr,equipment:'',hcp_notes:hcpNotes,sort_order:maxOrder+added+1,updated_at:new Date().toISOString()}).select().single();
-        if (r2.data) {
-          r2.data.milestones=MS.map(function(_,mi){return {job_id:r2.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
-          r2.data.hcp_notes=hcpNotes;
-          installs.push(r2.data);
-          await logActivity(r2.data.id,'Imported from HCP: '+fullName);
-          added++;
-        }
-      }
+      if (!existing) toImport.push(c);
     }
-    showToast(added>0?'Synced '+added+' new install(s) from HCP.':'No new installs found.');
-    render();
+    if (!toImport.length) { showToast('No new installs found.'); return; }
+    // check if any have multiple addresses — if so, show picker
+    var needsPicker = toImport.filter(function(c){return c.addresses&&c.addresses.length>1;});
+    var noPickerNeeded = toImport.filter(function(c){return !c.addresses||c.addresses.length<=1;});
+    // auto-import single-address customers
+    var added = 0;
+    var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+    for (var j=0;j<noPickerNeeded.length;j++) {
+      var c2 = noPickerNeeded[j];
+      added += await importCustomer(c2, c2.addresses&&c2.addresses.length?c2.addresses[0]:null, maxOrder+added);
+    }
+    if (needsPicker.length) {
+      pendingHCPCustomers = needsPicker;
+      showAddressPicker();
+    } else {
+      showToast('Synced '+added+' new install(s) from HCP.');
+      render();
+    }
   } catch(e) { showToast('HCP sync error. Check your API key and tag.'); }
+}
+
+async function importCustomer(c, addr, sortOrder) {
+  var hcpId = 'cust-'+c.id;
+  var fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim()||'Unknown';
+  var addrStr = addr ? [addr.street, addr.street_line_2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ') : '';
+  var hcpNotes = [];
+  if (c.notes && c.notes.trim()) hcpNotes.push({id:'note-0',text:c.notes.trim()});
+  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
+  if (r.data) {
+    r.data.milestones=MS.map(function(_,mi){return {job_id:r.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
+    r.data.hcp_notes=hcpNotes;
+    installs.push(r.data);
+    await logActivity(r.data.id,'Imported from HCP: '+fullName);
+    return 1;
+  }
+  return 0;
+}
+
+function showAddressPicker() {
+  var modal = document.getElementById('addr-picker-modal');
+  var body = document.getElementById('addr-picker-body');
+  var c = pendingHCPCustomers[0];
+  var fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim();
+  var html = '<p style="font-size:13px;color:#555;margin-bottom:1rem;">Which address should we use for <strong>'+fullName+'</strong>?</p>';
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  c.addresses.forEach(function(a,i) {
+    var addrStr = [a.street, a.street_line_2, a.city, a.state, a.zip].filter(Boolean).join(', ');
+    html += '<button onclick="selectAddress('+i+')" style="padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;font-size:13px;">';
+    html += '<span style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.5px;">'+a.type+'</span><br>';
+    html += addrStr;
+    html += '</button>';
+  });
+  html += '</div>';
+  body.innerHTML = html;
+  modal.classList.add('open');
+}
+
+async function selectAddress(addrIdx) {
+  var c = pendingHCPCustomers.shift();
+  var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+  await importCustomer(c, c.addresses[addrIdx], maxOrder+1);
+  document.getElementById('addr-picker-modal').classList.remove('open');
+  if (pendingHCPCustomers.length) {
+    showAddressPicker();
+  } else {
+    showToast('HCP sync complete.');
+    render();
+  }
 }
 
 function getSettings(){return JSON.parse(localStorage.getItem('nageo_settings')||'{}');}
@@ -596,5 +643,12 @@ async function drop(e,targetId){
 
 init();
 </script>
+
+<div class="modal-bg" id="addr-picker-modal">
+  <div class="modal">
+    <div class="modal-title">Choose install address</div>
+    <div id="addr-picker-body"></div>
+  </div>
+</div>
 </body>
 </html>
