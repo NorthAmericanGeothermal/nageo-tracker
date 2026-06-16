@@ -396,8 +396,10 @@ async function syncHCP() {
   if (!settings.hcpKey) { openSettings(); showToast('Enter your HCP API key in settings first.'); return; }
   showToast('Syncing from Housecall Pro...');
   try {
-    const res = await fetch(`https://api.housecallpro.com/jobs?tags=${encodeURIComponent(settings.hcpTag || 'geo-install')}&page_size=50`, {
-      headers: { Authorization: `Token ${settings.hcpKey}`, 'Content-Type': 'application/json' }
+    const res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}`, 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ tag: settings.hcpTag || 'geo-install' })
     });
     if (!res.ok) { showToast('HCP sync failed — check your API key.'); return; }
     const data = await res.json();
