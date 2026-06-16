@@ -449,7 +449,9 @@ function closeSettings(){document.getElementById('settings-modal').classList.rem
 function saveSettings(){localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:document.getElementById('hcp-key-input').value.trim(),hcpTag:document.getElementById('hcp-tag-input').value.trim()||'geo-install'}));closeSettings();showToast('Settings saved.');}
 
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
-function doneCount(j){var na=j.milestones.filter(function(m){return m.state==='na';}).length;var done=j.milestones.filter(function(m){return m.state==='done';}).length;return done+'/'+(9-na);}
+function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
+function naCount(j){return j.milestones.filter(function(m){return m.state==='na';}).length;}
+function progressLabel(j){var done=doneCount(j);var total=9-naCount(j);return done+'/'+total;}
 function hasDelay(j){return j.milestones.some(function(m){return m.state==='delayed';});}
 function isComplete(j){return j.milestones.every(function(m){return m.state==='done'||m.state==='na';});}
 function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
@@ -486,7 +488,7 @@ function renderOverview(){
   installs.forEach(function(j){
     html+='<tr><td><div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div></td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
-    html+='<td style="font-size:12px;color:#888">'+doneCount(j)+'/9</td>';
+    html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
     j.milestones.forEach(function(m,mi){
       var tipText = '';
       if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
@@ -517,7 +519,7 @@ function renderCards(){
     html+='<div class="card-meta"><div class="card-name">'+j.name+'</div><div class="card-addr">'+(j.address||'')+'</div>';
     if(j.equipment) html+='<div class="card-equip">&#9881; '+j.equipment+'</div>';
     html+='</div>';
-    html+='<div class="card-pills"><span class="pill pill-prog">'+doneCount(j)+'/9</span>';
+    html+='<div class="card-pills"><span class="pill pill-prog">'+progressLabel(j)+'</span>';
     if(hasDelay(j)) html+='<span class="pill pill-delayed">! Delayed</span>';
     if(isComplete(j)) html+='<span class="pill pill-done">&#10003; Complete</span>';
     html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
