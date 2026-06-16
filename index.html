@@ -482,7 +482,7 @@ function setView(v){
 function renderOverview(){
   var el=document.getElementById('view-overview');
   if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
-  var html='<div class="overview-wrap"><table><thead><tr><th>Customer</th><th>Equipment</th><th>Current milestone</th><th>Progress</th>';
+  var html='<div class="overview-wrap"><table><thead><tr><th>Customer</th><th>Current milestone</th><th>Progress</th>';
   MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
