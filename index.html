@@ -10,33 +10,27 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh;}
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f4f4f0;}
 .login-card{background:#fff;border-radius:16px;border:0.5px solid #ddd;padding:2rem;width:340px;text-align:center;}
-.login-logo{font-size:22px;font-weight:600;margin-bottom:4px;}
-.login-logo span{color:#2563eb;}
+.login-logo{font-size:22px;font-weight:600;margin-bottom:4px;}.login-logo span{color:#2563eb;}
 .login-sub{font-size:13px;color:#888;margin-bottom:2rem;}
 .user-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem;}
 .user-btn{padding:12px;border:0.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#1a1a1a;}
-.user-btn:hover{background:#f4f4f0;}
-.user-btn.selected{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+.user-btn:hover{background:#f4f4f0;}.user-btn.selected{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
 .pin-row{display:flex;gap:8px;margin-bottom:1rem;}
 .pin-input{flex:1;padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;font-size:16px;text-align:center;letter-spacing:6px;background:#f9f9f7;}
 .pin-input:focus{outline:none;border-color:#2563eb;}
 .login-btn{width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
-.login-btn:hover{background:#1d4ed8;}
-.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
+.login-btn:hover{background:#1d4ed8;}.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
 #app{display:none;}
 .topbar{background:#fff;border-bottom:0.5px solid #e5e5e5;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:52px;position:sticky;top:0;z-index:100;}
-.topbar-logo{font-size:15px;font-weight:600;flex:1;}
-.topbar-logo span{color:#2563eb;}
-.topbar-user{font-size:12px;color:#888;display:flex;align-items:center;gap:6px;}
-.topbar-user strong{color:#1a1a1a;}
+.topbar-logo{font-size:15px;font-weight:600;flex:1;}.topbar-logo span{color:#2563eb;}
+.topbar-user{font-size:12px;color:#888;}.topbar-user strong{color:#1a1a1a;}
 .logout-btn{font-size:12px;padding:4px 10px;border:0.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#888;}
 .sync-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:6px;background:#fff;cursor:pointer;color:#2563eb;}
 .settings-btn{font-size:18px;background:none;border:none;cursor:pointer;color:#888;padding:4px;}
 .main{max-width:1200px;margin:0 auto;padding:1.5rem;}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem;}
 .stat{background:#fff;border-radius:10px;border:0.5px solid #e5e5e5;padding:12px 16px;}
-.stat-label{font-size:11px;color:#888;margin-bottom:4px;}
-.stat-value{font-size:24px;font-weight:600;color:#1a1a1a;}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px;}.stat-value{font-size:24px;font-weight:600;color:#1a1a1a;}
 .view-toggle{display:flex;gap:6px;margin-bottom:1.25rem;}
 .vbtn{padding:6px 14px;font-size:13px;border-radius:8px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;}
 .vbtn.active{background:#f4f4f0;color:#1a1a1a;font-weight:500;border-color:#bbb;}
@@ -46,85 +40,73 @@ thead tr{border-bottom:0.5px solid #e5e5e5;}
 th{padding:10px 12px;text-align:left;color:#888;font-weight:400;white-space:nowrap;}
 td{padding:9px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
-.job-name-cell{font-weight:500;color:#1a1a1a;font-size:13px;}
-.job-addr-cell{font-size:11px;color:#888;margin-top:1px;}
+.inst-name-cell{font-weight:500;color:#1a1a1a;font-size:13px;}.inst-addr-cell{font-size:11px;color:#888;margin-top:1px;}
 .equip-cell{font-size:11px;color:#555;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
-.dot-done{background:#dcfce7;color:#16a34a;}
-.dot-inprog{background:#fef9c3;color:#ca8a04;}
-.dot-delayed{background:#fee2e2;color:#dc2626;}
-.dot-none{background:#f4f4f0;color:#bbb;}
+.dot-done{background:#dcfce7;color:#16a34a;}.dot-inprog{background:#fef9c3;color:#ca8a04;}
+.dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
-.cards{display:flex;flex-direction:column;gap:10px;}
+.installs{display:flex;flex-direction:column;gap:10px;}
 .card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;transition:border-color 0.15s;}
-.card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}
-.card.dragging{opacity:0.4;}
+.card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}.card.dragging{opacity:0.4;}
 .card-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
 .card-header:hover{background:#fafaf8;}
-.drag-handle{cursor:grab;color:#ccc;font-size:18px;padding:0 2px;flex-shrink:0;user-select:none;line-height:1;}
+.drag-handle{cursor:grab;color:#ccc;font-size:18px;padding:0 2px;flex-shrink:0;user-select:none;}
 .drag-handle:hover{color:#888;}
 .avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
-.card-meta{flex:1;min-width:0;}
-.card-name{font-size:14px;font-weight:600;color:#1a1a1a;}
-.card-addr{font-size:12px;color:#888;margin-top:1px;}
-.card-equip{font-size:11px;color:#2563eb;margin-top:2px;}
+.card-meta{flex:1;min-width:0;}.card-name{font-size:14px;font-weight:600;color:#1a1a1a;}
+.card-addr{font-size:12px;color:#888;margin-top:1px;}.card-equip{font-size:11px;color:#2563eb;margin-top:2px;}
 .card-pills{display:flex;gap:6px;align-items:center;flex-shrink:0;}
 .pill{font-size:11px;padding:3px 9px;border-radius:6px;}
-.pill-prog{background:#f4f4f0;color:#555;}
-.pill-delayed{background:#fee2e2;color:#dc2626;}
-.pill-done{background:#dcfce7;color:#16a34a;}
-.chevron{font-size:14px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}
-.chevron.open{transform:rotate(180deg);}
-.card-body{display:none;border-top:0.5px solid #f0f0f0;}
-.card-body.open{display:block;}
+.pill-prog{background:#f4f4f0;color:#555;}.pill-delayed{background:#fee2e2;color:#dc2626;}.pill-done{background:#dcfce7;color:#16a34a;}
+.chevron{font-size:14px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}.chevron.open{transform:rotate(180deg);}
+.card-body{display:none;border-top:0.5px solid #f0f0f0;}.card-body.open{display:block;}
 .equip-section{padding:12px 16px;border-bottom:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;}
 .equip-label{font-size:11px;color:#888;white-space:nowrap;}
 .equip-input{flex:1;font-size:13px;padding:6px 10px;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .equip-input:focus{outline:none;border-color:#2563eb;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
-.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}
-.ms-row.inprog-row{border-color:#fde047;}
-.ms-row.delayed-row{border-color:#fca5a5;}
+.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}
 .ms-main{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
 .ms-main:hover{background:rgba(0,0,0,0.02);}
 .si{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;}
-.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}
-.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}
-.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
-.ms-label{flex:1;font-size:13px;color:#1a1a1a;}
-.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
+.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+.ms-label{flex:1;font-size:13px;color:#1a1a1a;}.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
 .ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
 .ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
-.ms-chevron{font-size:12px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}
-.ms-chevron.open{transform:rotate(180deg);}
+.ms-chevron{font-size:12px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}.ms-chevron.open{transform:rotate(180deg);}
 .ms-detail{padding:0 12px 10px 42px;display:flex;flex-direction:column;gap:8px;}
 .det-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .det-lbl{font-size:11px;color:#888;width:72px;flex-shrink:0;}
 .state-btns{display:flex;gap:4px;flex-wrap:wrap;}
 .sbtn{font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
 .sbtn:hover{background:#f4f4f0;}
-.sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}
-.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
-.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
-.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+.sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
+.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}
 .det-input{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
-.det-input:focus{outline:none;border-color:#2563eb;}
-.det-input.wide{flex:1;min-width:0;}
+.det-input:focus{outline:none;border-color:#2563eb;}.det-input.wide{flex:1;min-width:0;}
 .pinned-note-box{flex:1;font-size:12px;color:#2563eb;line-height:1.4;}
 .unpin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;cursor:pointer;color:#888;}
 .notes-section{padding:12px 16px;border-top:0.5px solid #f0f0f0;}
 .notes-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
 .notes-title{font-size:12px;color:#888;}
-.notes-body{margin-top:10px;display:none;}
-.notes-body.open{display:block;}
+.notes-body{margin-top:10px;display:none;}.notes-body.open{display:block;}
 .note-item{padding:8px 10px;border:0.5px solid #e5e5e5;border-radius:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
 .note-text{flex:1;font-size:12px;color:#1a1a1a;line-height:1.5;}
 .note-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
 .pin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
-.pin-btn:hover{background:#f4f4f0;}
-.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
+.pin-btn:hover{background:#f4f4f0;}.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
 .pin-select{font-size:10px;padding:2px 6px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.delete-zone{padding:10px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.delete-btn{font-size:12px;padding:5px 12px;border:0.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
+.delete-btn:hover{background:#fee2e2;}
+.delete-confirm-area{display:none;align-items:center;gap:8px;flex-wrap:wrap;}
+.delete-confirm-area.show{display:flex;}
+.delete-hint{font-size:11px;color:#dc2626;}
+.delete-type-input{font-size:12px;padding:4px 8px;border:0.5px solid #fca5a5;border-radius:6px;font-family:inherit;width:90px;}
+.delete-go-btn{font-size:12px;padding:5px 12px;border:none;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer;font-family:inherit;}
+.delete-cancel-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ddd;border-radius:8px;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
 .log-section{margin-top:0;}
 .log-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;}
 .log-list{background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden;}
@@ -156,11 +138,9 @@ tr:last-child td{border-bottom:none;}
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">NAGeo <span>Tracker</span></div>
-    <div class="login-sub">North American GeoThermal — Install Management</div>
+    <div class="login-sub">North American GeoThermal &mdash; Install Management</div>
     <div class="user-grid" id="user-grid"></div>
-    <div class="pin-row">
-      <input type="password" class="pin-input" id="pin-input" placeholder="PIN" maxlength="6" inputmode="numeric">
-    </div>
+    <div class="pin-row"><input type="password" class="pin-input" id="pin-input" placeholder="PIN" maxlength="6" inputmode="numeric"></div>
     <button class="login-btn" onclick="doLogin()">Sign in</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -176,20 +156,20 @@ tr:last-child td{border-bottom:none;}
   </div>
   <div class="main">
     <div class="stats">
-      <div class="stat"><div class="stat-label">Active jobs</div><div class="stat-value" id="s-active">0</div></div>
-      <div class="stat"><div class="stat-label">Jobs with delays</div><div class="stat-value" id="s-delayed" style="color:#dc2626">0</div></div>
+      <div class="stat"><div class="stat-label">Active installs</div><div class="stat-value" id="s-active">0</div></div>
+      <div class="stat"><div class="stat-label">Delayed</div><div class="stat-value" id="s-delayed" style="color:#dc2626">0</div></div>
       <div class="stat"><div class="stat-label">In progress</div><div class="stat-value" id="s-inprog" style="color:#ca8a04">0</div></div>
       <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" id="s-complete" style="color:#16a34a">0</div></div>
     </div>
     <div class="view-toggle">
       <button class="vbtn active" id="btn-overview" onclick="setView('overview')">&#9776; Overview</button>
-      <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Job cards</button>
+      <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Installs</button>
       <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
     </div>
     <div id="view-overview"></div>
     <div id="view-cards" style="display:none"></div>
     <div id="view-log" style="display:none"></div>
-    <button class="add-btn" id="add-job-btn" onclick="addJob()">+ Add job</button>
+    <button class="add-btn" id="add-job-btn" onclick="addInstall()">+ Add install</button>
   </div>
 </div>
 
@@ -201,7 +181,7 @@ tr:last-child td{border-bottom:none;}
       <input type="password" class="modal-input" id="hcp-key-input" placeholder="Paste your Housecall Pro API key">
     </div>
     <div class="modal-row">
-      <div class="modal-label">HCP Install Tag</div>
+      <div class="modal-label">HCP Customer Tag</div>
       <input type="text" class="modal-input" id="hcp-tag-input" placeholder="e.g. geo-install">
     </div>
     <div class="modal-btns">
@@ -214,34 +194,24 @@ tr:last-child td{border-bottom:none;}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
-const MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
-
-let currentUser = null;
-let users = [];
-let jobs = [];
-let activityLog = [];
-let openCards = new Set();
-let openMS = new Set();
-let openNotes = new Set();
-let currentView = 'overview';
-let selectedUserId = null;
-let dragId = null;
-let dragOverId = null;
+var SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
+var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
+var currentUser = null, users = [], installs = [], activityLog = [];
+var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set();
+var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
 
 async function init() {
-  const saved = localStorage.getItem('nageo_user');
+  var saved = localStorage.getItem('nageo_user');
   if (saved) { currentUser = JSON.parse(saved); showApp(); }
   else { await loadUsers(); showLogin(); }
 }
 
 async function loadUsers() {
-  const { data } = await sb.from('users').select('*').order('name');
-  users = data || [];
+  var res = await sb.from('users').select('*').order('name');
+  users = res.data || [];
   renderUserGrid();
 }
 
@@ -251,46 +221,41 @@ function showLogin() {
 }
 
 function renderUserGrid() {
-  const grid = document.getElementById('user-grid');
-  grid.innerHTML = users.map(function(u) {
-    return '<button class="user-btn" id="ubtn-' + u.id + '" onclick="selectUser(\'' + u.id + '\')">' + u.name + '</button>';
+  document.getElementById('user-grid').innerHTML = users.map(function(u) {
+    return '<button class="user-btn" id="ubtn-'+u.id+'" onclick="selectUser(\''+u.id+'\')">'+u.name+'</button>';
   }).join('');
 }
 
 function selectUser(id) {
   selectedUserId = id;
-  document.querySelectorAll('.user-btn').forEach(function(b) { b.classList.remove('selected'); });
-  document.getElementById('ubtn-' + id).classList.add('selected');
+  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('ubtn-'+id).classList.add('selected');
   document.getElementById('pin-input').focus();
 }
 
 async function doLogin() {
   if (!selectedUserId) { document.getElementById('login-error').textContent = 'Please select your name.'; return; }
-  const pin = document.getElementById('pin-input').value;
-  const user = users.find(function(u) { return u.id === selectedUserId; });
+  var pin = document.getElementById('pin-input').value;
+  var user = users.find(function(u){return u.id===selectedUserId;});
   if (!user || user.pin !== pin) {
     document.getElementById('login-error').textContent = 'Incorrect PIN. Try again.';
-    document.getElementById('pin-input').value = '';
-    return;
+    document.getElementById('pin-input').value = ''; return;
   }
   currentUser = user;
   localStorage.setItem('nageo_user', JSON.stringify(user));
-  document.getElementById('login-error').textContent = '';
   showApp();
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+  if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') doLogin();
 });
 
 function doLogout() {
-  currentUser = null;
-  localStorage.removeItem('nageo_user');
+  currentUser = null; localStorage.removeItem('nageo_user');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pin-input').value = '';
-  selectedUserId = null;
-  document.querySelectorAll('.user-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('pin-input').value = ''; selectedUserId = null;
+  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
 }
 
 async function showApp() {
@@ -301,18 +266,17 @@ async function showApp() {
 }
 
 async function loadAll() {
-  const r1 = await sb.from('jobs').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false });
-  const r2 = await sb.from('milestones').select('*').order('index');
-  const r3 = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50);
-  const rawJobs = r1.data || [];
-  const allMS = r2.data || [];
+  var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+  var r2 = await sb.from('milestones').select('*').order('index');
+  var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+  var rawJobs = r1.data || [], allMS = r2.data || [];
   activityLog = r3.data || [];
-  jobs = rawJobs.map(function(j) {
-    return Object.assign({}, j, {
-      hcp_notes: j.hcp_notes || [],
-      milestones: MS.map(function(_, i) {
-        const found = allMS.find(function(m) { return m.job_id === j.id && m.index === i; });
-        return found || { job_id: j.id, index: i, state: 'none', date: '', notes: '', pinned_note: null };
+  installs = rawJobs.map(function(j) {
+    return Object.assign({},j,{
+      hcp_notes: j.hcp_notes||[],
+      milestones: MS.map(function(_,i){
+        var f = allMS.find(function(m){return m.job_id===j.id&&m.index===i;});
+        return f||{job_id:j.id,index:i,state:'none',date:'',notes:'',pinned_note:null};
       })
     });
   });
@@ -320,320 +284,313 @@ async function loadAll() {
 }
 
 async function saveMilestone(jobId, idx, fields) {
-  const job = jobs.find(function(j) { return j.id === jobId; });
-  const m = job.milestones[idx];
+  var inst = installs.find(function(j){return j.id===jobId;});
+  var m = inst.milestones[idx];
   Object.assign(m, fields);
-  const payload = { job_id: jobId, index: idx, state: m.state, date: m.date || null, notes: m.notes || null, pinned_note: m.pinned_note || null, updated_by: currentUser.id, updated_at: new Date().toISOString() };
-  if (m.id) {
-    await sb.from('milestones').update(payload).eq('id', m.id);
-  } else {
-    const res = await sb.from('milestones').insert(payload).select().single();
-    if (res.data) m.id = res.data.id;
-  }
-  await logActivity(jobId, 'Updated "' + MS[idx] + '" to ' + m.state + (m.notes ? ': ' + m.notes : ''));
+  var payload = {job_id:jobId,index:idx,state:m.state,date:m.date||null,notes:m.notes||null,pinned_note:m.pinned_note||null,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+  if (m.id) { await sb.from('milestones').update(payload).eq('id',m.id); }
+  else { var r = await sb.from('milestones').insert(payload).select().single(); if(r.data) m.id=r.data.id; }
+  await logActivity(jobId,'Updated "'+MS[idx]+'" to '+m.state+(m.notes?': '+m.notes:''));
   render();
 }
 
 async function saveJobField(jobId, field, value) {
-  await sb.from('jobs').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', jobId);
-  jobs.find(function(j) { return j.id === jobId; })[field] = value;
-  await logActivity(jobId, 'Updated ' + field + ': ' + value);
+  await sb.from('jobs').update({[field]:value,updated_at:new Date().toISOString()}).eq('id',jobId);
+  installs.find(function(j){return j.id===jobId;})[field]=value;
+  await logActivity(jobId,'Updated '+field+': '+value);
   render();
 }
 
 async function logActivity(jobId, action) {
-  const entry = { job_id: jobId, user_id: currentUser.id, user_name: currentUser.name, action: action, created_at: new Date().toISOString() };
+  var entry = {job_id:jobId,user_id:currentUser.id,user_name:currentUser.name,action:action,created_at:new Date().toISOString()};
   await sb.from('activity_log').insert(entry);
   activityLog.unshift(entry);
 }
 
-async function addJob() {
-  const name = prompt('Customer last name:');
+async function deleteInstall(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  await sb.from('milestones').delete().eq('job_id',jobId);
+  await sb.from('activity_log').delete().eq('job_id',jobId);
+  await sb.from('jobs').delete().eq('id',jobId);
+  installs = installs.filter(function(j){return j.id!==jobId;});
+  openCards.delete(jobId); showDel.delete(jobId);
+  showToast((inst?inst.name:'Install')+' deleted.');
+  render();
+}
+
+async function addInstall() {
+  var name = prompt('Customer full name:');
   if (!name) return;
-  const address = prompt('Job address:');
-  const maxOrder = jobs.reduce(function(max, j) { return Math.max(max, j.sort_order || 0); }, 0);
-  const res = await sb.from('jobs').insert({ name: name, address: address || '', equipment: '', hcp_notes: [], sort_order: maxOrder + 1, updated_at: new Date().toISOString() }).select().single();
-  if (res.data) {
-    res.data.milestones = MS.map(function(_, i) { return { job_id: res.data.id, index: i, state: 'none', date: '', notes: '', pinned_note: null }; });
-    res.data.hcp_notes = [];
-    jobs.unshift(res.data);
-    openCards.add(res.data.id);
-    await logActivity(res.data.id, 'Job created');
-    setView('cards');
-    render();
+  var address = prompt('Job address:');
+  var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+  var r = await sb.from('jobs').insert({name:name,address:address||'',equipment:'',hcp_notes:[],sort_order:maxOrder+1,updated_at:new Date().toISOString()}).select().single();
+  if (r.data) {
+    r.data.milestones = MS.map(function(_,i){return {job_id:r.data.id,index:i,state:'none',date:'',notes:'',pinned_note:null};});
+    r.data.hcp_notes=[];
+    installs.unshift(r.data);
+    openCards.add(r.data.id);
+    await logActivity(r.data.id,'Install created');
+    setView('cards'); render();
   }
 }
 
 async function syncHCP() {
-  const settings = getSettings();
+  var settings = getSettings();
   if (!settings.hcpKey) { openSettings(); showToast('Enter your HCP API key in settings first.'); return; }
   showToast('Syncing from Housecall Pro...');
   try {
-    const res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY, 'apikey': SUPABASE_KEY },
-      body: JSON.stringify({ tag: settings.hcpTag || 'geo-install', key: settings.hcpKey })
+    var res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({tag:settings.hcpTag||'geo-install',key:settings.hcpKey})
     });
     if (!res.ok) { showToast('HCP sync failed. Check your API key.'); return; }
-    const data = await res.json();
-    const hcpJobs = data.jobs || data.results || [];
-    let added = 0;
-    const maxOrder = jobs.reduce(function(max, j) { return Math.max(max, j.sort_order || 0); }, 0);
-    for (let i = 0; i < hcpJobs.length; i++) {
-      const hj = hcpJobs[i];
-      const existing = jobs.find(function(j) { return j.hcp_job_id === hj.id; });
+    var data = await res.json();
+    var customers = data.customers || [];
+    if (!customers.length) { showToast('No customers found with that tag.'); return; }
+    var added = 0;
+    var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+    for (var i=0;i<customers.length;i++) {
+      var c = customers[i];
+      var hcpId = 'cust-'+c.id;
+      var existing = installs.find(function(j){return j.hcp_job_id===hcpId;});
       if (!existing) {
-        const name = (hj.customer && hj.customer.last_name) ? hj.customer.last_name : ((hj.customer && hj.customer.name) ? hj.customer.name : 'Unknown');
-        const addr = hj.address ? [hj.address.street, hj.address.city, hj.address.state].filter(Boolean).join(', ') : '';
-        const hcp_notes = (hj.notes || []).map(function(n, ni) { return { id: 'hcp-' + ni, text: typeof n === 'string' ? n : (n.content || n.text || '') }; }).filter(function(n) { return n.text; });
-        const r = await sb.from('jobs').insert({ hcp_job_id: hj.id, name: name, address: addr, equipment: '', hcp_notes: hcp_notes, sort_order: maxOrder + added + 1, updated_at: new Date().toISOString() }).select().single();
-        if (r.data) {
-          r.data.milestones = MS.map(function(_, mi) { return { job_id: r.data.id, index: mi, state: 'none', date: '', notes: '', pinned_note: null }; });
-          r.data.hcp_notes = hcp_notes;
-          jobs.push(r.data);
-          await logActivity(r.data.id, 'Imported from HCP');
+        var firstName = c.first_name||'';
+        var lastName = c.last_name||'';
+        var fullName = (firstName+' '+lastName).trim()||c.name||'Unknown';
+        var addr = '';
+        if (c.addresses && c.addresses.length) {
+          var a = c.addresses[0];
+          addr = [a.street,a.city,a.state].filter(Boolean).join(', ');
+        }
+        var hcpNotes = [];
+        if (c.notes) hcpNotes.push({id:'note-0',text:c.notes});
+        var r2 = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addr,equipment:'',hcp_notes:hcpNotes,sort_order:maxOrder+added+1,updated_at:new Date().toISOString()}).select().single();
+        if (r2.data) {
+          r2.data.milestones=MS.map(function(_,mi){return {job_id:r2.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
+          r2.data.hcp_notes=hcpNotes;
+          installs.push(r2.data);
+          await logActivity(r2.data.id,'Imported from HCP: '+fullName);
           added++;
         }
       }
     }
-    showToast(added > 0 ? 'Synced ' + added + ' new job(s) from HCP.' : 'No new jobs found.');
+    showToast(added>0?'Synced '+added+' new install(s) from HCP.':'No new installs found.');
     render();
-  } catch(e) {
-    showToast('HCP sync error. Check your API key and tag.');
-  }
+  } catch(e) { showToast('HCP sync error. Check your API key and tag.'); }
 }
 
-function getSettings() { return JSON.parse(localStorage.getItem('nageo_settings') || '{}'); }
-function openSettings() {
-  const s = getSettings();
-  document.getElementById('hcp-key-input').value = s.hcpKey || '';
-  document.getElementById('hcp-tag-input').value = s.hcpTag || 'geo-install';
-  document.getElementById('settings-modal').classList.add('open');
-}
-function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
-function saveSettings() {
-  localStorage.setItem('nageo_settings', JSON.stringify({ hcpKey: document.getElementById('hcp-key-input').value.trim(), hcpTag: document.getElementById('hcp-tag-input').value.trim() || 'geo-install' }));
-  closeSettings();
-  showToast('Settings saved.');
+function getSettings(){return JSON.parse(localStorage.getItem('nageo_settings')||'{}');}
+function openSettings(){var s=getSettings();document.getElementById('hcp-key-input').value=s.hcpKey||'';document.getElementById('hcp-tag-input').value=s.hcpTag||'geo-install';document.getElementById('settings-modal').classList.add('open');}
+function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
+function saveSettings(){localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:document.getElementById('hcp-key-input').value.trim(),hcpTag:document.getElementById('hcp-tag-input').value.trim()||'geo-install'}));closeSettings();showToast('Settings saved.');}
+
+function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
+function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
+function hasDelay(j){return j.milestones.some(function(m){return m.state==='delayed';});}
+function isComplete(j){return j.milestones.every(function(m){return m.state==='done';});}
+function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
+function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
+function timeAgo(ts){var d=Math.floor((Date.now()-new Date(ts))/1000);if(d<60)return 'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':'dot-none');}
+function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':'';}
+function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':'');}
+function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':'');}
+
+function updateStats(){
+  document.getElementById('s-active').textContent=installs.filter(function(j){return !isComplete(j);}).length;
+  document.getElementById('s-delayed').textContent=installs.filter(function(j){return hasDelay(j);}).length;
+  document.getElementById('s-inprog').textContent=installs.filter(function(j){return j.milestones.some(function(m){return m.state==='inprog';});}).length;
+  document.getElementById('s-complete').textContent=installs.filter(function(j){return isComplete(j);}).length;
 }
 
-function initials(n) { return n.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0,2); }
-function doneCount(j) { return j.milestones.filter(function(m) { return m.state === 'done'; }).length; }
-function hasDelay(j) { return j.milestones.some(function(m) { return m.state === 'delayed'; }); }
-function isComplete(j) { return j.milestones.every(function(m) { return m.state === 'done'; }); }
-function currentMSName(j) { const i = j.milestones.findIndex(function(m) { return m.state !== 'done'; }); return i === -1 ? MS[MS.length-1] : MS[i]; }
-function getNoteText(job, nid) { const n = (job.hcp_notes || []).find(function(n) { return n.id === nid; }); return n ? n.text : null; }
-function timeAgo(ts) {
-  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d/60) + 'm ago';
-  if (d < 86400) return Math.floor(d/3600) + 'h ago';
-  return Math.floor(d/86400) + 'd ago';
-}
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 3000);
-}
-function dotClass(s) { return 'ms-dot ' + (s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':'dot-none'); }
-function dotIcon(s) { return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':''; }
-function siClass(s) { return 'si ' + (s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':''); }
-function siIcon(s) { return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':''; }
-function rowClass(s) { return 'ms-row ' + (s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':''); }
-
-function updateStats() {
-  document.getElementById('s-active').textContent = jobs.filter(function(j) { return !isComplete(j); }).length;
-  document.getElementById('s-delayed').textContent = jobs.filter(function(j) { return hasDelay(j); }).length;
-  document.getElementById('s-inprog').textContent = jobs.filter(function(j) { return j.milestones.some(function(m) { return m.state==='inprog'; }); }).length;
-  document.getElementById('s-complete').textContent = jobs.filter(function(j) { return isComplete(j); }).length;
-}
-
-function setView(v) {
-  currentView = v;
-  ['overview','cards','log'].forEach(function(n) {
-    document.getElementById('view-'+n).style.display = v===n?'block':'none';
-    document.getElementById('btn-'+n).className = 'vbtn'+(v===n?' active':'');
+function setView(v){
+  currentView=v;
+  ['overview','cards','log'].forEach(function(n){
+    document.getElementById('view-'+n).style.display=v===n?'block':'none';
+    document.getElementById('btn-'+n).className='vbtn'+(v===n?' active':'');
   });
-  document.getElementById('add-job-btn').style.display = v==='log'?'none':'block';
+  document.getElementById('add-job-btn').style.display=v==='log'?'none':'block';
 }
 
-function renderOverview() {
-  const el = document.getElementById('view-overview');
-  if (!jobs.length) { el.innerHTML = '<div class="overview-wrap"><div class="empty">No jobs yet. Add one below or sync from HCP.</div></div>'; return; }
-  let html = '<div class="overview-wrap"><table><thead><tr><th>Job</th><th>Equipment</th><th>Current milestone</th><th>Progress</th>';
-  MS_SHORT.forEach(function(s) { html += '<th style="font-size:10px">' + s + '</th>'; });
-  html += '<th>Delay</th></tr></thead><tbody>';
-  jobs.forEach(function(j) {
-    html += '<tr><td><div class="job-name-cell">' + j.name + '</div><div class="job-addr-cell">' + (j.address||'') + '</div></td>';
-    html += '<td><div class="equip-cell" title="' + (j.equipment||'') + '">' + (j.equipment || '<span style="color:#ccc">&#8212;</span>') + '</div></td>';
-    html += '<td style="font-size:12px">' + currentMSName(j) + '</td>';
-    html += '<td style="font-size:12px;color:#888">' + doneCount(j) + '/9</td>';
-    j.milestones.forEach(function(m) { html += '<td><span class="' + dotClass(m.state) + '" title="' + m.state + '">' + dotIcon(m.state) + '</span></td>'; });
-    html += '<td>' + (hasDelay(j) ? '<span class="delay-badge">! Yes</span>' : '<span style="color:#ccc;font-size:12px">&#8212;</span>') + '</td></tr>';
+function renderOverview(){
+  var el=document.getElementById('view-overview');
+  if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
+  var html='<div class="overview-wrap"><table><thead><tr><th>Customer</th><th>Equipment</th><th>Current milestone</th><th>Progress</th>';
+  MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
+  html+='<th>Delay</th></tr></thead><tbody>';
+  installs.forEach(function(j){
+    html+='<tr><td><div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div></td>';
+    html+='<td><div class="equip-cell" title="'+(j.equipment||'')+'">'+(j.equipment||'<span style="color:#ccc">&mdash;</span>')+'</div></td>';
+    html+='<td style="font-size:12px">'+curMS(j)+'</td>';
+    html+='<td style="font-size:12px;color:#888">'+doneCount(j)+'/9</td>';
+    j.milestones.forEach(function(m){html+='<td><span class="'+dc(m.state)+'" title="'+m.state+'">'+di(m.state)+'</span></td>';});
+    html+='<td>'+(hasDelay(j)?'<span class="delay-badge">! Yes</span>':'<span style="color:#ccc;font-size:12px">&mdash;</span>')+'</td></tr>';
   });
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
 }
 
-function renderCards() {
-  const el = document.getElementById('view-cards');
-  if (!jobs.length) { el.innerHTML = '<div class="empty">No jobs yet.</div>'; return; }
-  let html = '<div class="cards">';
-  jobs.forEach(function(j) {
-    const isOpen = openCards.has(j.id);
-    const notesOpen = openNotes.has(j.id);
-    html += '<div class="card" id="card-' + j.id + '" ondragover="dragOver(event,\'' + j.id + '\')" ondrop="drop(event,\'' + j.id + '\')">';
-    html += '<div class="card-header" onclick="toggleCard(\'' + j.id + '\')">';
-    html += '<span class="drag-handle" draggable="true" ondragstart="dragStart(event,\'' + j.id + '\')" ondragend="dragEnd(event)" onclick="event.stopPropagation()" title="Drag to reorder">&#8942;</span>';
-    html += '<div class="avatar">' + initials(j.name) + '</div>';
-    html += '<div class="card-meta"><div class="card-name">' + j.name + '</div><div class="card-addr">' + (j.address||'') + '</div>';
-    if (j.equipment) html += '<div class="card-equip">&#9881; ' + j.equipment + '</div>';
-    html += '</div>';
-    html += '<div class="card-pills"><span class="pill pill-prog">' + doneCount(j) + '/9</span>';
-    if (hasDelay(j)) html += '<span class="pill pill-delayed">! Delayed</span>';
-    if (isComplete(j)) html += '<span class="pill pill-done">&#10003; Complete</span>';
-    html += '</div>';
-    html += '<span class="chevron ' + (isOpen?'open':'') + '">&#9662;</span></div>';
-    html += '<div class="card-body ' + (isOpen?'open':'') + '">';
-    html += '<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
-    html += '<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="' + (j.equipment||'') + '" onchange="saveJobField(\'' + j.id + '\',\'equipment\',this.value)"></div>';
-    html += '<div class="ms-list">';
-    j.milestones.forEach(function(m, i) {
-      const key = j.id + '-' + i;
-      const msOpen = openMS.has(key);
-      const pinnedText = m.pinned_note ? getNoteText(j, m.pinned_note) : null;
-      html += '<div class="' + rowClass(m.state) + '">';
-      html += '<div class="ms-main" onclick="toggleMS(\'' + key + '\')">';
-      html += '<div class="' + siClass(m.state) + '">' + siIcon(m.state) + '</div>';
-      html += '<span class="ms-label ' + (m.state==='done'?'done-lbl':'') + '">' + MS[i] + '</span>';
-      if (pinnedText) html += '<span class="ms-pinned-tag">&#128204; ' + (pinnedText.length>40?pinnedText.slice(0,40)+'&#8230;':pinnedText) + '</span>';
-      if (m.state==='done' && m.date) html += '<span class="ms-date-tag">' + m.date + '</span>';
-      html += '<span class="ms-chevron ' + (msOpen?'open':'') + '">&#9662;</span></div>';
-      html += '<div class="ms-detail" style="display:' + (msOpen?'flex':'none') + '">';
-      html += '<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
-      html += '<button class="sbtn ' + (m.state==='none'?'a-none':'') + '" onclick="setState(\'' + j.id + '\',' + i + ',\'none\')">Not started</button>';
-      html += '<button class="sbtn ' + (m.state==='inprog'?'a-inprog':'') + '" onclick="setState(\'' + j.id + '\',' + i + ',\'inprog\')">In progress</button>';
-      html += '<button class="sbtn ' + (m.state==='delayed'?'a-delayed':'') + '" onclick="setState(\'' + j.id + '\',' + i + ',\'delayed\')">Delayed</button>';
-      html += '<button class="sbtn ' + (m.state==='done'?'a-done':'') + '" onclick="setState(\'' + j.id + '\',' + i + ',\'done\')">Done</button>';
-      html += '</div></div>';
-      if (m.state==='done') html += '<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="' + (m.date||'') + '" onchange="setMSField(\'' + j.id + '\',' + i + ',\'date\',this.value)"></div>';
-      if (m.state==='inprog'||m.state==='delayed') html += '<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="What\'s happening..." value="' + (m.notes||'') + '" onchange="setMSField(\'' + j.id + '\',' + i + ',\'notes\',this.value)"></div>';
-      if (pinnedText) html += '<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">' + pinnedText + '</span><button class="unpin-btn" onclick="unpinMS(\'' + j.id + '\',' + i + ')">Unpin</button></div>';
-      html += '</div></div>';
+function renderCards(){
+  var el=document.getElementById('view-cards');
+  if(!installs.length){el.innerHTML='<div class="empty">No installs yet.</div>';return;}
+  var html='<div class="installs">';
+  installs.forEach(function(j){
+    var isOpen=openCards.has(j.id), notesOpen=openNotes.has(j.id), delOpen=showDel.has(j.id);
+    html+='<div class="card" id="card-'+j.id+'" ondragover="dragOver(event,\''+j.id+'\')" ondrop="drop(event,\''+j.id+'\')">';
+    html+='<div class="card-header" onclick="toggleCard(\''+j.id+'\')">';
+    html+='<span class="drag-handle" draggable="true" ondragstart="dragStart(event,\''+j.id+'\')" ondragend="dragEnd(event)" onclick="event.stopPropagation()" title="Drag to reorder">&#8942;</span>';
+    html+='<div class="avatar">'+initials(j.name)+'</div>';
+    html+='<div class="card-meta"><div class="card-name">'+j.name+'</div><div class="card-addr">'+(j.address||'')+'</div>';
+    if(j.equipment) html+='<div class="card-equip">&#9881; '+j.equipment+'</div>';
+    html+='</div>';
+    html+='<div class="card-pills"><span class="pill pill-prog">'+doneCount(j)+'/9</span>';
+    if(hasDelay(j)) html+='<span class="pill pill-delayed">! Delayed</span>';
+    if(isComplete(j)) html+='<span class="pill pill-done">&#10003; Complete</span>';
+    html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
+    html+='<div class="card-body '+(isOpen?'open':'')+'">';
+    html+='<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
+    html+='<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="'+(j.equipment||'')+'" onchange="saveJobField(\''+j.id+'\',\'equipment\',this.value)"></div>';
+    html+='<div class="ms-list">';
+    j.milestones.forEach(function(m,i){
+      var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
+      html+='<div class="'+rc(m.state)+'">';
+      html+='<div class="ms-main" onclick="toggleMS(\''+key+'\')"><div class="'+sic(m.state)+'">'+di(m.state)+'</div>';
+      html+='<span class="ms-label '+(m.state==='done'?'done-lbl':'')+'">'+MS[i]+'</span>';
+      if(pt) html+='<span class="ms-pinned-tag">&#128204; '+(pt.length>40?pt.slice(0,40)+'&#8230;':pt)+'</span>';
+      if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
+      html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
+      html+='<div class="ms-detail" style="display:'+(msOpen?'flex':'none')+'">';
+      html+='<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
+      html+='<button class="sbtn '+(m.state==='none'?'a-none':'')+'" onclick="setState(\''+j.id+'\','+i+',\'none\')">Not started</button>';
+      html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
+      html+='<button class="sbtn '+(m.state==='delayed'?'a-delayed':'')+'" onclick="setState(\''+j.id+'\','+i+',\'delayed\')">Delayed</button>';
+      html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
+      html+='</div></div>';
+      if(m.state==='done') html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
+      if(m.state==='inprog'||m.state==='delayed') html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="What\'s happening..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
+      if(pt) html+='<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">'+pt+'</span><button class="unpin-btn" onclick="unpinMS(\''+j.id+'\','+i+')">Unpin</button></div>';
+      html+='</div></div>';
     });
-    html += '</div>';
-    if (j.hcp_notes && j.hcp_notes.length) {
-      html += '<div class="notes-section"><div class="notes-hdr" onclick="toggleNotes(\'' + j.id + '\')"><span class="notes-title">&#128203; HCP notes (' + j.hcp_notes.length + ') &#8212; pin to equipment or milestone</span><span class="chevron ' + (notesOpen?'open':'') + '">&#9662;</span></div>';
-      html += '<div class="notes-body ' + (notesOpen?'open':'') + '">';
-      j.hcp_notes.forEach(function(note) {
-        const isPinnedEquip = j.pinned_equip_note === note.id;
-        const pinnedMSIdx = j.milestones.findIndex(function(m) { return m.pinned_note === note.id; });
-        html += '<div class="note-item"><span class="note-text">' + note.text + '</span><div class="note-actions">';
-        html += '<button class="pin-btn ' + (isPinnedEquip?'pinned':'') + '" onclick="pinToEquip(\'' + j.id + '\',\'' + note.id + '\')">&#9881; ' + (isPinnedEquip?'Pinned to equip.':'Pin to equipment') + '</button>';
-        html += '<select class="pin-select" onchange="pinToMS(\'' + j.id + '\',\'' + note.id + '\',this.value)"><option value="">Pin to milestone&#8230;</option>';
-        MS.forEach(function(name, i) { html += '<option value="' + i + '" ' + (pinnedMSIdx===i?'selected':'') + '>' + name + '</option>'; });
-        html += '</select></div></div>';
+    html+='</div>';
+    if(j.hcp_notes&&j.hcp_notes.length){
+      html+='<div class="notes-section"><div class="notes-hdr" onclick="toggleNotes(\''+j.id+'\')"><span class="notes-title">&#128203; HCP notes ('+j.hcp_notes.length+') &mdash; pin to equipment or milestone</span><span class="chevron '+(notesOpen?'open':'')+'">&#9662;</span></div>';
+      html+='<div class="notes-body '+(notesOpen?'open':'')+'">';
+      j.hcp_notes.forEach(function(note){
+        var isPE=j.pinned_equip_note===note.id, pmi=j.milestones.findIndex(function(m){return m.pinned_note===note.id;});
+        html+='<div class="note-item"><span class="note-text">'+note.text+'</span><div class="note-actions">';
+        html+='<button class="pin-btn '+(isPE?'pinned':'')+'" onclick="pinToEquip(\''+j.id+'\',\''+note.id+'\')">&#9881; '+(isPE?'Pinned to equip.':'Pin to equipment')+'</button>';
+        html+='<select class="pin-select" onchange="pinToMS(\''+j.id+'\',\''+note.id+'\',this.value)"><option value="">Pin to milestone&hellip;</option>';
+        MS.forEach(function(name,i){html+='<option value="'+i+'" '+(pmi===i?'selected':'')+'>'+name+'</option>';});
+        html+='</select></div></div>';
       });
-      html += '</div></div>';
+      html+='</div></div>';
     }
-    html += '</div></div>';
+    html+='<div class="delete-zone">';
+    if(!delOpen){
+      html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
+    } else {
+      html+='<span class="delete-hint">Type DELETE to confirm:</span>';
+      html+='<div class="delete-confirm-area show">';
+      html+='<input type="text" class="delete-type-input" id="del-input-'+j.id+'" placeholder="DELETE">';
+      html+='<button class="delete-go-btn" onclick="confirmDelete(\''+j.id+'\')">Delete</button>';
+      html+='<button class="delete-cancel-btn" onclick="cancelDelete(\''+j.id+'\')">Cancel</button>';
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='</div></div>';
   });
-  html += '</div>';
-  el.innerHTML = html;
+  html+='</div>';
+  el.innerHTML=html;
 }
 
-function renderLog() {
-  const el = document.getElementById('view-log');
-  if (!activityLog.length) { el.innerHTML = '<div class="empty">No activity yet.</div>'; return; }
-  const jobMap = {};
-  jobs.forEach(function(j) { jobMap[j.id] = j.name; });
-  let html = '<div class="log-section"><div class="log-title">Recent activity</div><div class="log-list">';
-  activityLog.slice(0,50).forEach(function(l) {
-    html += '<div class="log-item"><span class="log-who">' + l.user_name + '</span><span class="log-what">' + (jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &#8212; ':'') + l.action + '</span><span class="log-when">' + timeAgo(l.created_at) + '</span></div>';
+function renderLog(){
+  var el=document.getElementById('view-log');
+  if(!activityLog.length){el.innerHTML='<div class="empty">No activity yet.</div>';return;}
+  var jobMap={};
+  installs.forEach(function(j){jobMap[j.id]=j.name;});
+  var html='<div class="log-section"><div class="log-title">Recent activity</div><div class="log-list">';
+  activityLog.slice(0,50).forEach(function(l){
+    html+='<div class="log-item"><span class="log-who">'+l.user_name+'</span><span class="log-what">'+(jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &mdash; ':'')+l.action+'</span><span class="log-when">'+timeAgo(l.created_at)+'</span></div>';
   });
-  html += '</div></div>';
-  el.innerHTML = html;
+  html+='</div></div>';
+  el.innerHTML=html;
 }
 
-function render() { updateStats(); renderOverview(); renderCards(); renderLog(); }
+function render(){updateStats();renderOverview();renderCards();renderLog();}
 
-function toggleCard(id) { if(openCards.has(id))openCards.delete(id);else openCards.add(id); render(); }
-function toggleMS(key) { if(openMS.has(key))openMS.delete(key);else openMS.add(key); render(); }
-function toggleNotes(id) { if(openNotes.has(id))openNotes.delete(id);else openNotes.add(id); render(); }
-
-function setState(jobId, idx, state) {
-  const m = jobs.find(function(j){return j.id===jobId;}).milestones[idx];
-  const date = state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
-  saveMilestone(jobId, idx, { state: state, date: date });
+function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
+function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
+function toggleNotes(id){if(openNotes.has(id))openNotes.delete(id);else openNotes.add(id);render();}
+function showDeleteConfirm(id){showDel.add(id);render();}
+function cancelDelete(id){showDel.delete(id);render();}
+function confirmDelete(id){
+  var val=document.getElementById('del-input-'+id);
+  if(!val||val.value.trim()!=='DELETE'){showToast('Type DELETE in all caps to confirm.');return;}
+  deleteInstall(id);
 }
-function setMSField(jobId, idx, field, val) { saveMilestone(jobId, idx, { [field]: val }); }
 
-async function pinToEquip(jobId, noteId) {
-  const job = jobs.find(function(j){return j.id===jobId;});
-  const isPinned = job.pinned_equip_note === noteId;
-  job.pinned_equip_note = isPinned ? null : noteId;
-  if (!isPinned) { const note = job.hcp_notes.find(function(n){return n.id===noteId;}); if(note) job.equipment = note.text; }
-  await sb.from('jobs').update({ pinned_equip_note: job.pinned_equip_note, equipment: job.equipment, updated_at: new Date().toISOString() }).eq('id', jobId);
-  await logActivity(jobId, isPinned?'Unpinned equipment note':'Pinned note to equipment');
+function setState(jobId,idx,state){
+  var m=installs.find(function(j){return j.id===jobId;}).milestones[idx];
+  var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
+  saveMilestone(jobId,idx,{state:state,date:date});
+}
+function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
+
+async function pinToEquip(jobId,noteId){
+  var inst=installs.find(function(j){return j.id===jobId;});
+  var isPinned=inst.pinned_equip_note===noteId;
+  inst.pinned_equip_note=isPinned?null:noteId;
+  if(!isPinned){var note=inst.hcp_notes.find(function(n){return n.id===noteId;});if(note)inst.equipment=note.text;}
+  await sb.from('jobs').update({pinned_equip_note:inst.pinned_equip_note,equipment:inst.equipment,updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId,isPinned?'Unpinned equipment note':'Pinned note to equipment');
   render();
 }
 
-async function pinToMS(jobId, noteId, msIdx) {
-  if (msIdx==='') return;
-  const job = jobs.find(function(j){return j.id===jobId;});
-  const idx = parseInt(msIdx);
-  for (let i=0;i<job.milestones.length;i++) { if(job.milestones[i].pinned_note===noteId) await saveMilestone(jobId,i,{pinned_note:null}); }
-  await saveMilestone(jobId, idx, { pinned_note: noteId });
-  await logActivity(jobId, 'Pinned note to "' + MS[idx] + '"');
+async function pinToMS(jobId,noteId,msIdx){
+  if(msIdx==='')return;
+  var inst=installs.find(function(j){return j.id===jobId;});
+  var idx=parseInt(msIdx);
+  for(var i=0;i<inst.milestones.length;i++){if(inst.milestones[i].pinned_note===noteId)await saveMilestone(jobId,i,{pinned_note:null});}
+  await saveMilestone(jobId,idx,{pinned_note:noteId});
+  await logActivity(jobId,'Pinned note to "'+MS[idx]+'"');
 }
 
-async function unpinMS(jobId, idx) {
-  await saveMilestone(jobId, idx, { pinned_note: null });
-  await logActivity(jobId, 'Unpinned note from "' + MS[idx] + '"');
+async function unpinMS(jobId,idx){
+  await saveMilestone(jobId,idx,{pinned_note:null});
+  await logActivity(jobId,'Unpinned note from "'+MS[idx]+'"');
 }
 
-function dragStart(e, id) {
-  dragId = id;
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(function() {
-    const el = document.getElementById('card-' + id);
-    if (el) el.classList.add('dragging');
-  }, 0);
+function dragStart(e,id){
+  dragId=id; e.dataTransfer.effectAllowed='move';
+  setTimeout(function(){var el=document.getElementById('card-'+id);if(el)el.classList.add('dragging');},0);
 }
-
-function dragEnd(e) {
-  document.querySelectorAll('.card').forEach(function(el) {
-    el.classList.remove('dragging');
-    el.classList.remove('drag-over');
-  });
-  dragId = null;
-  dragOverId = null;
+function dragEnd(e){
+  document.querySelectorAll('.card').forEach(function(el){el.classList.remove('dragging');el.classList.remove('drag-over');});
+  dragId=null; dragOverId=null;
 }
-
-function dragOver(e, id) {
+function dragOver(e,id){
   e.preventDefault();
-  if (id === dragId) return;
-  if (dragOverId !== id) {
-    document.querySelectorAll('.card').forEach(function(el) { el.classList.remove('drag-over'); });
-    const el = document.getElementById('card-' + id);
-    if (el) el.classList.add('drag-over');
-    dragOverId = id;
+  if(id===dragId)return;
+  if(dragOverId!==id){
+    document.querySelectorAll('.card').forEach(function(el){el.classList.remove('drag-over');});
+    var el=document.getElementById('card-'+id);if(el)el.classList.add('drag-over');
+    dragOverId=id;
   }
-  e.dataTransfer.dropEffect = 'move';
+  e.dataTransfer.dropEffect='move';
 }
-
-async function drop(e, targetId) {
+async function drop(e,targetId){
   e.preventDefault();
-  if (!dragId || dragId === targetId) return;
-  const fromIdx = jobs.findIndex(function(j){return j.id===dragId;});
-  const toIdx = jobs.findIndex(function(j){return j.id===targetId;});
-  if (fromIdx===-1||toIdx===-1) return;
-  const moved = jobs.splice(fromIdx,1)[0];
-  jobs.splice(toIdx,0,moved);
-  jobs.forEach(function(j,i){j.sort_order=i;});
+  if(!dragId||dragId===targetId)return;
+  var fi=installs.findIndex(function(j){return j.id===dragId;});
+  var ti=installs.findIndex(function(j){return j.id===targetId;});
+  if(fi===-1||ti===-1)return;
+  var moved=installs.splice(fi,1)[0];
+  installs.splice(ti,0,moved);
+  installs.forEach(function(j,i){j.sort_order=i;});
   render();
-  await Promise.all(jobs.map(function(j,i){ return sb.from('jobs').update({sort_order:i}).eq('id',j.id); }));
+  await Promise.all(installs.map(function(j,i){return sb.from('jobs').update({sort_order:i}).eq('id',j.id);}));
   showToast('Order saved.');
 }
 
