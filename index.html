@@ -44,7 +44,7 @@ tr:last-child td{border-bottom:none;}
 .equip-cell{font-size:11px;color:#555;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
 .dot-done{background:#dcfce7;color:#16a34a;}.dot-inprog{background:#fef9c3;color:#ca8a04;}
-.dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}
+.dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}.dot-na{background:#e5e5e5;color:#555;font-size:9px;font-weight:600;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
 .dot-wrap{position:relative;display:inline-block;}
 .dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:50;line-height:1.6;text-align:left;pointer-events:none;}
@@ -71,11 +71,11 @@ tr:last-child td{border-bottom:none;}
 .equip-input:focus{outline:none;border-color:#2563eb;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
-.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}
+.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}
 .ms-main{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
 .ms-main:hover{background:rgba(0,0,0,0.02);}
 .si{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;}
-.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}.si-na{background:#e5e5e5;border-color:#bbb;color:#555;font-size:8px;font-weight:600;}
 .ms-label{flex:1;font-size:13px;color:#1a1a1a;}.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
 .ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
 .ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
@@ -87,7 +87,7 @@ tr:last-child td{border-bottom:none;}
 .sbtn{font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
 .sbtn:hover{background:#f4f4f0;}
 .sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
-.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}.sbtn.a-na{background:#e5e5e5;color:#555;border-color:#bbb;}
 .det-input{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .det-input:focus{outline:none;border-color:#2563eb;}.det-input.wide{flex:1;min-width:0;}
 .pinned-note-box{flex:1;font-size:12px;color:#2563eb;line-height:1.4;}
@@ -449,17 +449,17 @@ function closeSettings(){document.getElementById('settings-modal').classList.rem
 function saveSettings(){localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:document.getElementById('hcp-key-input').value.trim(),hcpTag:document.getElementById('hcp-tag-input').value.trim()||'geo-install'}));closeSettings();showToast('Settings saved.');}
 
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
-function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
+function doneCount(j){var na=j.milestones.filter(function(m){return m.state==='na';}).length;var done=j.milestones.filter(function(m){return m.state==='done';}).length;return done+'/'+(9-na);}
 function hasDelay(j){return j.milestones.some(function(m){return m.state==='delayed';});}
-function isComplete(j){return j.milestones.every(function(m){return m.state==='done';});}
+function isComplete(j){return j.milestones.every(function(m){return m.state==='done'||m.state==='na';});}
 function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
 function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
 function timeAgo(ts){var d=Math.floor((Date.now()-new Date(ts))/1000);if(d<60)return 'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':'dot-none');}
-function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':'';}
-function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':'');}
-function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':'');}
+function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':s==='na'?'dot-na':'dot-none');}
+function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='na'?'N/A':'';}
+function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':s==='na'?'si-na':'');}
+function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':s==='na'?'na-row':'');}
 
 function updateStats(){
   document.getElementById('s-active').textContent=installs.filter(function(j){return !isComplete(j);}).length;
@@ -492,6 +492,7 @@ function renderOverview(){
       if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='inprog'){tipText=MS[mi]+': In progress'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='na'){tipText=MS[mi]+': N/A';}
       else{tipText=MS[mi]+': Not started'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       html+='<td><div class="dot-wrap"><span class="'+dc(m.state)+'">'+di(m.state)+'</span><div class="tip">'+tipText+'</div></div></td>';
     });
@@ -528,7 +529,7 @@ function renderCards(){
       var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
       html+='<div class="'+rc(m.state)+'">';
       html+='<div class="ms-main" onclick="toggleMS(\''+key+'\')"><div class="'+sic(m.state)+'">'+di(m.state)+'</div>';
-      html+='<span class="ms-label '+(m.state==='done'?'done-lbl':'')+'">'+MS[i]+'</span>';
+      html+='<span class="ms-label '+(m.state==='done'||m.state==='na'?'done-lbl':'')+'">'+MS[i]+'</span>';
       if(pt) html+='<span class="ms-pinned-tag">&#128204; '+(pt.length>40?pt.slice(0,40)+'&#8230;':pt)+'</span>';
       if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
       html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
@@ -538,6 +539,7 @@ function renderCards(){
       html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
       html+='<button class="sbtn '+(m.state==='delayed'?'a-delayed':'')+'" onclick="setState(\''+j.id+'\','+i+',\'delayed\')">Delayed</button>';
       html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
+      html+='<button class="sbtn '+(m.state==='na'?'a-na':'')+'" onclick="setState(\''+j.id+'\','+i+',\'na\')">N/A</button>';
       html+='</div></div>';
       if(m.state==='done') html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
       html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="Add a note..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
@@ -605,7 +607,7 @@ function confirmDelete(id){
 function setState(jobId,idx,state){
   var m=installs.find(function(j){return j.id===jobId;}).milestones[idx];
   var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
-  saveMilestone(jobId,idx,{state:state,date:date});
+  saveMilestone(jobId,idx,{state:state,date:date,notes:state==='na'?'':m.notes});
 }
 function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
 
