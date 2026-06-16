@@ -46,6 +46,10 @@ tr:last-child td{border-bottom:none;}
 .dot-done{background:#dcfce7;color:#16a34a;}.dot-inprog{background:#fef9c3;color:#ca8a04;}
 .dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
+.dot-wrap{position:relative;display:inline-block;}
+.dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;white-space:nowrap;max-width:220px;white-space:normal;z-index:50;line-height:1.4;text-align:left;pointer-events:none;}
+.dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}
+.dot-wrap:hover .tip{display:block;}
 .installs{display:flex;flex-direction:column;gap:10px;}
 .card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;transition:border-color 0.15s;}
 .card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}.card.dragging{opacity:0.4;}
@@ -481,11 +485,19 @@ function renderOverview(){
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
     html+='<tr><td><div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div></td>';
-    html+='<td><div class="equip-cell" title="'+(j.equipment||'')+'">'+(j.equipment||'<span style="color:#ccc">&mdash;</span>')+'</div></td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+doneCount(j)+'/9</td>';
-    j.milestones.forEach(function(m){html+='<td><span class="'+dc(m.state)+'" title="'+m.state+'">'+di(m.state)+'</span></td>';});
-    html+='<td>'+(hasDelay(j)?'<span class="delay-badge">! Yes</span>':'<span style="color:#ccc;font-size:12px">&mdash;</span>')+'</td></tr>';
+    j.milestones.forEach(function(m,mi){
+      var tipText = '';
+      if(m.state==='done') tipText = MS[mi]+': Completed'+(m.date?' on '+m.date:'');
+      else if(m.state==='inprog') tipText = MS[mi]+': In progress'+(m.notes?'\n'+m.notes:'');
+      else if(m.state==='delayed') tipText = MS[mi]+': Delayed'+(m.notes?'\n'+m.notes:'');
+      else tipText = MS[mi]+': Not started';
+      html+='<td><div class="dot-wrap"><span class="'+dc(m.state)+'">'+di(m.state)+'</span><div class="tip">'+tipText+'</div></div></td>';
+    });
+    var delayInfo = '';
+    j.milestones.forEach(function(m,mi){if(m.state==='delayed'){delayInfo+=(delayInfo?'\n':'')+MS[mi]+(m.notes?': '+m.notes:'');}});
+    html+='<td>'+(hasDelay(j)?'<div class="dot-wrap"><span class="delay-badge">! Yes</span><div class="tip" style="left:auto;right:0;transform:none;">'+delayInfo+'</div></div>':'<span style="color:#ccc;font-size:12px">&mdash;</span>')+'</td></tr>';
   });
   html+='</tbody></table></div>';
   el.innerHTML=html;
