@@ -47,7 +47,7 @@ tr:last-child td{border-bottom:none;}
 .dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
 .dot-wrap{position:relative;display:inline-block;}
-.dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;white-space:nowrap;max-width:220px;white-space:normal;z-index:50;line-height:1.4;text-align:left;pointer-events:none;}
+.dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:50;line-height:1.6;text-align:left;pointer-events:none;}
 .dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}
 .dot-wrap:hover .tip{display:block;}
 .installs{display:flex;flex-direction:column;gap:10px;}
@@ -489,10 +489,10 @@ function renderOverview(){
     html+='<td style="font-size:12px;color:#888">'+doneCount(j)+'/9</td>';
     j.milestones.forEach(function(m,mi){
       var tipText = '';
-      if(m.state==='done') tipText = MS[mi]+': Completed'+(m.date?' on '+m.date:'');
-      else if(m.state==='inprog') tipText = MS[mi]+': In progress'+(m.notes?'\n'+m.notes:'');
-      else if(m.state==='delayed') tipText = MS[mi]+': Delayed'+(m.notes?'\n'+m.notes:'');
-      else tipText = MS[mi]+': Not started';
+      if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='inprog'){tipText=MS[mi]+': In progress'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else{tipText=MS[mi]+': Not started'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       html+='<td><div class="dot-wrap"><span class="'+dc(m.state)+'">'+di(m.state)+'</span><div class="tip">'+tipText+'</div></div></td>';
     });
     var delayInfo = '';
