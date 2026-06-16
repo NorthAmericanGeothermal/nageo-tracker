@@ -351,13 +351,25 @@ async function syncHCP() {
     var customers = data.customers || [];
     if (!customers.length) { showToast('No customers found with that tag.'); return; }
     var toImport = [];
+    var updated = 0;
     for (var i=0;i<customers.length;i++) {
       var c = customers[i];
       var hcpId = 'cust-'+c.id;
       var existing = installs.find(function(j){return j.hcp_job_id===hcpId;});
-      if (!existing) toImport.push(c);
+      if (existing) {
+        // update notes only, never touch milestones or anything else
+        var freshNotes = c.all_notes || (c.notes&&c.notes.trim()?[{id:'customer-note',type:'Customer',date:c.updated_at,text:c.notes.trim()}]:[]);
+        if (JSON.stringify(freshNotes) !== JSON.stringify(existing.hcp_notes)) {
+          existing.hcp_notes = freshNotes;
+          await sb.from('jobs').update({hcp_notes:freshNotes,updated_at:new Date().toISOString()}).eq('id',existing.id);
+          updated++;
+        }
+      } else {
+        toImport.push(c);
+      }
     }
-    if (!toImport.length) { showToast('No new installs found.'); return; }
+    if (!toImport.length && !updated) { showToast('Everything up to date.'); render(); return; }
+    if (!toImport.length) { showToast('Updated notes on '+updated+' install(s).'); render(); return; }
     // check if any have multiple addresses — if so, show picker
     var needsPicker = toImport.filter(function(c){return c.addresses&&c.addresses.length>1;});
     var noPickerNeeded = toImport.filter(function(c){return !c.addresses||c.addresses.length<=1;});
@@ -516,7 +528,7 @@ function renderCards(){
       html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
       html+='</div></div>';
       if(m.state==='done') html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
-      if(m.state==='inprog'||m.state==='delayed') html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="What\'s happening..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
+      html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="Add a note..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
       if(pt) html+='<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">'+pt+'</span><button class="unpin-btn" onclick="unpinMS(\''+j.id+'\','+i+')">Unpin</button></div>';
       html+='</div></div>';
     });
