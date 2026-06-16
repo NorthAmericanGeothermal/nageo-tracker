@@ -72,6 +72,11 @@ tr:last-child td{border-bottom:none;}
 
 /* CARDS */
 .cards{display:flex;flex-direction:column;gap:10px;}
+.card.dragging{opacity:0.4;border:1.5px dashed #2563eb;}
+.card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}
+.drag-handle{cursor:grab;color:#ccc;font-size:16px;padding:0 4px;flex-shrink:0;user-select:none;}
+.drag-handle:hover{color:#888;}
+.drag-handle:active{cursor:grabbing;}
 .card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;}
 .card-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
 .card-header:hover{background:#fafaf8;}
@@ -329,7 +334,7 @@ async function showApp() {
 // ── DATA ──────────────────────────────────────────────
 async function loadAll() {
   const [{ data: jData }, { data: mData }, { data: lData }] = await Promise.all([
-    sb.from('jobs').select('*').order('created_at', { ascending: false }),
+    sb.from('jobs').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
     sb.from('milestones').select('*').order('index'),
     sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50)
   ]);
@@ -512,8 +517,9 @@ function renderCards() {
   jobs.forEach(j => {
     const isOpen = openCards.has(j.id);
     const notesOpen = openNotes.has(j.id);
-    html += `<div class="card">
+    html += `<div class="card" data-job-id="${j.id}" ondragover="dragOver(event,'${j.id}')" ondrop="drop(event,'${j.id}')">
       <div class="card-header" onclick="toggleCard('${j.id}')">
+        <span class="drag-handle" draggable="true" onmousedown="event.stopPropagation()" ondragstart="dragStart(event,'${j.id}')" ondragend="dragEnd(event)" title="Drag to reorder">⠿</span>
         <div class="avatar">${initials(j.name)}</div>
         <div class="card-meta">
           <div class="card-name">${j.name}</div>
@@ -667,6 +673,55 @@ async function pinToMS(jobId, noteId, msIdx) {
 async function unpinMS(jobId, idx) {
   await saveMilestone(jobId, idx, { pinned_note: null });
   await logActivity(jobId, `Unpinned note from "${MS[idx]}"`);
+}
+
+// ── DRAG AND DROP ────────────────────────────────────
+let dragId = null;
+let dragOverId = null;
+
+function dragStart(e, id) {
+  dragId = id;
+  setTimeout(() => {
+    const el = document.querySelector(\`[data-job-id="\${id}"]\`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragEnd(e) {
+  document.querySelectorAll('.card').forEach(el => {
+    el.classList.remove('dragging');
+    el.classList.remove('drag-over');
+  });
+  dragId = null;
+  dragOverId = null;
+}
+
+function dragOver(e, id) {
+  e.preventDefault();
+  if (id === dragId) return;
+  if (dragOverId !== id) {
+    document.querySelectorAll('.card').forEach(el => el.classList.remove('drag-over'));
+    const el = document.querySelector(\`[data-job-id="\${id}"]\`);
+    if (el) el.classList.add('drag-over');
+    dragOverId = id;
+  }
+  e.dataTransfer.dropEffect = 'move';
+}
+
+async function drop(e, targetId) {
+  e.preventDefault();
+  if (!dragId || dragId === targetId) return;
+  const fromIdx = jobs.findIndex(j => j.id === dragId);
+  const toIdx = jobs.findIndex(j => j.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const moved = jobs.splice(fromIdx, 1)[0];
+  jobs.splice(toIdx, 0, moved);
+  jobs.forEach((j, i) => j.sort_order = i);
+  render();
+  // save new order to supabase
+  await Promise.all(jobs.map((j, i) => sb.from('jobs').update({ sort_order: i }).eq('id', j.id)));
+  showToast('Order saved.');
 }
 
 // ── START ─────────────────────────────────────────────
