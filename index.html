@@ -181,10 +181,6 @@ tr:last-child td{border-bottom:none;}
   <div class="modal">
     <div class="modal-title">Settings</div>
     <div class="modal-row">
-      <div class="modal-label">HCP API Key</div>
-      <input type="password" class="modal-input" id="hcp-key-input" placeholder="Paste your Housecall Pro API key">
-    </div>
-    <div class="modal-row">
       <div class="modal-label">HCP Customer Tag</div>
       <input type="text" class="modal-input" id="hcp-tag-input" placeholder="e.g. geo-install">
     </div>
@@ -344,13 +340,13 @@ var pendingHCPCustomers = [];
 
 async function syncHCP() {
   var settings = getSettings();
-  if (!settings.hcpKey) { openSettings(); showToast('Enter your HCP API key in settings first.'); return; }
+
   showToast('Syncing from Housecall Pro...');
   try {
     var res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
-      body:JSON.stringify({tag:settings.hcpTag||'geo-install',key:settings.hcpKey})
+      body:JSON.stringify({tag:appSettings.hcpTag||'geo-install'})
     });
     if (!res.ok) { showToast('HCP sync failed. Check your API key.'); return; }
     var data = await res.json();
@@ -463,7 +459,6 @@ function getSettings(){ return appSettings; }
 
 async function openSettings(){
   await loadSettings();
-  document.getElementById('hcp-key-input').value=appSettings.hcpKey||'';
   document.getElementById('hcp-tag-input').value=appSettings.hcpTag||'geo-install';
   document.getElementById('settings-modal').classList.add('open');
 }
@@ -471,21 +466,11 @@ async function openSettings(){
 function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
 
 async function saveSettings(){
-  var hcpKey = document.getElementById('hcp-key-input').value.trim();
   var hcpTag = document.getElementById('hcp-tag-input').value.trim()||'geo-install';
-  appSettings.hcpKey = hcpKey;
   appSettings.hcpTag = hcpTag;
-  // delete then insert to avoid upsert RLS issues
-  await sb.from('settings').delete().in('key',['hcpKey','hcpTag']);
-  var r = await sb.from('settings').insert([{key:'hcpKey',value:hcpKey},{key:'hcpTag',value:hcpTag}]);
-  if (r.error) {
-    console.error('Settings save error:', r.error);
-    showToast('Error saving — check console.');
-  } else {
-    localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:hcpKey,hcpTag:hcpTag}));
-    closeSettings();
-    showToast('Settings saved to all devices.');
-  }
+  localStorage.setItem('nageo_settings',JSON.stringify({hcpTag:hcpTag}));
+  closeSettings();
+  showToast('Settings saved.');
 }
 
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
