@@ -267,6 +267,7 @@ async function showApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('topbar-name').textContent = currentUser.name;
   await loadAll();
+  startRealtime();
 }
 
 async function loadAll() {
@@ -670,6 +671,53 @@ async function drop(e,targetId){
 }
 
 init();
+
+// ── REAL-TIME + AUTO REFRESH ──────────────────────────
+var realtimeChannel = null;
+
+function startRealtime() {
+  // Auto-refresh every 30 seconds
+  setInterval(function() {
+    silentRefresh();
+  }, 30000);
+
+  // Real-time subscription via Supabase
+  realtimeChannel = sb.channel('tracker-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, function() {
+      silentRefresh();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, function() {
+      silentRefresh();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, function() {
+      silentRefresh();
+    })
+    .subscribe();
+}
+
+var refreshing = false;
+async function silentRefresh() {
+  if (refreshing) return;
+  refreshing = true;
+  try {
+    var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+    var r2 = await sb.from('milestones').select('*').order('index');
+    var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+    var rawJobs = r1.data || [], allMS = r2.data || [];
+    activityLog = r3.data || [];
+    installs = rawJobs.map(function(j) {
+      return Object.assign({},j,{
+        hcp_notes: j.hcp_notes||[],
+        milestones: MS.map(function(_,i){
+          var f = allMS.find(function(m){return m.job_id===j.id&&m.index===i;});
+          return f||{job_id:j.id,index:i,state:'none',date:'',notes:'',pinned_note:null};
+        })
+      });
+    });
+    render();
+  } catch(e) {}
+  refreshing = false;
+}
 </script>
 
 <div class="modal-bg" id="addr-picker-modal">
