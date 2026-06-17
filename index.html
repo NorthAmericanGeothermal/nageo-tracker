@@ -143,8 +143,7 @@ tr:last-child td{border-bottom:none;}
   <div class="login-card">
     <div class="login-logo">NAGeo <span>Tracker</span></div>
     <div class="login-sub">North American GeoThermal &mdash; Install Management</div>
-    <div class="user-grid" id="user-grid"></div>
-    <div class="pin-row"><input type="password" class="pin-input" id="pin-input" placeholder="PIN" maxlength="6" inputmode="numeric"></div>
+    <div class="pin-row"><input type="password" class="pin-input" id="pin-input" placeholder="Enter your PIN" maxlength="6" inputmode="numeric"></div>
     <button class="login-btn" onclick="doLogin()">Sign in</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -212,7 +211,6 @@ async function init() {
 async function loadUsers() {
   var res = await sb.from('users').select('*').order('name');
   users = res.data || [];
-  renderUserGrid();
 }
 
 function showLogin() {
@@ -220,25 +218,14 @@ function showLogin() {
   document.getElementById('app').style.display = 'none';
 }
 
-function renderUserGrid() {
-  document.getElementById('user-grid').innerHTML = users.map(function(u) {
-    return '<button class="user-btn" id="ubtn-'+u.id+'" onclick="selectUser(\''+u.id+'\')">'+u.name+'</button>';
-  }).join('');
-}
 
-function selectUser(id) {
-  selectedUserId = id;
-  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
-  document.getElementById('ubtn-'+id).classList.add('selected');
-  document.getElementById('pin-input').focus();
-}
 
 async function doLogin() {
-  if (!selectedUserId) { document.getElementById('login-error').textContent = 'Please select your name.'; return; }
-  var pin = document.getElementById('pin-input').value;
-  var user = users.find(function(u){return u.id===selectedUserId;});
-  if (!user || user.pin !== pin) {
-    document.getElementById('login-error').textContent = 'Incorrect PIN. Try again.';
+  var pin = document.getElementById('pin-input').value.trim();
+  if (!pin) { document.getElementById('login-error').textContent = 'Please enter your PIN.'; return; }
+  var user = users.find(function(u){return u.pin === pin;});
+  if (!user) {
+    document.getElementById('login-error').textContent = 'PIN not recognized. Try again.';
     document.getElementById('pin-input').value = ''; return;
   }
   currentUser = user;
@@ -254,8 +241,7 @@ function doLogout() {
   currentUser = null; localStorage.removeItem('nageo_user');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pin-input').value = ''; selectedUserId = null;
-  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('pin-input').value = '';
 }
 
 async function showApp() {
