@@ -475,12 +475,17 @@ async function saveSettings(){
   var hcpTag = document.getElementById('hcp-tag-input').value.trim()||'geo-install';
   appSettings.hcpKey = hcpKey;
   appSettings.hcpTag = hcpTag;
-  // save to Supabase
-  await sb.from('settings').upsert([{key:'hcpKey',value:hcpKey},{key:'hcpTag',value:hcpTag}]);
-  // also save locally as backup
-  localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:hcpKey,hcpTag:hcpTag}));
-  closeSettings();
-  showToast('Settings saved to all devices.');
+  // delete then insert to avoid upsert RLS issues
+  await sb.from('settings').delete().in('key',['hcpKey','hcpTag']);
+  var r = await sb.from('settings').insert([{key:'hcpKey',value:hcpKey},{key:'hcpTag',value:hcpTag}]);
+  if (r.error) {
+    console.error('Settings save error:', r.error);
+    showToast('Error saving — check console.');
+  } else {
+    localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:hcpKey,hcpTag:hcpTag}));
+    closeSettings();
+    showToast('Settings saved to all devices.');
+  }
 }
 
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
