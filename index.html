@@ -497,7 +497,10 @@ function renderOverview(){
   MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
-    html+='<tr><td><div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div></td>';
+    var nameCell = j.equipment
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip" style="left:0;transform:none;width:300px;">'+j.equipment+'</div></div>'
+      : '<div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+    html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
     j.milestones.forEach(function(m,mi){
