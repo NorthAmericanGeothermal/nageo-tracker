@@ -266,6 +266,7 @@ async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('topbar-name').textContent = currentUser.name;
+  await loadSettings();
   await loadAll();
   startRealtime();
 }
@@ -444,10 +445,43 @@ async function selectAddress(addrIdx) {
   }
 }
 
-function getSettings(){return JSON.parse(localStorage.getItem('nageo_settings')||'{}');}
-function openSettings(){var s=getSettings();document.getElementById('hcp-key-input').value=s.hcpKey||'';document.getElementById('hcp-tag-input').value=s.hcpTag||'geo-install';document.getElementById('settings-modal').classList.add('open');}
+var appSettings = {};
+
+async function loadSettings() {
+  // try Supabase first
+  var r = await sb.from('settings').select('*');
+  if (r.data && r.data.length) {
+    r.data.forEach(function(row){ appSettings[row.key] = row.value; });
+  }
+  // merge with localStorage as fallback
+  var local = JSON.parse(localStorage.getItem('nageo_settings')||'{}');
+  if (local.hcpKey && !appSettings.hcpKey) appSettings.hcpKey = local.hcpKey;
+  if (local.hcpTag && !appSettings.hcpTag) appSettings.hcpTag = local.hcpTag;
+}
+
+function getSettings(){ return appSettings; }
+
+async function openSettings(){
+  await loadSettings();
+  document.getElementById('hcp-key-input').value=appSettings.hcpKey||'';
+  document.getElementById('hcp-tag-input').value=appSettings.hcpTag||'geo-install';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
 function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
-function saveSettings(){localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:document.getElementById('hcp-key-input').value.trim(),hcpTag:document.getElementById('hcp-tag-input').value.trim()||'geo-install'}));closeSettings();showToast('Settings saved.');}
+
+async function saveSettings(){
+  var hcpKey = document.getElementById('hcp-key-input').value.trim();
+  var hcpTag = document.getElementById('hcp-tag-input').value.trim()||'geo-install';
+  appSettings.hcpKey = hcpKey;
+  appSettings.hcpTag = hcpTag;
+  // save to Supabase
+  await sb.from('settings').upsert([{key:'hcpKey',value:hcpKey},{key:'hcpTag',value:hcpTag}]);
+  // also save locally as backup
+  localStorage.setItem('nageo_settings',JSON.stringify({hcpKey:hcpKey,hcpTag:hcpTag}));
+  closeSettings();
+  showToast('Settings saved to all devices.');
+}
 
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
 function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
