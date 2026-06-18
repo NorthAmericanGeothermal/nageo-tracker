@@ -48,7 +48,7 @@ tr:last-child td{border-bottom:none;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
 .dot-wrap{position:relative;display:inline-block;}
 .dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:50;line-height:1.6;text-align:left;pointer-events:none;}.dot-wrap .tip.tip-down{bottom:auto;top:calc(100% + 6px);}
-.dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}.dot-wrap .tip.tip-down::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#1a1a1a;}
+.dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}.dot-wrap .tip.tip-right::after{display:none;}.dot-wrap .tip.tip-down::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#1a1a1a;}
 .dot-wrap:hover .tip{display:block;}
 .installs{display:flex;flex-direction:column;gap:10px;}
 .card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;transition:border-color 0.15s;}
@@ -498,7 +498,7 @@ function renderOverview(){
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
     var nameCell = j.equipment
-      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-down" style="left:0;transform:none;width:300px;top:calc(100% + 6px);bottom:auto;">'+j.equipment+'</div></div>'
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
       : '<div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
     html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
