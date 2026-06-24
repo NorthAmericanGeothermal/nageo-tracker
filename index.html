@@ -103,6 +103,22 @@ tr:last-child td{border-bottom:none;}
 .pin-btn:hover{background:#f4f4f0;}.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
 .pin-select{font-size:10px;padding:2px 6px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .delete-zone{padding:10px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.nc-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fafaf8;}
+.nc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.nc-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
+.nc-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;}
+.nc-item{margin-bottom:12px;}
+.nc-item-header{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.nc-item-label{font-size:12px;font-weight:500;color:#1a1a1a;}
+.nc-check{width:16px;height:16px;border-radius:3px;border:1.5px solid #ddd;cursor:pointer;flex-shrink:0;accent-color:#2563eb;}
+.nc-input{width:100%;font-size:12px;padding:5px 9px;border:0.5px solid #ddd;border-radius:6px;background:#fff;color:#1a1a1a;font-family:inherit;}
+.nc-input:focus{outline:none;border-color:#2563eb;}
+.nc-row{display:flex;gap:8px;}
+.nc-row .nc-input{flex:1;}
+.nc-label-small{font-size:11px;color:#888;margin-bottom:3px;}
+.add-nc-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:8px;background:#fff;color:#2563eb;cursor:pointer;font-family:inherit;}
+.add-nc-btn:hover{background:#eff6ff;}
+.nc-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#dbeafe;color:#2563eb;font-weight:600;margin-left:4px;vertical-align:middle;}
 .delete-btn{font-size:12px;padding:5px 12px;border:0.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
 .delete-btn:hover{background:#fee2e2;}
 .delete-confirm-area{display:none;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -499,8 +515,8 @@ function renderOverview(){
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
     var nameCell = j.equipment
-      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
-      : '<div class="inst-name-cell">'+j.name+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+(j.nc?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
+      : '<div class="inst-name-cell">'+j.name+(j.nc?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
     html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
@@ -577,8 +593,32 @@ function renderCards(){
       });
       html+='</div></div>';
     }
+    // NC checklist section
+    if(j.nc) {
+      var nc = j.nc_data || {};
+      html+='<div class="nc-section">';
+      html+='<div class="nc-header"><span class="nc-title">&#127959; New Construction checklist <span class="nc-badge">NC</span></span></div>';
+      // Oven hood specs
+      html+='<div class="nc-item"><div class="nc-item-header"><input type="checkbox" class="nc-check" '+(nc.oven_done?'checked':'')+' onchange="saveNC(''+j.id+'','oven_done',this.checked)"><span class="nc-item-label">Oven hood specs</span></div>';
+      html+='<input type="text" class="nc-input" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'')+'" onchange="saveNC(''+j.id+'','oven_notes',this.value)"></div>';
+      // Accessories
+      html+='<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
+      html+='<input type="text" class="nc-input" placeholder="List accessories..." value="'+(nc.accessories||'')+'" onchange="saveNC(''+j.id+'','accessories',this.value)"></div>';
+      // Bath fans
+      html+='<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
+      html+='<div class="nc-label-small">Specs / details</div>';
+      html+='<input type="text" class="nc-input" style="margin-bottom:5px" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'')+'" onchange="saveNC(''+j.id+'','bath_fan_specs',this.value)">';
+      html+='<div class="nc-label-small">Who is supplying?</div>';
+      html+='<input type="text" class="nc-input" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'')+'" onchange="saveNC(''+j.id+'','bath_fan_supplier',this.value)"></div>';
+      // Electrical requirements
+      html+='<div class="nc-item"><div class="nc-item-header"><input type="checkbox" class="nc-check" '+(nc.elec_done?'checked':'')+' onchange="saveNC(''+j.id+'','elec_done',this.checked)"><span class="nc-item-label">Electrical requirements</span></div>';
+      html+='<input type="text" class="nc-input" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'')+'" onchange="saveNC(''+j.id+'','elec_notes',this.value)"></div>';
+      html+='</div>';
+    }
     html+='<div class="delete-zone">';
     if(!delOpen){
+      if(!j.nc){html+='<button class="add-nc-btn" onclick="toggleNC(\'\'+j.id+\'\')" style="margin-right:8px">&#127959; Mark as New Construction</button>';}
+      else{html+='<button class="add-nc-btn" onclick="toggleNC(\'\'+j.id+\'\')" style="margin-right:8px;border-color:#dc2626;color:#dc2626">Remove NC flag</button>';}
       html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
     } else {
       html+='<span class="delete-hint">Type DELETE to confirm:</span>';
@@ -682,6 +722,22 @@ async function drop(e,targetId){
   render();
   await Promise.all(installs.map(function(j,i){return sb.from('jobs').update({sort_order:i}).eq('id',j.id);}));
   showToast('Order saved.');
+}
+
+async function toggleNC(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.nc = !inst.nc;
+  if(!inst.nc) inst.nc_data = {};
+  await sb.from('jobs').update({nc:inst.nc, nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.nc ? 'Marked as New Construction' : 'Removed New Construction flag');
+  render();
+}
+
+async function saveNC(jobId, field, value) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if(!inst.nc_data) inst.nc_data = {};
+  inst.nc_data[field] = value;
+  await sb.from('jobs').update({nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
 }
 
 function printReport() {
