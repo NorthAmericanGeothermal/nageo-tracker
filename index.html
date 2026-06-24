@@ -596,8 +596,7 @@ function renderCards(){
     if(j.nc) html += renderNC(j);
         html+='<div class="delete-zone">';
     if(!delOpen){
-      if(!j.nc){html+='<button class="add-nc-btn" onclick="toggleNC(\'\'+j.id+\'\')" style="margin-right:8px">&#127959; Mark as New Construction</button>';}
-      else{html+='<button class="add-nc-btn" onclick="toggleNC(\'\'+j.id+\'\')" style="margin-right:8px;border-color:#dc2626;color:#dc2626">Remove NC flag</button>';}
+      html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+(j.nc?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+(j.nc?'Remove NC flag':'Mark as New Construction')+'</button>';
       html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
     } else {
       html+='<span class="delete-hint">Type DELETE to confirm:</span>';
@@ -721,27 +720,36 @@ async function saveNC(jobId, field, value) {
 
 function renderNC(j) {
   var nc = j.nc_data || {};
-  var h = '';
-  h += '<div class="nc-section">';
+  var id = j.id;
+  var h = '<div class="nc-section">';
   h += '<div class="nc-header"><span class="nc-title">&#127959; New Construction checklist <span class="nc-badge">NC</span></span></div>';
-  h += '<div class="nc-item"><div class="nc-item-header">';
-  h += '<input type="checkbox" class="nc-check" ' + (nc.oven_done ? 'checked' : '') + ' onchange="saveNC('' + j.id + '','oven_done',this.checked)">';
+  h += '<div class="nc-item">';
+  h += '<div class="nc-item-header">';
+  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="oven_done" ' + (nc.oven_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Oven hood specs</span></div>';
-  h += '<input type="text" class="nc-input" placeholder="Specs, model, notes..." value="' + (nc.oven_notes||'').replace(/"/g,'&quot;') + '" onchange="saveNC('' + j.id + '','oven_notes',this.value)"></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="oven_notes" placeholder="Specs, model, notes..." value="' + (nc.oven_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
-  h += '<input type="text" class="nc-input" placeholder="List accessories..." value="' + (nc.accessories||'').replace(/"/g,'&quot;') + '" onchange="saveNC('' + j.id + '','accessories',this.value)"></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="accessories" placeholder="List accessories..." value="' + (nc.accessories || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
   h += '<div class="nc-label-small">Specs / details</div>';
-  h += '<input type="text" class="nc-input" style="margin-bottom:5px" placeholder="Fan specs, quantity, model..." value="' + (nc.bath_fan_specs||'').replace(/"/g,'&quot;') + '" onchange="saveNC('' + j.id + '','bath_fan_specs',this.value)">';
+  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="' + id + '" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="' + (nc.bath_fan_specs || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)">';
   h += '<div class="nc-label-small">Who is supplying?</div>';
-  h += '<input type="text" class="nc-input" placeholder="Supplier name..." value="' + (nc.bath_fan_supplier||'').replace(/"/g,'&quot;') + '" onchange="saveNC('' + j.id + '','bath_fan_supplier',this.value)"></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="bath_fan_supplier" placeholder="Supplier name..." value="' + (nc.bath_fan_supplier || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
   h += '<div class="nc-item"><div class="nc-item-header">';
-  h += '<input type="checkbox" class="nc-check" ' + (nc.elec_done ? 'checked' : '') + ' onchange="saveNC('' + j.id + '','elec_done',this.checked)">';
+  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="elec_done" ' + (nc.elec_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Electrical requirements</span></div>';
-  h += '<input type="text" class="nc-input" placeholder="Electrical notes, requirements..." value="' + (nc.elec_notes||'').replace(/"/g,'&quot;') + '" onchange="saveNC('' + j.id + '','elec_notes',this.value)"></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="' + (nc.elec_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
   h += '</div>';
   return h;
 }
+
+function saveNCCheck(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.checked);
+}
+function saveNCText(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.value);
+}
+
 
 function printReport() {
   var today = new Date();
