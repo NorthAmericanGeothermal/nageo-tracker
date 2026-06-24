@@ -153,6 +153,7 @@ tr:last-child td{border-bottom:none;}
   <div class="topbar">
     <div class="topbar-logo">NAGeo <span>Tracker</span></div>
     <button class="sync-btn" onclick="syncHCP()">&#8635; Sync HCP</button>
+    <button class="sync-btn" onclick="printReport()" style="border-color:#16a34a;color:#16a34a;">&#128438; Print report</button>
     <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
     <div class="topbar-user">Signed in as <strong id="topbar-name"></strong></div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
@@ -681,6 +682,105 @@ async function drop(e,targetId){
   render();
   await Promise.all(installs.map(function(j,i){return sb.from('jobs').update({sort_order:i}).eq('id',j.id);}));
   showToast('Order saved.');
+}
+
+function printReport() {
+  var today = new Date();
+  var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  var active = installs.filter(function(j) { return !isComplete(j); });
+
+  var MS_STATUS = { done: 'Complete', inprog: 'In Progress', delayed: 'Delayed', na: 'N/A', none: 'Not Started' };
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>NAGeo Install Status Report</title><style>';
+  html += 'body{font-family:Georgia,serif;color:#1a1a1a;margin:0;padding:0;font-size:12px;}';
+  html += '.page{width:7.5in;margin:0 auto;padding:0.75in;page-break-after:always;}';
+  html += '.page:last-child{page-break-after:avoid;}';
+  html += 'h1{font-size:22px;font-weight:bold;margin:0 0 4px 0;letter-spacing:-0.5px;}';
+  html += 'h2{font-size:16px;font-weight:bold;margin:0 0 4px 0;}';
+  html += '.subtitle{font-size:12px;color:#666;margin-bottom:32px;}';
+  html += '.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin:24px 0 10px 0;border-bottom:0.5px solid #ddd;padding-bottom:4px;}';
+  html += 'table{width:100%;border-collapse:collapse;font-size:11px;}';
+  html += 'th{text-align:left;padding:6px 8px;border-bottom:1px solid #1a1a1a;font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}';
+  html += 'td{padding:6px 8px;border-bottom:0.5px solid #e5e5e5;vertical-align:top;}';
+  html += 'tr:last-child td{border-bottom:none;}';
+  html += '.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;}';
+  html += '.badge-delayed{background:#fee2e2;color:#dc2626;}';
+  html += '.badge-ontrack{background:#dcfce7;color:#16a34a;}';
+  html += '.job-header{margin-bottom:20px;}';
+  html += '.job-name{font-size:20px;font-weight:bold;margin:0 0 2px 0;}';
+  html += '.job-addr{font-size:12px;color:#666;margin:0 0 6px 0;}';
+  html += '.job-equip{font-size:12px;color:#1a1a1a;font-style:italic;margin:0;}';
+  html += '.ms-row{padding:8px 0;border-bottom:0.5px solid #f0f0f0;display:flex;gap:12px;}';
+  html += '.ms-row:last-child{border-bottom:none;}';
+  html += '.ms-status{width:90px;flex-shrink:0;font-size:11px;font-weight:bold;}';
+  html += '.ms-status.done{color:#16a34a;}';
+  html += '.ms-status.inprog{color:#ca8a04;}';
+  html += '.ms-status.delayed{color:#dc2626;}';
+  html += '.ms-status.na{color:#888;}';
+  html += '.ms-status.none{color:#bbb;}';
+  html += '.ms-name{flex:1;font-size:12px;}';
+  html += '.ms-name.done{text-decoration:line-through;color:#888;}';
+  html += '.ms-name.na{color:#888;}';
+  html += '.ms-date{font-size:10px;color:#888;white-space:nowrap;}';
+  html += '.ms-note{font-size:11px;color:#555;margin-top:2px;font-style:italic;}';
+  html += '.logo{font-size:11px;color:#888;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}';
+  html += '.divider{border:none;border-top:1px solid #1a1a1a;margin:16px 0;}';
+  html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
+  html += '</style></head><body>';
+
+  // SUMMARY PAGE
+  html += '<div class="page">';
+  html += '<div class="logo">North American Geothermal</div>';
+  html += '<h1>Install Status Report</h1>';
+  html += '<div class="subtitle">' + dateStr + ' &nbsp;&middot;&nbsp; ' + active.length + ' active install' + (active.length !== 1 ? 's' : '') + '</div>';
+  html += '<hr class="divider">';
+  html += '<div class="section-title">Active installs overview</div>';
+  html += '<table><thead><tr><th>Customer</th><th>Address</th><th>Current milestone</th><th>Progress</th><th>Status</th></tr></thead><tbody>';
+  active.forEach(function(j) {
+    var delayed = hasDelay(j);
+    html += '<tr>';
+    html += '<td><strong>' + j.name + '</strong></td>';
+    html += '<td>' + (j.address || '—') + '</td>';
+    html += '<td>' + curMS(j) + '</td>';
+    html += '<td>' + progressLabel(j) + '</td>';
+    html += '<td>' + (delayed ? '<span class="badge badge-delayed">Delayed</span>' : '<span class="badge badge-ontrack">On track</span>') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '</div>';
+
+  // DETAIL PAGES
+  active.forEach(function(j) {
+    html += '<div class="page">';
+    html += '<div class="logo">North American Geothermal</div>';
+    html += '<div class="job-header">';
+    html += '<div class="job-name">' + j.name + '</div>';
+    html += '<div class="job-addr">' + (j.address || '') + '</div>';
+    if (j.equipment) html += '<div class="job-equip">Equipment: ' + j.equipment + '</div>';
+    html += '</div>';
+    html += '<hr class="divider">';
+    html += '<div class="section-title">Milestone progress</div>';
+
+    j.milestones.forEach(function(m, i) {
+      var statusLabel = MS_STATUS[m.state] || 'Not Started';
+      html += '<div class="ms-row">';
+      html += '<div class="ms-status ' + m.state + '">' + statusLabel + '</div>';
+      html += '<div style="flex:1"><div class="ms-name ' + (m.state === 'done' ? 'done' : m.state === 'na' ? 'na' : '') + '">' + MS[i] + '</div>';
+      if (m.state === 'done' && m.date) html += '<div class="ms-note">Completed: ' + m.date + '</div>';
+      if (m.notes && m.notes.trim()) html += '<div class="ms-note">' + m.notes + '</div>';
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+  });
+
+  html += '</body></html>';
+
+  var win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 500);
 }
 
 init();
