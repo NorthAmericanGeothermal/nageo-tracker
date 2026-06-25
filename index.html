@@ -157,6 +157,39 @@ tr:last-child td{border-bottom:none;}
 .add-btn:hover{background:#f4f4f0;color:#1a1a1a;}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;}
 .toast.show{opacity:1;}
+
+@media (max-width:600px){
+  .topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:6px;}
+  .topbar-logo{font-size:14px;width:100%;}
+  .topbar-user{font-size:11px;}
+  .sync-btn{font-size:11px;padding:4px 8px;}
+  .settings-btn{font-size:16px;}
+  .logout-btn{font-size:11px;padding:3px 8px;}
+  .main{padding:1rem 0.75rem;}
+  .stats{grid-template-columns:1fr 1fr;gap:8px;}
+  .stat-value{font-size:20px;}
+  .view-toggle{gap:4px;}
+  .vbtn{padding:5px 10px;font-size:12px;}
+  .overview-wrap{font-size:11px;}
+  th{padding:6px 6px;font-size:9px;}
+  td{padding:6px 6px;}
+  .inst-name-cell{font-size:12px;}
+  .inst-addr-cell{font-size:10px;}
+  .ms-dot{width:18px;height:18px;font-size:9px;cursor:pointer;}
+  .overview-wrap table th:nth-child(n+5):nth-child(-n+13),
+  .overview-wrap table td:nth-child(n+5):nth-child(-n+13){display:none;}
+  .overview-wrap table th:last-child,
+  .overview-wrap table td:last-child{display:table-cell;}
+  .dot-wrap .tip{display:none !important;}
+  .dot-wrap .tip.tip-visible{display:block !important;}
+  .tip-mobile-overlay{position:fixed;inset:0;z-index:49;background:transparent;}
+  .card-name{font-size:13px;}
+  .card-addr{font-size:11px;}
+  .delete-zone{flex-wrap:wrap;gap:6px;}
+  .add-duct-btn,.add-nc-btn,.delete-btn{font-size:11px;padding:4px 8px;}
+  .state-btns{gap:3px;}
+  .sbtn{font-size:10px;padding:2px 6px;}
+}
 .empty{padding:2rem;text-align:center;color:#aaa;font-size:13px;}
 </style>
 </head>
@@ -751,6 +784,38 @@ function renderNC(j) {
   h += '</div>';
   return h;
 }
+
+// Mobile tap for dots
+document.addEventListener('click', function(e) {
+  var isMobile = window.innerWidth <= 600;
+  if (!isMobile) return;
+  var wrap = e.target.closest('.dot-wrap');
+  if (wrap) {
+    e.stopPropagation();
+    // close all others
+    document.querySelectorAll('.dot-wrap .tip').forEach(function(t) {
+      if (t !== wrap.querySelector('.tip')) t.classList.remove('tip-visible');
+    });
+    // remove overlay if exists
+    var existing = document.querySelector('.tip-mobile-overlay');
+    if (existing) existing.remove();
+    var tip = wrap.querySelector('.tip');
+    if (tip) {
+      var isVisible = tip.classList.contains('tip-visible');
+      tip.classList.toggle('tip-visible');
+      if (!isVisible) {
+        // add overlay to close on outside tap
+        var overlay = document.createElement('div');
+        overlay.className = 'tip-mobile-overlay';
+        overlay.onclick = function() {
+          tip.classList.remove('tip-visible');
+          overlay.remove();
+        };
+        document.body.appendChild(overlay);
+      }
+    }
+  }
+});
 
 function saveNCCheck(el) {
   saveNC(el.dataset.job, el.dataset.field, el.checked);
