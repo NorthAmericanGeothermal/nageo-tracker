@@ -119,6 +119,13 @@ tr:last-child td{border-bottom:none;}
 .add-nc-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:8px;background:#fff;color:#2563eb;cursor:pointer;font-family:inherit;}
 .add-nc-btn:hover{background:#eff6ff;}
 .nc-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#dbeafe;color:#2563eb;font-weight:600;margin-left:4px;vertical-align:middle;}
+.duct-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#f3e8ff;color:#7c3aed;font-weight:600;margin-left:4px;vertical-align:middle;}
+.add-duct-btn{font-size:12px;padding:5px 12px;border:0.5px solid #7c3aed;border-radius:8px;background:#fff;color:#7c3aed;cursor:pointer;font-family:inherit;}
+.add-duct-btn:hover{background:#f3e8ff;}
+.duct-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#faf8ff;}
+.duct-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.duct-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
+.duct-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#f3e8ff;color:#7c3aed;font-weight:500;}
 .delete-btn{font-size:12px;padding:5px 12px;border:0.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
 .delete-btn:hover{background:#fee2e2;}
 .delete-confirm-area{display:none;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -515,8 +522,8 @@ function renderOverview(){
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
     var nameCell = j.equipment
-      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
-      : '<div class="inst-name-cell">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
+      : '<div class="inst-name-cell">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
     html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
@@ -594,8 +601,10 @@ function renderCards(){
       html+='</div></div>';
     }
     if(j.nc === true || j.nc === 'true') html += renderNC(j);
+    if(j.duct) html += renderDuct(j);
         html+='<div class="delete-zone">';
     if(!delOpen){
+      html+='<button class="add-duct-btn" data-job="'+j.id+'" onclick="toggleDuct(this.dataset.job)" style="margin-right:8px'+((j.duct)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.duct?'Remove ductwork':'&#128274; Add ductwork')+'</button>';
       html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+((j.nc===true||j.nc==='true')?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+((j.nc===true||j.nc==='true')?'Remove NC flag':'Mark as New Construction')+'</button>';
       html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
     } else {
@@ -750,6 +759,29 @@ function saveNCText(el) {
   saveNC(el.dataset.job, el.dataset.field, el.value);
 }
 
+
+function renderDuct(j) {
+  var h = '<div class="duct-section">';
+  h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
+  h += '<input type="text" class="nc-input" data-job="' + j.id + '" data-field="duct_notes" placeholder="Ductwork notes..." value="' + ((j.duct_notes||'').replace(/"/g,'&quot;')) + '" onchange="saveDuctNotes(this)">';
+  h += '</div>';
+  return h;
+}
+
+function saveDuctNotes(el) {
+  var inst = installs.find(function(j){return j.id===el.dataset.job;});
+  inst.duct_notes = el.value;
+  sb.from('jobs').update({duct_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+}
+
+async function toggleDuct(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.duct = !inst.duct;
+  if(!inst.duct) inst.duct_notes = '';
+  await sb.from('jobs').update({duct:inst.duct,duct_notes:inst.duct_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.duct ? 'Marked as Ductwork' : 'Removed Ductwork flag');
+  render();
+}
 
 function printReport() {
   var today = new Date();
