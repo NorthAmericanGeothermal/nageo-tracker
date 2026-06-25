@@ -294,6 +294,13 @@ document.addEventListener('keydown', function(e) {
   if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') doLogin();
 });
 
+document.getElementById('pin-input').addEventListener('input', function() {
+  if (this.value.length >= 4) {
+    var user = users.find(function(u){ return u.pin === this.value; }, this);
+    if (user) doLogin();
+  }
+});
+
 function doLogout() {
   currentUser = null; localStorage.removeItem('nageo_user');
   document.getElementById('app').style.display = 'none';
