@@ -4,7 +4,933 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NAGeo Install Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAGeo Install Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f4f4f0;}
+.login-card{background:#fff;border-radius:16px;border:0.5px solid #ddd;padding:2rem;width:340px;text-align:center;}
+.login-logo{font-size:22px;font-weight:600;margin-bottom:4px;}.login-logo span{color:#2563eb;}
+.login-sub{font-size:13px;color:#888;margin-bottom:2rem;}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem;}
+.user-btn{padding:12px;border:0.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#1a1a1a;}
+.user-btn:hover{background:#f4f4f0;}.user-btn.selected{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+.pin-row{display:flex;gap:8px;margin-bottom:1rem;}
+.pin-input{flex:1;padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;font-size:16px;text-align:center;letter-spacing:6px;background:#f9f9f7;}
+.pin-input:focus{outline:none;border-color:#2563eb;}
+.login-btn{width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
+.login-btn:hover{background:#1d4ed8;}.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
+#app{display:none;}
+.topbar{background:#fff;border-bottom:0.5px solid #e5e5e5;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:52px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-size:15px;font-weight:600;flex:1;}.topbar-logo span{color:#2563eb;}
+.topbar-user{font-size:12px;color:#888;}.topbar-user strong{color:#1a1a1a;}
+.logout-btn{font-size:12px;padding:4px 10px;border:0.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#888;}
+.sync-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:6px;background:#fff;cursor:pointer;color:#2563eb;}
+.settings-btn{font-size:18px;background:none;border:none;cursor:pointer;color:#888;padding:4px;}
+.main{max-width:1200px;margin:0 auto;padding:1.5rem;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem;}
+.stat{background:#fff;border-radius:10px;border:0.5px solid #e5e5e5;padding:12px 16px;}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px;}.stat-value{font-size:24px;font-weight:600;color:#1a1a1a;}
+.view-toggle{display:flex;gap:6px;margin-bottom:1.25rem;}
+.vbtn{padding:6px 14px;font-size:13px;border-radius:8px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;}
+.vbtn.active{background:#f4f4f0;color:#1a1a1a;font-weight:500;border-color:#bbb;}
+.overview-wrap{overflow-x:auto;background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{border-bottom:0.5px solid #e5e5e5;}
+th{padding:10px 12px;text-align:left;color:#888;font-weight:400;white-space:nowrap;}
+td{padding:9px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.inst-name-cell{font-weight:500;color:#1a1a1a;font-size:13px;}.inst-addr-cell{font-size:11px;color:#888;margin-top:1px;}
+.equip-cell{font-size:11px;color:#555;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
+.dot-done{background:#dcfce7;color:#16a34a;}.dot-inprog{background:#fef9c3;color:#ca8a04;}
+.dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}.dot-na{background:#e5e5e5;color:#555;font-size:9px;font-weight:600;}
+.delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
+.dot-wrap{position:relative;display:inline-block;}
+.dot-wrap .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:50;line-height:1.6;text-align:left;pointer-events:none;}.dot-wrap .tip.tip-down{bottom:auto;top:calc(100% + 6px);}
+.dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}.dot-wrap .tip.tip-right::after{display:none;}.dot-wrap .tip.tip-down::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#1a1a1a;}
+.dot-wrap:hover .tip{display:block;}
+.installs{display:flex;flex-direction:column;gap:10px;}
+.card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;transition:border-color 0.15s;}
+.card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}.card.dragging{opacity:0.4;}
+.card-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
+.card-header:hover{background:#fafaf8;}
+.drag-handle{cursor:grab;color:#ccc;font-size:18px;padding:0 2px;flex-shrink:0;user-select:none;}
+.drag-handle:hover{color:#888;}
+.avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.card-meta{flex:1;min-width:0;}.card-name{font-size:14px;font-weight:600;color:#1a1a1a;}
+.card-addr{font-size:12px;color:#888;margin-top:1px;}.card-equip{font-size:11px;color:#2563eb;margin-top:2px;}
+.card-pills{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.pill{font-size:11px;padding:3px 9px;border-radius:6px;}
+.pill-prog{background:#f4f4f0;color:#555;}.pill-delayed{background:#fee2e2;color:#dc2626;}.pill-done{background:#dcfce7;color:#16a34a;}
+.chevron{font-size:14px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}.chevron.open{transform:rotate(180deg);}
+.card-body{display:none;border-top:0.5px solid #f0f0f0;}.card-body.open{display:block;}
+.equip-section{padding:12px 16px;border-bottom:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;}
+.equip-label{font-size:11px;color:#888;white-space:nowrap;}
+.equip-input{flex:1;font-size:13px;padding:6px 10px;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.equip-input:focus{outline:none;border-color:#2563eb;}
+.ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
+.ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
+.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}
+.ms-main{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
+.ms-main:hover{background:rgba(0,0,0,0.02);}
+.si{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;}
+.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}.si-na{background:#e5e5e5;border-color:#bbb;color:#555;font-size:8px;font-weight:600;}
+.ms-label{flex:1;font-size:13px;color:#1a1a1a;}.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
+.ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
+.ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.ms-chevron{font-size:12px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}.ms-chevron.open{transform:rotate(180deg);}
+.ms-detail{padding:0 12px 10px 42px;display:flex;flex-direction:column;gap:8px;}
+.det-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.det-lbl{font-size:11px;color:#888;width:72px;flex-shrink:0;}
+.state-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.sbtn{font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.sbtn:hover{background:#f4f4f0;}
+.sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
+.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}.sbtn.a-na{background:#e5e5e5;color:#555;border-color:#bbb;}
+.det-input{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.det-input:focus{outline:none;border-color:#2563eb;}.det-input.wide{flex:1;min-width:0;}
+.pinned-note-box{flex:1;font-size:12px;color:#2563eb;line-height:1.4;}
+.unpin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;cursor:pointer;color:#888;}
+.notes-section{padding:12px 16px;border-top:0.5px solid #f0f0f0;}
+.notes-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.notes-title{font-size:12px;color:#888;}
+.notes-body{margin-top:10px;display:none;}.notes-body.open{display:block;}
+.note-item{padding:8px 10px;border:0.5px solid #e5e5e5;border-radius:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.note-text{flex:1;font-size:12px;color:#1a1a1a;line-height:1.5;}
+.note-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.pin-btn{font-size:10px;padding:2px 8px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.pin-btn:hover{background:#f4f4f0;}.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
+.pin-select{font-size:10px;padding:2px 6px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.delete-zone{padding:10px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.nc-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fafaf8;}
+.nc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.nc-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
+.nc-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;}
+.nc-item{margin-bottom:12px;}
+.nc-item-header{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.nc-item-label{font-size:12px;font-weight:500;color:#1a1a1a;}
+.nc-check{width:16px;height:16px;border-radius:3px;border:1.5px solid #ddd;cursor:pointer;flex-shrink:0;accent-color:#2563eb;}
+.nc-input{width:100%;font-size:12px;padding:5px 9px;border:0.5px solid #ddd;border-radius:6px;background:#fff;color:#1a1a1a;font-family:inherit;}
+.nc-input:focus{outline:none;border-color:#2563eb;}
+.nc-row{display:flex;gap:8px;}
+.nc-row .nc-input{flex:1;}
+.nc-label-small{font-size:11px;color:#888;margin-bottom:3px;}
+.add-nc-btn{font-size:12px;padding:5px 12px;border:0.5px solid #2563eb;border-radius:8px;background:#fff;color:#2563eb;cursor:pointer;font-family:inherit;}
+.add-nc-btn:hover{background:#eff6ff;}
+.nc-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#dbeafe;color:#2563eb;font-weight:600;margin-left:4px;vertical-align:middle;}
+.delete-btn{font-size:12px;padding:5px 12px;border:0.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
+.delete-btn:hover{background:#fee2e2;}
+.delete-confirm-area{display:none;align-items:center;gap:8px;flex-wrap:wrap;}
+.delete-confirm-area.show{display:flex;}
+.delete-hint{font-size:11px;color:#dc2626;}
+.delete-type-input{font-size:12px;padding:4px 8px;border:0.5px solid #fca5a5;border-radius:6px;font-family:inherit;width:90px;}
+.delete-go-btn{font-size:12px;padding:5px 12px;border:none;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer;font-family:inherit;}
+.delete-cancel-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ddd;border-radius:8px;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
+.log-section{margin-top:0;}
+.log-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;}
+.log-list{background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden;}
+.log-item{padding:10px 16px;border-bottom:0.5px solid #f0f0f0;display:flex;gap:10px;align-items:flex-start;}
+.log-item:last-child{border-bottom:none;}
+.log-who{font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;}
+.log-what{flex:1;font-size:12px;color:#555;}
+.log-when{font-size:11px;color:#aaa;white-space:nowrap;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:1.5rem;width:420px;max-width:95vw;}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1.25rem;}
+.modal-row{margin-bottom:1rem;}
+.modal-label{font-size:12px;color:#888;margin-bottom:4px;}
+.modal-input{width:100%;padding:8px 12px;border:0.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;background:#f9f9f7;color:#1a1a1a;}
+.modal-input:focus{outline:none;border-color:#2563eb;}
+.modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;}
+.modal-cancel{padding:8px 16px;border:0.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit;color:#888;}
+.modal-save{padding:8px 16px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;}
+.add-btn{margin-top:1rem;width:100%;padding:11px;background:#fff;border:0.5px dashed #ccc;border-radius:12px;color:#888;cursor:pointer;font-size:13px;font-family:inherit;}
+.add-btn:hover{background:#f4f4f0;color:#1a1a1a;}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.empty{padding:2rem;text-align:center;color:#aaa;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">NAGeo <span>Tracker</span></div>
+    <div class="login-sub">North American GeoThermal &mdash; Install Management</div>
+    <div class="pin-row"><input type="password" class="pin-input" id="pin-input" placeholder="Enter your PIN" maxlength="6" inputmode="numeric"></div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">NAGeo <span>Tracker</span></div>
+    <button class="sync-btn" onclick="syncHCP()">&#8635; Sync HCP</button>
+    <button class="sync-btn" onclick="printReport()" style="border-color:#16a34a;color:#16a34a;">&#128438; Print report</button>
+    <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
+    <div class="topbar-user">Signed in as <strong id="topbar-name"></strong></div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Active installs</div><div class="stat-value" id="s-active">0</div></div>
+      <div class="stat"><div class="stat-label">Delayed</div><div class="stat-value" id="s-delayed" style="color:#dc2626">0</div></div>
+      <div class="stat"><div class="stat-label">In progress</div><div class="stat-value" id="s-inprog" style="color:#ca8a04">0</div></div>
+      <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" id="s-complete" style="color:#16a34a">0</div></div>
+    </div>
+    <div class="view-toggle">
+      <button class="vbtn active" id="btn-overview" onclick="setView('overview')">&#9776; Overview</button>
+      <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Installs</button>
+      <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
+    </div>
+    <div id="view-overview"></div>
+    <div id="view-cards" style="display:none"></div>
+    <div id="view-log" style="display:none"></div>
+    <button class="add-btn" id="add-job-btn" onclick="addInstall()">+ Add install</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">Settings</div>
+    <div class="modal-row">
+      <div class="modal-label">HCP Customer Tag</div>
+      <input type="text" class="modal-input" id="hcp-tag-input" placeholder="e.g. geo-install">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="modal-save" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
+var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
+var currentUser = null, users = [], installs = [], activityLog = [];
+var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set();
+var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
+
+async function init() {
+  var saved = localStorage.getItem('nageo_user');
+  if (saved) { currentUser = JSON.parse(saved); showApp(); }
+  else { await loadUsers(); showLogin(); }
+}
+
+async function loadUsers() {
+  var res = await sb.from('users').select('*').order('name');
+  users = res.data || [];
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+
+
+async function doLogin() {
+  var pin = document.getElementById('pin-input').value.trim();
+  if (!pin) { document.getElementById('login-error').textContent = 'Please enter your PIN.'; return; }
+  var user = users.find(function(u){return u.pin === pin;});
+  if (!user) {
+    document.getElementById('login-error').textContent = 'PIN not recognized. Try again.';
+    document.getElementById('pin-input').value = ''; return;
+  }
+  currentUser = user;
+  localStorage.setItem('nageo_user', JSON.stringify(user));
+  showApp();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') doLogin();
+});
+
+function doLogout() {
+  currentUser = null; localStorage.removeItem('nageo_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pin-input').value = '';
+}
+
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-name').textContent = currentUser.name;
+  await loadSettings();
+  await loadAll();
+  startRealtime();
+}
+
+async function loadAll() {
+  var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+  var r2 = await sb.from('milestones').select('*').order('index');
+  var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+  var rawJobs = r1.data || [], allMS = r2.data || [];
+  activityLog = r3.data || [];
+  installs = rawJobs.map(function(j) {
+    return Object.assign({},j,{
+      hcp_notes: j.hcp_notes||[],
+      milestones: MS.map(function(_,i){
+        var f = allMS.find(function(m){return m.job_id===j.id&&m.index===i;});
+        return f||{job_id:j.id,index:i,state:'none',date:'',notes:'',pinned_note:null};
+      })
+    });
+  });
+  render();
+}
+
+async function saveMilestone(jobId, idx, fields) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  var m = inst.milestones[idx];
+  Object.assign(m, fields);
+  var payload = {job_id:jobId,index:idx,state:m.state,date:m.date||null,notes:m.notes||null,pinned_note:m.pinned_note||null,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+  if (m.id) { await sb.from('milestones').update(payload).eq('id',m.id); }
+  else { var r = await sb.from('milestones').insert(payload).select().single(); if(r.data) m.id=r.data.id; }
+  await logActivity(jobId,'Updated "'+MS[idx]+'" to '+m.state+(m.notes?': '+m.notes:''));
+  render();
+}
+
+async function saveJobField(jobId, field, value) {
+  await sb.from('jobs').update({[field]:value,updated_at:new Date().toISOString()}).eq('id',jobId);
+  installs.find(function(j){return j.id===jobId;})[field]=value;
+  await logActivity(jobId,'Updated '+field+': '+value);
+  render();
+}
+
+async function logActivity(jobId, action) {
+  var entry = {job_id:jobId,user_id:currentUser.id,user_name:currentUser.name,action:action,created_at:new Date().toISOString()};
+  await sb.from('activity_log').insert(entry);
+  activityLog.unshift(entry);
+}
+
+async function deleteInstall(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  await sb.from('milestones').delete().eq('job_id',jobId);
+  await sb.from('activity_log').delete().eq('job_id',jobId);
+  await sb.from('jobs').delete().eq('id',jobId);
+  installs = installs.filter(function(j){return j.id!==jobId;});
+  openCards.delete(jobId); showDel.delete(jobId);
+  showToast((inst?inst.name:'Install')+' deleted.');
+  render();
+}
+
+async function addInstall() {
+  var name = prompt('Customer full name:');
+  if (!name) return;
+  var address = prompt('Job address:');
+  var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+  var r = await sb.from('jobs').insert({name:name,address:address||'',equipment:'',hcp_notes:[],sort_order:maxOrder+1,updated_at:new Date().toISOString()}).select().single();
+  if (r.data) {
+    r.data.milestones = MS.map(function(_,i){return {job_id:r.data.id,index:i,state:'none',date:'',notes:'',pinned_note:null};});
+    r.data.hcp_notes=[];
+    installs.unshift(r.data);
+    openCards.add(r.data.id);
+    await logActivity(r.data.id,'Install created');
+    setView('cards'); render();
+  }
+}
+
+var pendingHCPCustomers = [];
+
+async function syncHCP() {
+  var settings = getSettings();
+
+  showToast('Syncing from Housecall Pro...');
+  try {
+    var res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({tag:appSettings.hcpTag||'geo-install'})
+    });
+    if (!res.ok) { showToast('HCP sync failed. Check your API key.'); return; }
+    var data = await res.json();
+    var customers = data.customers || [];
+    if (!customers.length) { showToast('No customers found with that tag.'); return; }
+    var toImport = [];
+    var updated = 0;
+    for (var i=0;i<customers.length;i++) {
+      var c = customers[i];
+      var hcpId = 'cust-'+c.id;
+      var existing = installs.find(function(j){return j.hcp_job_id===hcpId;});
+      if (existing) {
+        // update notes only, never touch milestones or anything else
+        var freshNotes = c.all_notes || (c.notes&&c.notes.trim()?[{id:'customer-note',type:'Customer',date:c.updated_at,text:c.notes.trim()}]:[]);
+        if (JSON.stringify(freshNotes) !== JSON.stringify(existing.hcp_notes)) {
+          existing.hcp_notes = freshNotes;
+          await sb.from('jobs').update({hcp_notes:freshNotes,updated_at:new Date().toISOString()}).eq('id',existing.id);
+          updated++;
+        }
+      } else {
+        toImport.push(c);
+      }
+    }
+    if (!toImport.length && !updated) { showToast('Everything up to date.'); render(); return; }
+    if (!toImport.length) { showToast('Updated notes on '+updated+' install(s).'); render(); return; }
+    // check if any have multiple addresses — if so, show picker
+    var needsPicker = toImport.filter(function(c){return c.addresses&&c.addresses.length>1;});
+    var noPickerNeeded = toImport.filter(function(c){return !c.addresses||c.addresses.length<=1;});
+    // auto-import single-address customers
+    var added = 0;
+    var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+    for (var j=0;j<noPickerNeeded.length;j++) {
+      var c2 = noPickerNeeded[j];
+      added += await importCustomer(c2, c2.addresses&&c2.addresses.length?c2.addresses[0]:null, maxOrder+added);
+    }
+    if (needsPicker.length) {
+      pendingHCPCustomers = needsPicker;
+      showAddressPicker();
+    } else {
+      showToast('Synced '+added+' new install(s) from HCP.');
+      render();
+    }
+  } catch(e) { showToast('HCP sync error. Check your API key and tag.'); }
+}
+
+async function importCustomer(c, addr, sortOrder) {
+  var hcpId = 'cust-'+c.id;
+  var fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim()||'Unknown';
+  var addrStr = addr ? [addr.street, addr.street_line_2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ') : '';
+  var hcpNotes = [];
+  if (c.notes && c.notes.trim()) hcpNotes.push({id:'note-0',text:c.notes.trim()});
+  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
+  if (r.data) {
+    r.data.milestones=MS.map(function(_,mi){return {job_id:r.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
+    r.data.hcp_notes=hcpNotes;
+    installs.push(r.data);
+    await logActivity(r.data.id,'Imported from HCP: '+fullName);
+    return 1;
+  }
+  return 0;
+}
+
+function showAddressPicker() {
+  var modal = document.getElementById('addr-picker-modal');
+  var body = document.getElementById('addr-picker-body');
+  var c = pendingHCPCustomers[0];
+  var fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim();
+  var html = '<p style="font-size:13px;color:#555;margin-bottom:1rem;">Which address should we use for <strong>'+fullName+'</strong>?</p>';
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  c.addresses.forEach(function(a,i) {
+    var addrStr = [a.street, a.street_line_2, a.city, a.state, a.zip].filter(Boolean).join(', ');
+    html += '<button onclick="selectAddress('+i+')" style="padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;font-size:13px;">';
+    html += '<span style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.5px;">'+a.type+'</span><br>';
+    html += addrStr;
+    html += '</button>';
+  });
+  html += '</div>';
+  body.innerHTML = html;
+  modal.classList.add('open');
+}
+
+async function selectAddress(addrIdx) {
+  var c = pendingHCPCustomers.shift();
+  var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
+  await importCustomer(c, c.addresses[addrIdx], maxOrder+1);
+  document.getElementById('addr-picker-modal').classList.remove('open');
+  if (pendingHCPCustomers.length) {
+    showAddressPicker();
+  } else {
+    showToast('HCP sync complete.');
+    render();
+  }
+}
+
+var appSettings = {};
+
+async function loadSettings() {
+  // try Supabase first
+  var r = await sb.from('settings').select('*');
+  if (r.data && r.data.length) {
+    r.data.forEach(function(row){ appSettings[row.key] = row.value; });
+  }
+  // merge with localStorage as fallback
+  var local = JSON.parse(localStorage.getItem('nageo_settings')||'{}');
+  if (local.hcpKey && !appSettings.hcpKey) appSettings.hcpKey = local.hcpKey;
+  if (local.hcpTag && !appSettings.hcpTag) appSettings.hcpTag = local.hcpTag;
+}
+
+function getSettings(){ return appSettings; }
+
+async function openSettings(){
+  await loadSettings();
+  document.getElementById('hcp-tag-input').value=appSettings.hcpTag||'geo-install';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
+
+async function saveSettings(){
+  var hcpTag = document.getElementById('hcp-tag-input').value.trim()||'geo-install';
+  appSettings.hcpTag = hcpTag;
+  localStorage.setItem('nageo_settings',JSON.stringify({hcpTag:hcpTag}));
+  closeSettings();
+  showToast('Settings saved.');
+}
+
+function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
+function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
+function naCount(j){return j.milestones.filter(function(m){return m.state==='na';}).length;}
+function progressLabel(j){var done=doneCount(j);var total=9-naCount(j);return done+'/'+total;}
+function hasDelay(j){return j.milestones.some(function(m){return m.state==='delayed';});}
+function isComplete(j){return j.milestones.every(function(m){return m.state==='done'||m.state==='na';});}
+function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
+function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
+function timeAgo(ts){var d=Math.floor((Date.now()-new Date(ts))/1000);if(d<60)return 'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':s==='na'?'dot-na':'dot-none');}
+function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='na'?'N/A':'';}
+function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':s==='na'?'si-na':'');}
+function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':s==='na'?'na-row':'');}
+
+function updateStats(){
+  document.getElementById('s-active').textContent=installs.filter(function(j){return !isComplete(j);}).length;
+  document.getElementById('s-delayed').textContent=installs.filter(function(j){return hasDelay(j);}).length;
+  document.getElementById('s-inprog').textContent=installs.filter(function(j){return j.milestones.some(function(m){return m.state==='inprog';});}).length;
+  document.getElementById('s-complete').textContent=installs.filter(function(j){return isComplete(j);}).length;
+}
+
+function setView(v){
+  currentView=v;
+  ['overview','cards','log'].forEach(function(n){
+    document.getElementById('view-'+n).style.display=v===n?'block':'none';
+    document.getElementById('btn-'+n).className='vbtn'+(v===n?' active':'');
+  });
+  document.getElementById('add-job-btn').style.display=v==='log'?'none':'block';
+}
+
+function renderOverview(){
+  var el=document.getElementById('view-overview');
+  if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
+  var html='<div class="overview-wrap"><table><thead><tr><th>Customer</th><th>Current milestone</th><th>Progress</th>';
+  MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
+  html+='<th>Delay</th></tr></thead><tbody>';
+  installs.forEach(function(j){
+    var nameCell = j.equipment
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+(j.nc?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
+      : '<div class="inst-name-cell">'+j.name+(j.nc?'<span class="nc-overview-badge">NC</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+    html+='<tr><td>'+nameCell+'</td>';
+    html+='<td style="font-size:12px">'+curMS(j)+'</td>';
+    html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
+    j.milestones.forEach(function(m,mi){
+      var tipText = '';
+      if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='inprog'){tipText=MS[mi]+': In progress'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='na'){tipText=MS[mi]+': N/A';}
+      else{tipText=MS[mi]+': Not started'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      html+='<td><div class="dot-wrap"><span class="'+dc(m.state)+'">'+di(m.state)+'</span><div class="tip">'+tipText+'</div></div></td>';
+    });
+    var delayInfo = '';
+    j.milestones.forEach(function(m,mi){if(m.state==='delayed'){delayInfo+=(delayInfo?'\n':'')+MS[mi]+(m.notes?': '+m.notes:'');}});
+    html+='<td>'+(hasDelay(j)?'<div class="dot-wrap"><span class="delay-badge">! Yes</span><div class="tip" style="left:auto;right:0;transform:none;">'+delayInfo+'</div></div>':'<span style="color:#ccc;font-size:12px">&mdash;</span>')+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderCards(){
+  var el=document.getElementById('view-cards');
+  if(!installs.length){el.innerHTML='<div class="empty">No installs yet.</div>';return;}
+  var html='<div class="installs">';
+  installs.forEach(function(j){
+    var isOpen=openCards.has(j.id), notesOpen=openNotes.has(j.id), delOpen=showDel.has(j.id);
+    html+='<div class="card" id="card-'+j.id+'" ondragover="dragOver(event,\''+j.id+'\')" ondrop="drop(event,\''+j.id+'\')">';
+    html+='<div class="card-header" onclick="toggleCard(\''+j.id+'\')">';
+    html+='<span class="drag-handle" draggable="true" ondragstart="dragStart(event,\''+j.id+'\')" ondragend="dragEnd(event)" onclick="event.stopPropagation()" title="Drag to reorder">&#8942;</span>';
+    html+='<div class="avatar">'+initials(j.name)+'</div>';
+    html+='<div class="card-meta"><div class="card-name">'+j.name+'</div><div class="card-addr">'+(j.address||'')+'</div>';
+    if(j.equipment) html+='<div class="card-equip">&#9881; '+j.equipment+'</div>';
+    html+='</div>';
+    html+='<div class="card-pills"><span class="pill pill-prog">'+progressLabel(j)+'</span>';
+    if(hasDelay(j)) html+='<span class="pill pill-delayed">! Delayed</span>';
+    if(isComplete(j)) html+='<span class="pill pill-done">&#10003; Complete</span>';
+    html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
+    html+='<div class="card-body '+(isOpen?'open':'')+'">';
+    html+='<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
+    html+='<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="'+(j.equipment||'')+'" onchange="saveJobField(\''+j.id+'\',\'equipment\',this.value)"></div>';
+    html+='<div class="ms-list">';
+    j.milestones.forEach(function(m,i){
+      var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
+      html+='<div class="'+rc(m.state)+'">';
+      html+='<div class="ms-main" onclick="toggleMS(\''+key+'\')"><div class="'+sic(m.state)+'">'+di(m.state)+'</div>';
+      html+='<span class="ms-label '+(m.state==='done'||m.state==='na'?'done-lbl':'')+'">'+MS[i]+'</span>';
+      if(pt) html+='<span class="ms-pinned-tag">&#128204; '+(pt.length>40?pt.slice(0,40)+'&#8230;':pt)+'</span>';
+      if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
+      html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
+      html+='<div class="ms-detail" style="display:'+(msOpen?'flex':'none')+'">';
+      html+='<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
+      html+='<button class="sbtn '+(m.state==='none'?'a-none':'')+'" onclick="setState(\''+j.id+'\','+i+',\'none\')">Not started</button>';
+      html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
+      html+='<button class="sbtn '+(m.state==='delayed'?'a-delayed':'')+'" onclick="setState(\''+j.id+'\','+i+',\'delayed\')">Delayed</button>';
+      html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
+      html+='<button class="sbtn '+(m.state==='na'?'a-na':'')+'" onclick="setState(\''+j.id+'\','+i+',\'na\')">N/A</button>';
+      html+='</div></div>';
+      if(m.state==='done') html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
+      html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="Add a note..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
+      if(pt) html+='<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">'+pt+'</span><button class="unpin-btn" onclick="unpinMS(\''+j.id+'\','+i+')">Unpin</button></div>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+    if(j.hcp_notes&&j.hcp_notes.length){
+      html+='<div class="notes-section"><div class="notes-hdr" onclick="toggleNotes(\''+j.id+'\')"><span class="notes-title">&#128203; HCP notes ('+j.hcp_notes.length+') &mdash; pin to equipment or milestone</span><span class="chevron '+(notesOpen?'open':'')+'">&#9662;</span></div>';
+      html+='<div class="notes-body '+(notesOpen?'open':'')+'">';
+      j.hcp_notes.forEach(function(note){
+        var isPE=j.pinned_equip_note===note.id, pmi=j.milestones.findIndex(function(m){return m.pinned_note===note.id;});
+        html+='<div class="note-item"><span class="note-text">'+note.text+'</span><div class="note-actions">';
+        html+='<button class="pin-btn '+(isPE?'pinned':'')+'" onclick="pinToEquip(\''+j.id+'\',\''+note.id+'\')">&#9881; '+(isPE?'Pinned to equip.':'Pin to equipment')+'</button>';
+        html+='<select class="pin-select" onchange="pinToMS(\''+j.id+'\',\''+note.id+'\',this.value)"><option value="">Pin to milestone&hellip;</option>';
+        MS.forEach(function(name,i){html+='<option value="'+i+'" '+(pmi===i?'selected':'')+'>'+name+'</option>';});
+        html+='</select></div></div>';
+      });
+      html+='</div></div>';
+    }
+    if(j.nc) html += renderNC(j);
+        html+='<div class="delete-zone">';
+    if(!delOpen){
+      html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+(j.nc?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+(j.nc?'Remove NC flag':'Mark as New Construction')+'</button>';
+      html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
+    } else {
+      html+='<span class="delete-hint">Type DELETE to confirm:</span>';
+      html+='<div class="delete-confirm-area show">';
+      html+='<input type="text" class="delete-type-input" id="del-input-'+j.id+'" placeholder="DELETE">';
+      html+='<button class="delete-go-btn" onclick="confirmDelete(\''+j.id+'\')">Delete</button>';
+      html+='<button class="delete-cancel-btn" onclick="cancelDelete(\''+j.id+'\')">Cancel</button>';
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='</div></div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderLog(){
+  var el=document.getElementById('view-log');
+  if(!activityLog.length){el.innerHTML='<div class="empty">No activity yet.</div>';return;}
+  var jobMap={};
+  installs.forEach(function(j){jobMap[j.id]=j.name;});
+  var html='<div class="log-section"><div class="log-title">Recent activity</div><div class="log-list">';
+  activityLog.slice(0,50).forEach(function(l){
+    html+='<div class="log-item"><span class="log-who">'+l.user_name+'</span><span class="log-what">'+(jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &mdash; ':'')+l.action+'</span><span class="log-when">'+timeAgo(l.created_at)+'</span></div>';
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+}
+
+function render(){updateStats();renderOverview();renderCards();renderLog();}
+
+function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
+function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
+function toggleNotes(id){if(openNotes.has(id))openNotes.delete(id);else openNotes.add(id);render();}
+function showDeleteConfirm(id){showDel.add(id);render();}
+function cancelDelete(id){showDel.delete(id);render();}
+function confirmDelete(id){
+  var val=document.getElementById('del-input-'+id);
+  if(!val||val.value.trim()!=='DELETE'){showToast('Type DELETE in all caps to confirm.');return;}
+  deleteInstall(id);
+}
+
+function setState(jobId,idx,state){
+  var m=installs.find(function(j){return j.id===jobId;}).milestones[idx];
+  var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
+  saveMilestone(jobId,idx,{state:state,date:date,notes:state==='na'?'':m.notes});
+}
+function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
+
+async function pinToEquip(jobId,noteId){
+  var inst=installs.find(function(j){return j.id===jobId;});
+  var isPinned=inst.pinned_equip_note===noteId;
+  inst.pinned_equip_note=isPinned?null:noteId;
+  if(!isPinned){var note=inst.hcp_notes.find(function(n){return n.id===noteId;});if(note)inst.equipment=note.text;}
+  await sb.from('jobs').update({pinned_equip_note:inst.pinned_equip_note,equipment:inst.equipment,updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId,isPinned?'Unpinned equipment note':'Pinned note to equipment');
+  render();
+}
+
+async function pinToMS(jobId,noteId,msIdx){
+  if(msIdx==='')return;
+  var inst=installs.find(function(j){return j.id===jobId;});
+  var idx=parseInt(msIdx);
+  for(var i=0;i<inst.milestones.length;i++){if(inst.milestones[i].pinned_note===noteId)await saveMilestone(jobId,i,{pinned_note:null});}
+  await saveMilestone(jobId,idx,{pinned_note:noteId});
+  await logActivity(jobId,'Pinned note to "'+MS[idx]+'"');
+}
+
+async function unpinMS(jobId,idx){
+  await saveMilestone(jobId,idx,{pinned_note:null});
+  await logActivity(jobId,'Unpinned note from "'+MS[idx]+'"');
+}
+
+function dragStart(e,id){
+  dragId=id; e.dataTransfer.effectAllowed='move';
+  setTimeout(function(){var el=document.getElementById('card-'+id);if(el)el.classList.add('dragging');},0);
+}
+function dragEnd(e){
+  document.querySelectorAll('.card').forEach(function(el){el.classList.remove('dragging');el.classList.remove('drag-over');});
+  dragId=null; dragOverId=null;
+}
+function dragOver(e,id){
+  e.preventDefault();
+  if(id===dragId)return;
+  if(dragOverId!==id){
+    document.querySelectorAll('.card').forEach(function(el){el.classList.remove('drag-over');});
+    var el=document.getElementById('card-'+id);if(el)el.classList.add('drag-over');
+    dragOverId=id;
+  }
+  e.dataTransfer.dropEffect='move';
+}
+async function drop(e,targetId){
+  e.preventDefault();
+  if(!dragId||dragId===targetId)return;
+  var fi=installs.findIndex(function(j){return j.id===dragId;});
+  var ti=installs.findIndex(function(j){return j.id===targetId;});
+  if(fi===-1||ti===-1)return;
+  var moved=installs.splice(fi,1)[0];
+  installs.splice(ti,0,moved);
+  installs.forEach(function(j,i){j.sort_order=i;});
+  render();
+  await Promise.all(installs.map(function(j,i){return sb.from('jobs').update({sort_order:i}).eq('id',j.id);}));
+  showToast('Order saved.');
+}
+
+async function toggleNC(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.nc = !inst.nc;
+  if(!inst.nc) inst.nc_data = {};
+  await sb.from('jobs').update({nc:inst.nc, nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.nc ? 'Marked as New Construction' : 'Removed New Construction flag');
+  render();
+}
+
+async function saveNC(jobId, field, value) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if(!inst.nc_data) inst.nc_data = {};
+  inst.nc_data[field] = value;
+  await sb.from('jobs').update({nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
+}
+
+function renderNC(j) {
+  var nc = j.nc_data || {};
+  var id = j.id;
+  var h = '<div class="nc-section">';
+  h += '<div class="nc-header"><span class="nc-title">&#127959; New Construction checklist <span class="nc-badge">NC</span></span></div>';
+  h += '<div class="nc-item">';
+  h += '<div class="nc-item-header">';
+  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="oven_done" ' + (nc.oven_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
+  h += '<span class="nc-item-label">Oven hood specs</span></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="oven_notes" placeholder="Specs, model, notes..." value="' + (nc.oven_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="accessories" placeholder="List accessories..." value="' + (nc.accessories || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
+  h += '<div class="nc-label-small">Specs / details</div>';
+  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="' + id + '" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="' + (nc.bath_fan_specs || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)">';
+  h += '<div class="nc-label-small">Who is supplying?</div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="bath_fan_supplier" placeholder="Supplier name..." value="' + (nc.bath_fan_supplier || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<div class="nc-item"><div class="nc-item-header">';
+  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="elec_done" ' + (nc.elec_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
+  h += '<span class="nc-item-label">Electrical requirements</span></div>';
+  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="' + (nc.elec_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '</div>';
+  return h;
+}
+
+function saveNCCheck(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.checked);
+}
+function saveNCText(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.value);
+}
+
+
+function printReport() {
+  var today = new Date();
+  var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  var active = installs.filter(function(j) { return !isComplete(j); });
+
+  var MS_STATUS = { done: 'Complete', inprog: 'In Progress', delayed: 'Delayed', na: 'N/A', none: 'Not Started' };
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>NAGeo Install Status Report</title><style>';
+  html += 'body{font-family:Georgia,serif;color:#1a1a1a;margin:0;padding:0;font-size:12px;}';
+  html += '.page{width:7.5in;margin:0 auto;padding:0.75in;page-break-after:always;}';
+  html += '.page:last-child{page-break-after:avoid;}';
+  html += 'h1{font-size:22px;font-weight:bold;margin:0 0 4px 0;letter-spacing:-0.5px;}';
+  html += 'h2{font-size:16px;font-weight:bold;margin:0 0 4px 0;}';
+  html += '.subtitle{font-size:12px;color:#666;margin-bottom:32px;}';
+  html += '.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin:24px 0 10px 0;border-bottom:0.5px solid #ddd;padding-bottom:4px;}';
+  html += 'table{width:100%;border-collapse:collapse;font-size:11px;}';
+  html += 'th{text-align:left;padding:6px 8px;border-bottom:1px solid #1a1a1a;font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}';
+  html += 'td{padding:6px 8px;border-bottom:0.5px solid #e5e5e5;vertical-align:top;}';
+  html += 'tr:last-child td{border-bottom:none;}';
+  html += '.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;}';
+  html += '.badge-delayed{background:#fee2e2;color:#dc2626;}';
+  html += '.badge-ontrack{background:#dcfce7;color:#16a34a;}';
+  html += '.job-header{margin-bottom:20px;}';
+  html += '.job-name{font-size:20px;font-weight:bold;margin:0 0 2px 0;}';
+  html += '.job-addr{font-size:12px;color:#666;margin:0 0 6px 0;}';
+  html += '.job-equip{font-size:12px;color:#1a1a1a;font-style:italic;margin:0;}';
+  html += '.ms-row{padding:8px 0;border-bottom:0.5px solid #f0f0f0;display:flex;gap:12px;}';
+  html += '.ms-row:last-child{border-bottom:none;}';
+  html += '.ms-status{width:90px;flex-shrink:0;font-size:11px;font-weight:bold;}';
+  html += '.ms-status.done{color:#16a34a;}';
+  html += '.ms-status.inprog{color:#ca8a04;}';
+  html += '.ms-status.delayed{color:#dc2626;}';
+  html += '.ms-status.na{color:#888;}';
+  html += '.ms-status.none{color:#bbb;}';
+  html += '.ms-name{flex:1;font-size:12px;}';
+  html += '.ms-name.done{text-decoration:line-through;color:#888;}';
+  html += '.ms-name.na{color:#888;}';
+  html += '.ms-date{font-size:10px;color:#888;white-space:nowrap;}';
+  html += '.ms-note{font-size:11px;color:#555;margin-top:2px;font-style:italic;}';
+  html += '.logo{font-size:11px;color:#888;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}';
+  html += '.divider{border:none;border-top:1px solid #1a1a1a;margin:16px 0;}';
+  html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
+  html += '</style></head><body>';
+
+  // SUMMARY PAGE
+  html += '<div class="page">';
+  html += '<div class="logo">North American Geothermal</div>';
+  html += '<h1>Install Status Report</h1>';
+  html += '<div class="subtitle">' + dateStr + ' &nbsp;&middot;&nbsp; ' + active.length + ' active install' + (active.length !== 1 ? 's' : '') + '</div>';
+  html += '<hr class="divider">';
+  html += '<div class="section-title">Active installs overview</div>';
+  html += '<table><thead><tr><th>Customer</th><th>Address</th><th>Current milestone</th><th>Progress</th><th>Status</th></tr></thead><tbody>';
+  active.forEach(function(j) {
+    var delayed = hasDelay(j);
+    html += '<tr>';
+    html += '<td><strong>' + j.name + '</strong></td>';
+    html += '<td>' + (j.address || '—') + '</td>';
+    html += '<td>' + curMS(j) + '</td>';
+    html += '<td>' + progressLabel(j) + '</td>';
+    html += '<td>' + (delayed ? '<span class="badge badge-delayed">Delayed</span>' : '<span class="badge badge-ontrack">On track</span>') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '</div>';
+
+  // DETAIL PAGES
+  active.forEach(function(j) {
+    html += '<div class="page">';
+    html += '<div class="logo">North American Geothermal</div>';
+    html += '<div class="job-header">';
+    html += '<div class="job-name">' + j.name + '</div>';
+    html += '<div class="job-addr">' + (j.address || '') + '</div>';
+    if (j.equipment) html += '<div class="job-equip">Equipment: ' + j.equipment + '</div>';
+    html += '</div>';
+    html += '<hr class="divider">';
+    html += '<div class="section-title">Milestone progress</div>';
+
+    j.milestones.forEach(function(m, i) {
+      var statusLabel = MS_STATUS[m.state] || 'Not Started';
+      html += '<div class="ms-row">';
+      html += '<div class="ms-status ' + m.state + '">' + statusLabel + '</div>';
+      html += '<div style="flex:1"><div class="ms-name ' + (m.state === 'done' ? 'done' : m.state === 'na' ? 'na' : '') + '">' + MS[i] + '</div>';
+      if (m.state === 'done' && m.date) html += '<div class="ms-note">Completed: ' + m.date + '</div>';
+      if (m.notes && m.notes.trim()) html += '<div class="ms-note">' + m.notes + '</div>';
+      html += '</div></div>';
+    });
+
+    // NC checklist if applicable
+    if(j.nc) {
+      var nc = j.nc_data || {};
+      html += '<div class="section-title">New Construction checklist</div>';
+      html += '<table><tbody>';
+      html += '<tr><td style="width:160px;font-weight:bold">Oven hood specs</td><td>' + (nc.oven_done ? '&#10003; Complete' : '&#9711; Pending') + (nc.oven_notes ? ' &mdash; ' + nc.oven_notes : '') + '</td></tr>';
+      html += '<tr><td style="font-weight:bold">Accessories</td><td>' + (nc.accessories || '<span style="color:#aaa">Not entered</span>') + '</td></tr>';
+      html += '<tr><td style="font-weight:bold">Bath fans</td><td>';
+      if (nc.bath_fan_specs || nc.bath_fan_supplier) {
+        if (nc.bath_fan_specs) html += nc.bath_fan_specs;
+        if (nc.bath_fan_supplier) html += (nc.bath_fan_specs ? '<br>' : '') + 'Supplier: ' + nc.bath_fan_supplier;
+      } else { html += '<span style="color:#aaa">Not entered</span>'; }
+      html += '</td></tr>';
+      html += '<tr><td style="font-weight:bold">Electrical requirements</td><td>' + (nc.elec_done ? '&#10003; Complete' : '&#9711; Pending') + (nc.elec_notes ? ' &mdash; ' + nc.elec_notes : '') + '</td></tr>';
+      html += '</tbody></table>';
+    }
+
+    html += '</div>';
+  });
+
+  html += '</body></html>';
+
+  var win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 500);
+}
+
+init();
+
+// ── REAL-TIME + AUTO REFRESH ──────────────────────────
+var realtimeChannel = null;
+
+function startRealtime() {
+  // Auto-refresh every 30 seconds
+  setInterval(function() {
+    silentRefresh();
+  }, 30000);
+
+  // Real-time subscription via Supabase
+  realtimeChannel = sb.channel('tracker-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, function() {
+      silentRefresh();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'milestones' }, function() {
+      silentRefresh();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, function() {
+      silentRefresh();
+    })
+    .subscribe();
+}
+
+var refreshing = false;
+async function silentRefresh() {
+  if (refreshing) return;
+  refreshing = true;
+  try {
+    var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+    var r2 = await sb.from('milestones').select('*').order('index');
+    var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+    var rawJobs = r1.data || [], allMS = r2.data || [];
+    activityLog = r3.data || [];
+    installs = rawJobs.map(function(j) {
+      return Object.assign({},j,{
+        hcp_notes: j.hcp_notes||[],
+        milestones: MS.map(function(_,i){
+          var f = allMS.find(function(m){return m.job_id===j.id&&m.index===i;});
+          return f||{job_id:j.id,index:i,state:'none',date:'',notes:'',pinned_note:null};
+        })
+      });
+    });
+    render();
+  } catch(e) {}
+  refreshing = false;
+}
+</script>
+
+<div class="modal-bg" id="addr-picker-modal">
+  <div class="modal">
+    <div class="modal-title">Choose install address</div>
+    <div id="addr-picker-body"></div>
+  </div>
+</div>
+</body>
+</html>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh;}
