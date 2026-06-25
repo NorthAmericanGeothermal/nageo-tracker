@@ -842,7 +842,12 @@ function printReport() {
     html += '<td>' + (j.address || '—') + '</td>';
     html += '<td>' + curMS(j) + '</td>';
     html += '<td>' + progressLabel(j) + '</td>';
-    html += '<td>' + (delayed ? '<span class="badge badge-delayed">Delayed</span>' : '<span class="badge badge-ontrack">On track</span>') + '</td>';
+    var badges = '';
+    if(delayed) badges += '<span class="badge badge-delayed">Delayed</span> ';
+    else badges += '<span class="badge badge-ontrack">On track</span> ';
+    if(j.nc===true||j.nc==='true') badges += '<span class="badge" style="background:#dbeafe;color:#2563eb">NC</span> ';
+    if(j.duct) badges += '<span class="badge" style="background:#f3e8ff;color:#7c3aed">Duct</span>';
+    html += '<td>' + badges + '</td>';
     html += '</tr>';
   });
   html += '</tbody></table>';
@@ -869,6 +874,17 @@ function printReport() {
       if (m.notes && m.notes.trim()) html += '<div class="ms-note">' + m.notes + '</div>';
       html += '</div></div>';
     });
+
+    // Ductwork if applicable
+    if(j.duct) {
+      html += '<div class="section-title">Ductwork</div>';
+      html += '<table><tbody>';
+      html += '<tr><td style="width:160px;font-weight:bold">Status</td><td>Ductwork required for this install</td></tr>';
+      if(j.duct_notes && j.duct_notes.trim()) {
+        html += '<tr><td style="font-weight:bold">Notes</td><td>' + j.duct_notes + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    }
 
     // NC checklist if applicable
     if(j.nc === true || j.nc === 'true') {
