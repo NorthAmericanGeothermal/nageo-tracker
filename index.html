@@ -158,6 +158,31 @@ tr:last-child td{border-bottom:none;}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;}
 .toast.show{opacity:1;}
 
+.mobile-detail{display:none;position:fixed;inset:0;background:#f4f4f0;z-index:150;overflow-y:auto;}
+.mobile-detail.open{display:block;}
+.mobile-detail-header{background:#fff;padding:12px 16px;border-bottom:0.5px solid #e5e5e5;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+.mobile-back{font-size:14px;padding:6px 12px;border:0.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;color:#2563eb;font-family:inherit;}
+.mobile-detail-name{font-size:15px;font-weight:600;color:#1a1a1a;flex:1;}
+.mobile-detail-body{padding:1rem;}
+.mobile-detail-addr{font-size:12px;color:#888;margin-bottom:4px;}
+.mobile-detail-equip{font-size:12px;color:#2563eb;margin-bottom:16px;}
+.mobile-tiles{display:none;}
+@media (max-width:600px){
+  .mobile-tiles{display:flex;flex-direction:column;gap:10px;}
+  #view-overview .overview-wrap{display:none;}
+  #view-overview .mobile-tiles{display:flex;}
+}
+.mobile-tile{background:#fff;border:0.5px solid #e5e5e5;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;}
+.mobile-tile:active{background:#f4f4f0;}
+.mobile-tile-meta{flex:1;min-width:0;}
+.mobile-tile-name{font-size:14px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mobile-tile-addr{font-size:11px;color:#888;margin-top:2px;}
+.mobile-tile-ms{font-size:11px;color:#555;margin-top:3px;}
+.mobile-tile-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.mobile-tile-prog{font-size:12px;color:#888;}
+.mobile-tile-delay{font-size:10px;padding:2px 7px;border-radius:5px;background:#fee2e2;color:#dc2626;}
+.mobile-tile-arrow{font-size:16px;color:#ccc;}
+
 @media (max-width:600px){
   .topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:6px;}
   .topbar-logo{font-size:14px;width:100%;}
@@ -247,6 +272,13 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<div class="mobile-detail" id="mobile-detail">
+  <div class="mobile-detail-header">
+    <button class="mobile-back" onclick="closeMobileDetail()">&#8592; Back</button>
+    <span class="mobile-detail-name" id="mobile-detail-name"></span>
+  </div>
+  <div class="mobile-detail-body" id="mobile-detail-body"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -675,7 +707,7 @@ function renderLog(){
   el.innerHTML=html;
 }
 
-function render(){updateStats();renderOverview();renderCards();renderLog();}
+function render(){updateStats();renderOverview();renderCards();renderLog();renderMobileTiles();}
 
 function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
 function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
@@ -853,6 +885,90 @@ async function toggleDuct(jobId) {
   await sb.from('jobs').update({duct:inst.duct,duct_notes:inst.duct_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
   await logActivity(jobId, inst.duct ? 'Marked as Ductwork' : 'Removed Ductwork flag');
   render();
+}
+
+function renderMobileTiles() {
+  var el = document.getElementById('view-overview');
+  // remove old tiles if any
+  var old = el.querySelector('.mobile-tiles');
+  if (old) old.remove();
+  if (window.innerWidth > 600) return;
+  var div = document.createElement('div');
+  div.className = 'mobile-tiles';
+  installs.forEach(function(j) {
+    var delayed = hasDelay(j);
+    var tile = document.createElement('div');
+    tile.className = 'mobile-tile';
+    tile.onclick = function() { openMobileDetail(j.id); };
+    var badges = '';
+    if (j.nc===true||j.nc==='true') badges += '<span class="nc-overview-badge">NC</span>';
+    if (j.duct) badges += '<span class="duct-overview-badge">DUCT</span>';
+    tile.innerHTML = '<div class="mobile-tile-meta">' +
+      '<div class="mobile-tile-name">' + j.name + badges + '</div>' +
+      '<div class="mobile-tile-addr">' + (j.address||'') + '</div>' +
+      '<div class="mobile-tile-ms">' + curMS(j) + '</div>' +
+      '</div>' +
+      '<div class="mobile-tile-right">' +
+        '<span class="mobile-tile-prog">' + progressLabel(j) + '</span>' +
+        (delayed ? '<span class="mobile-tile-delay">! Delayed</span>' : '') +
+        '<span class="mobile-tile-arrow">&#8250;</span>' +
+      '</div>';
+    div.appendChild(tile);
+  });
+  el.appendChild(div);
+}
+
+function openMobileDetail(jobId) {
+  var j = installs.find(function(x){return x.id===jobId;});
+  if (!j) return;
+  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',na:'N/A',none:'Not Started'};
+  document.getElementById('mobile-detail-name').textContent = j.name;
+  var body = document.getElementById('mobile-detail-body');
+  var h = '';
+  if (j.address) h += '<div class="mobile-detail-addr">'+j.address+'</div>';
+  if (j.equipment) h += '<div class="mobile-detail-equip">&#9881; '+j.equipment+'</div>';
+  // milestones
+  h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">';
+  j.milestones.forEach(function(m,i) {
+    var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='na'?'#888':'#bbb';
+    var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':m.state==='inprog'?'#fefce8':'#fff';
+    h += '<div style="background:'+bg+';border:0.5px solid #e5e5e5;border-radius:8px;padding:10px 12px;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    h += '<span style="font-size:13px;font-weight:500;color:#1a1a1a;'+(m.state==='done'||m.state==='na'?'text-decoration:line-through;color:#aaa':'')+'">'+MS[i]+'</span>';
+    h += '<span style="font-size:11px;font-weight:600;color:'+statusColor+'">'+MS_STATUS[m.state]+'</span>';
+    h += '</div>';
+    if (m.state==='done'&&m.date) h += '<div style="font-size:11px;color:#888;margin-top:3px;">Completed: '+m.date+'</div>';
+    if (m.notes&&m.notes.trim()) h += '<div style="font-size:12px;color:#555;margin-top:4px;font-style:italic;">'+m.notes+'</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  // ductwork
+  if (j.duct) {
+    h += '<div style="background:#faf8ff;border:0.5px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;">';
+    h += '<div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:6px;">&#128274; Ductwork</div>';
+    if (j.duct_notes&&j.duct_notes.trim()) h += '<div style="font-size:12px;color:#555;">'+j.duct_notes+'</div>';
+    else h += '<div style="font-size:12px;color:#aaa;">No notes</div>';
+    h += '</div>';
+  }
+  // NC checklist
+  if (j.nc===true||j.nc==='true') {
+    var nc = j.nc_data||{};
+    h += '<div style="background:#fafaf8;border:0.5px solid #e5e5e5;border-radius:8px;padding:12px;">';
+    h += '<div style="font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:10px;">&#127959; New Construction checklist</div>';
+    h += '<div style="font-size:12px;margin-bottom:8px;"><strong>Oven hood specs:</strong> '+(nc.oven_done?'&#10003; Complete':'Pending')+(nc.oven_notes?' &mdash; '+nc.oven_notes:'')+'</div>';
+    h += '<div style="font-size:12px;margin-bottom:8px;"><strong>Accessories:</strong> '+(nc.accessories||'<span style=color:#aaa>Not entered</span>')+'</div>';
+    h += '<div style="font-size:12px;margin-bottom:8px;"><strong>Bath fans:</strong> '+(nc.bath_fan_specs||'')+(nc.bath_fan_supplier?' | Supplier: '+nc.bath_fan_supplier:'')+((!nc.bath_fan_specs&&!nc.bath_fan_supplier)?'<span style=color:#aaa>Not entered</span>':'')+'</div>';
+    h += '<div style="font-size:12px;"><strong>Electrical:</strong> '+(nc.elec_done?'&#10003; Complete':'Pending')+(nc.elec_notes?' &mdash; '+nc.elec_notes:'')+'</div>';
+    h += '</div>';
+  }
+  body.innerHTML = h;
+  document.getElementById('mobile-detail').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileDetail() {
+  document.getElementById('mobile-detail').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function printReport() {
