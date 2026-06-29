@@ -81,6 +81,13 @@ tr:last-child td{border-bottom:none;}
 .ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
 .ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
 .ms-chevron{font-size:12px;color:#bbb;transition:transform 0.2s;flex-shrink:0;}.ms-chevron.open{transform:rotate(180deg);}
+.drill-steps{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.drill-step{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid #f0f0f0;}
+.drill-step:last-child{border-bottom:none;}
+.drill-step-label{font-size:12px;color:#1a1a1a;width:60px;flex-shrink:0;font-weight:500;}
+.drill-date{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
+.drill-date:focus{outline:none;border-color:#2563eb;}
+.drill-done-tag{font-size:10px;color:#16a34a;font-weight:600;margin-left:4px;}
 .ms-detail{padding:0 12px 10px 42px;display:flex;flex-direction:column;gap:8px;}
 .det-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .det-lbl{font-size:11px;color:#888;width:72px;flex-shrink:0;}
@@ -121,6 +128,11 @@ tr:last-child td{border-bottom:none;}
 .add-nc-btn:hover{background:#eff6ff;}
 .nc-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#dbeafe;color:#2563eb;font-weight:600;margin-left:4px;vertical-align:middle;}
 .duct-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#f3e8ff;color:#7c3aed;font-weight:600;margin-left:4px;vertical-align:middle;}
+.repl-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#fef9c3;color:#854d0e;font-weight:600;margin-left:4px;vertical-align:middle;}
+.add-repl-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ca8a04;border-radius:8px;background:#fff;color:#ca8a04;cursor:pointer;font-family:inherit;}
+.add-repl-btn:hover{background:#fef9c3;}
+.repl-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fefef0;}
+.repl-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#fef9c3;color:#854d0e;font-weight:500;}
 .add-duct-btn{font-size:12px;padding:5px 12px;border:0.5px solid #7c3aed;border-radius:8px;background:#fff;color:#7c3aed;cursor:pointer;font-family:inherit;}
 .add-duct-btn:hover{background:#f3e8ff;}
 .duct-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#faf8ff;}
@@ -595,8 +607,8 @@ function renderOverview(){
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
     var nameCell = j.equipment
-      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
-      : '<div class="inst-name-cell">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
+      : '<div class="inst-name-cell">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
     html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
@@ -654,7 +666,22 @@ function renderCards(){
       html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
       html+='<button class="sbtn '+(m.state==='na'?'a-na':'')+'" onclick="setState(\''+j.id+'\','+i+',\'na\')">N/A</button>';
       html+='</div></div>';
-      if(m.state==='done') html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
+      if(i===3) {
+        // Drilling sub-steps
+        var ds = m.drill_steps || {};
+        html+='<div class="drill-steps">';
+        ['step1','step2','step3'].forEach(function(sk,si) {
+          var sv = ds[sk]||'';
+          html+='<div class="drill-step">';
+          html+='<span class="drill-step-label">Step '+(si+1)+'</span>';
+          html+='<input type="date" class="drill-date" data-job="'+j.id+'" data-step="'+sk+'" value="'+sv+'" onchange="saveDrillStep(this.dataset.job,this.dataset.step,this.value)">';
+          if(sv) html+='<span class="drill-done-tag">&#10003;</span>';
+          html+='</div>';
+        });
+        html+='</div>';
+      } else if(m.state==='done') {
+        html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
+      }
       html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="Add a note..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
       if(pt) html+='<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">'+pt+'</span><button class="unpin-btn" onclick="unpinMS(\''+j.id+'\','+i+')">Unpin</button></div>';
       html+='</div></div>';
@@ -675,8 +702,10 @@ function renderCards(){
     }
     if(j.nc === true || j.nc === 'true') html += renderNC(j);
     if(j.duct) html += renderDuct(j);
+    if(j.repl) html += renderRepl(j);
         html+='<div class="delete-zone">';
     if(!delOpen){
+      html+='<button class="add-repl-btn" data-job="'+j.id+'" onclick="toggleRepl(this.dataset.job)" style="margin-right:8px'+((j.repl)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.repl?'Remove replacement':'&#128260; Add replacement')+'</button>';
       html+='<button class="add-duct-btn" data-job="'+j.id+'" onclick="toggleDuct(this.dataset.job)" style="margin-right:8px'+((j.duct)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.duct?'Remove ductwork':'&#128274; Add ductwork')+'</button>';
       html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+((j.nc===true||j.nc==='true')?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+((j.nc===true||j.nc==='true')?'Remove NC flag':'Mark as New Construction')+'</button>';
       html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
@@ -905,6 +934,64 @@ function saveNCText(el) {
 }
 
 
+function getDrillState(m) {
+  var d = m.drill_steps || {};
+  var filled = [d.step1,d.step2,d.step3].filter(function(v){return v&&v.trim();}).length;
+  if (filled === 0) return 'none';
+  if (filled === 3) return 'done';
+  return 'inprog';
+}
+
+async function saveDrillStep(jobId, stepKey, value) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  var m = inst.milestones[3]; // drilling is index 3
+  if (!m.drill_steps) m.drill_steps = {};
+  m.drill_steps[stepKey] = value;
+  // auto-calculate state
+  var newState = getDrillState(m);
+  var newDate = newState === 'done' ? (m.date || new Date().toISOString().slice(0,10)) : '';
+  m.state = newState;
+  m.date = newDate;
+  var payload = {
+    state: newState,
+    date: newDate || null,
+    drill_steps: m.drill_steps,
+    updated_by: currentUser.id,
+    updated_at: new Date().toISOString()
+  };
+  if (m.id) {
+    await sb.from('milestones').update(payload).eq('id', m.id);
+  } else {
+    var r = await sb.from('milestones').insert(Object.assign({job_id:jobId,index:3,notes:null,pinned_note:null},payload)).select().single();
+    if (r.data) m.id = r.data.id;
+  }
+  await logActivity(jobId, 'Updated Drilling step: ' + stepKey + (value ? ' — ' + value : ' cleared'));
+  render();
+}
+
+function renderRepl(j) {
+  var h = '<div class="repl-section">';
+  h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
+  h += '<input type="text" class="nc-input" data-job="' + j.id + '" data-field="repl_notes" placeholder="Replacement notes..." value="' + ((j.repl_notes||'').replace(/"/g,'&quot;')) + '" onchange="saveReplNotes(this)">';
+  h += '</div>';
+  return h;
+}
+
+function saveReplNotes(el) {
+  var inst = installs.find(function(j){return j.id===el.dataset.job;});
+  inst.repl_notes = el.value;
+  sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+}
+
+async function toggleRepl(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.repl = !inst.repl;
+  if(!inst.repl) inst.repl_notes = '';
+  await sb.from('jobs').update({repl:inst.repl,repl_notes:inst.repl_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.repl ? 'Marked as Replacement' : 'Removed Replacement flag');
+  render();
+}
+
 function renderDuct(j) {
   var h = '<div class="duct-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
@@ -944,6 +1031,7 @@ function renderMobileTiles() {
     var badges = '';
     if (j.nc===true||j.nc==='true') badges += '<span class="nc-overview-badge">NC</span>';
     if (j.duct) badges += '<span class="duct-overview-badge">DUCT</span>';
+    if (j.repl) badges += '<span class="repl-overview-badge">REPL</span>';
     tile.innerHTML = '<div class="mobile-tile-meta">' +
       '<div class="mobile-tile-name">' + j.name + badges + '</div>' +
       '<div class="mobile-tile-addr">' + (j.address||'') + '</div>' +
@@ -1076,6 +1164,7 @@ function printReport() {
     else badges += '<span class="badge badge-ontrack">On track</span> ';
     if(j.nc===true||j.nc==='true') badges += '<span class="badge" style="background:#dbeafe;color:#2563eb">NC</span> ';
     if(j.duct) badges += '<span class="badge" style="background:#f3e8ff;color:#7c3aed">Duct</span>';
+    if(j.repl) badges += '<span class="badge" style="background:#fef9c3;color:#854d0e">Replacement</span>';
     html += '<td>' + badges + '</td>';
     html += '</tr>';
   });
@@ -1103,6 +1192,17 @@ function printReport() {
       if (m.notes && m.notes.trim()) html += '<div class="ms-note">' + m.notes + '</div>';
       html += '</div></div>';
     });
+
+    // Replacement if applicable
+    if(j.repl) {
+      html += '<div class="section-title">Replacement</div>';
+      html += '<table><tbody>';
+      html += '<tr><td style="width:160px;font-weight:bold">Status</td><td>Replacement job</td></tr>';
+      if(j.repl_notes && j.repl_notes.trim()) {
+        html += '<tr><td style="font-weight:bold">Notes</td><td>' + j.repl_notes + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    }
 
     // Ductwork if applicable
     if(j.duct) {
