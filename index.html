@@ -672,10 +672,12 @@ function renderCards(){
         html+='<div class="drill-steps">';
         ['step1','step2','step3'].forEach(function(sk,si) {
           var sv = ds[sk]||'';
+          var sc = ds[sk+'_check']||false;
+          var isDone = sv || sc;
           html+='<div class="drill-step">';
+          html+='<input type="checkbox" class="nc-check" data-job="'+j.id+'" data-step="'+sk+'_check" '+(isDone?'checked':'')+' onchange="saveDrillCheck(this)">';
           html+='<span class="drill-step-label">Step '+(si+1)+'</span>';
           html+='<input type="date" class="drill-date" data-job="'+j.id+'" data-step="'+sk+'" value="'+sv+'" onchange="saveDrillStep(this.dataset.job,this.dataset.step,this.value)">';
-          if(sv) html+='<span class="drill-done-tag">&#10003;</span>';
           html+='</div>';
         });
         html+='</div>';
@@ -936,10 +938,31 @@ function saveNCText(el) {
 
 function getDrillState(m) {
   var d = m.drill_steps || {};
-  var filled = [d.step1,d.step2,d.step3].filter(function(v){return v&&v.trim();}).length;
+  var done1 = (d.step1&&d.step1.trim()) || d.step1_check;
+  var done2 = (d.step2&&d.step2.trim()) || d.step2_check;
+  var done3 = (d.step3&&d.step3.trim()) || d.step3_check;
+  var filled = [done1,done2,done3].filter(Boolean).length;
   if (filled === 0) return 'none';
   if (filled === 3) return 'done';
   return 'inprog';
+}
+
+async function saveDrillCheck(el) {
+  var jobId = el.dataset.job;
+  var stepKey = el.dataset.step; // e.g. step1_check
+  var inst = installs.find(function(j){return j.id===jobId;});
+  var m = inst.milestones[3];
+  if (!m.drill_steps) m.drill_steps = {};
+  m.drill_steps[stepKey] = el.checked;
+  var newState = getDrillState(m);
+  var newDate = newState === 'done' ? (m.date || new Date().toISOString().slice(0,10)) : '';
+  m.state = newState;
+  m.date = newDate;
+  var payload = {state:newState,date:newDate||null,drill_steps:m.drill_steps,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+  if (m.id) { await sb.from('milestones').update(payload).eq('id',m.id); }
+  else { var r = await sb.from('milestones').insert(Object.assign({job_id:jobId,index:3,notes:null,pinned_note:null},payload)).select().single(); if(r.data) m.id=r.data.id; }
+  await logActivity(jobId, 'Updated Drilling '+stepKey+': '+(el.checked?'checked':'unchecked'));
+  render();
 }
 
 async function saveDrillStep(jobId, stepKey, value) {
