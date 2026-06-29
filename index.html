@@ -614,7 +614,19 @@ function renderOverview(){
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
     j.milestones.forEach(function(m,mi){
       var tipText = '';
-      if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      if(mi===3) {
+        // Drilling — show sub-steps
+        var ds = m.drill_steps || {};
+        tipText = 'Drilling / loop field';
+        ['step1','step2','step3'].forEach(function(sk,si) {
+          var sv = ds[sk];
+          var sc = ds[sk+'_check'];
+          if(sv && sv.trim()) tipText += '<br>Step '+(si+1)+': &#10003; '+sv;
+          else if(sc) tipText += '<br>Step '+(si+1)+': &#10003; Done';
+          else tipText += '<br>Step '+(si+1)+': Pending';
+        });
+        if(m.notes) tipText += '<br><em>'+m.notes+'</em>';
+      } else if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='inprog'){tipText=MS[mi]+': In progress'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='na'){tipText=MS[mi]+': N/A';}
