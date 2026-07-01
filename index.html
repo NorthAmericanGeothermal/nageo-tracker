@@ -579,10 +579,13 @@ function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){retur
 function timeAgo(ts){
   var d=Math.floor((Date.now()-new Date(ts))/1000);
   var dt=new Date(ts);
-  var timeStr=dt.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true});
-  var dateStr=dt.toLocaleDateString([],{month:'short',day:'numeric'});
+  var opts={hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'};
+  var timeStr=dt.toLocaleTimeString('en-US',opts);
+  var dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'});
   var today=new Date();
-  var isToday=dt.toDateString()===today.toDateString();
+  var todayET=today.toLocaleDateString('en-US',{timeZone:'America/New_York'});
+  var dtET=dt.toLocaleDateString('en-US',{timeZone:'America/New_York'});
+  var isToday=todayET===dtET;
   if(d<60)return 'just now';
   if(d<3600)return Math.floor(d/60)+'m ago &middot; '+timeStr;
   if(isToday)return timeStr;
