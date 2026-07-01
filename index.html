@@ -365,7 +365,7 @@ async function showApp() {
 async function loadAll() {
   var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
   var r2 = await sb.from('milestones').select('*').order('index');
-  var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+  var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
   var rawJobs = r1.data || [], allMS = r2.data || [];
   activityLog = r3.data || [];
   installs = rawJobs.map(function(j) {
@@ -749,17 +749,27 @@ function renderCards(){
   el.innerHTML=html;
 }
 
+var logPage = 50;
 function renderLog(){
   var el=document.getElementById('view-log');
   if(!activityLog.length){el.innerHTML='<div class="empty">No activity yet.</div>';return;}
   var jobMap={};
   installs.forEach(function(j){jobMap[j.id]=j.name;});
-  var html='<div class="log-section"><div class="log-title">Recent activity</div><div class="log-list">';
-  activityLog.slice(0,50).forEach(function(l){
+  var html='<div class="log-section"><div class="log-title">Activity log ('+activityLog.length+' entries)</div><div class="log-list">';
+  activityLog.slice(0,logPage).forEach(function(l){
     html+='<div class="log-item"><span class="log-who">'+l.user_name+'</span><span class="log-what">'+(jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &mdash; ':'')+l.action+'</span><span class="log-when">'+timeAgo(l.created_at)+'</span></div>';
   });
-  html+='</div></div>';
+  html+='</div>';
+  if(activityLog.length > logPage){
+    html+='<button onclick="loadMoreLog()" style="margin-top:10px;width:100%;padding:10px;background:#fff;border:0.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px;color:#888;font-family:inherit;">Load more ('+( activityLog.length - logPage)+' remaining)</button>';
+  }
+  html+='</div>';
   el.innerHTML=html;
+}
+
+function loadMoreLog(){
+  logPage += 50;
+  renderLog();
 }
 
 function render(){updateStats();renderOverview();renderCards();renderLog();renderMobileTiles();}
@@ -1335,7 +1345,7 @@ async function silentRefresh() {
   try {
     var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
     var r2 = await sb.from('milestones').select('*').order('index');
-    var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(50);
+    var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
     var rawJobs = r1.data || [], allMS = r2.data || [];
     activityLog = r3.data || [];
     installs = rawJobs.map(function(j) {
