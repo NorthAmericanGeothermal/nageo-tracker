@@ -576,7 +576,18 @@ function hasDelay(j){return j.milestones.some(function(m){return m.state==='dela
 function isComplete(j){return j.milestones.every(function(m){return m.state==='done'||m.state==='na';});}
 function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
 function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
-function timeAgo(ts){var d=Math.floor((Date.now()-new Date(ts))/1000);if(d<60)return 'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
+function timeAgo(ts){
+  var d=Math.floor((Date.now()-new Date(ts))/1000);
+  var dt=new Date(ts);
+  var timeStr=dt.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true});
+  var dateStr=dt.toLocaleDateString([],{month:'short',day:'numeric'});
+  var today=new Date();
+  var isToday=dt.toDateString()===today.toDateString();
+  if(d<60)return 'just now';
+  if(d<3600)return Math.floor(d/60)+'m ago &middot; '+timeStr;
+  if(isToday)return timeStr;
+  return dateStr+' &middot; '+timeStr;
+}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
 function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':s==='na'?'dot-na':'dot-none');}
 function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='na'?'N/A':'';}
@@ -1305,8 +1316,21 @@ function startRealtime() {
 }
 
 var refreshing = false;
+var userTyping = false;
+
+document.addEventListener('focusin', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    userTyping = true;
+  }
+});
+document.addEventListener('focusout', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    setTimeout(function() { userTyping = false; }, 500);
+  }
+});
+
 async function silentRefresh() {
-  if (refreshing) return;
+  if (refreshing || userTyping) return;
   refreshing = true;
   try {
     var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
