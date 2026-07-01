@@ -763,9 +763,6 @@ function formatLogTime(ts) {
   var todayStr = new Date().toLocaleDateString('en-US', {timeZone:tz});
   var dtDayStr = dt.toLocaleDateString('en-US', {timeZone:tz});
   var isToday = todayStr === dtDayStr;
-  var d = Math.floor((Date.now() - dt.getTime()) / 1000);
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d/60) + 'm ago &middot; ' + timeStr + ' ET';
   if (isToday) return timeStr + ' ET';
   return dateStr + ' &middot; ' + timeStr + ' ET';
 }
