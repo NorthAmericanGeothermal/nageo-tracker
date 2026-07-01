@@ -399,7 +399,7 @@ async function saveJobField(jobId, field, value) {
 }
 
 async function logActivity(jobId, action) {
-  var entry = {job_id:jobId,user_id:currentUser.id,user_name:currentUser.name,action:action,created_at:new Date().toISOString()};
+  var entry = {job_id:jobId,user_id:currentUser.id,user_name:currentUser.name,action:action,created_at:new Date().toISOString(),detail:null};
   await sb.from('activity_log').insert(entry);
   activityLog.unshift(entry);
 }
@@ -753,22 +753,60 @@ function renderCards(){
 }
 
 var logPage = 50;
+var logSearch = '';
+
+function formatLogTime(ts) {
+  var dt = new Date(ts);
+  var tz = 'America/New_York';
+  var timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true, timeZone:tz});
+  var dateStr = dt.toLocaleDateString('en-US', {month:'short', day:'numeric', timeZone:tz});
+  var todayStr = new Date().toLocaleDateString('en-US', {timeZone:tz});
+  var dtDayStr = dt.toLocaleDateString('en-US', {timeZone:tz});
+  var isToday = todayStr === dtDayStr;
+  var d = Math.floor((Date.now() - dt.getTime()) / 1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60) + 'm ago &middot; ' + timeStr + ' ET';
+  if (isToday) return timeStr + ' ET';
+  return dateStr + ' &middot; ' + timeStr + ' ET';
+}
+
+
 function renderLog(){
   var el=document.getElementById('view-log');
   if(!activityLog.length){el.innerHTML='<div class="empty">No activity yet.</div>';return;}
   var jobMap={};
   installs.forEach(function(j){jobMap[j.id]=j.name;});
-  var html='<div class="log-section"><div class="log-title">Activity log ('+activityLog.length+' entries)</div><div class="log-list">';
-  activityLog.slice(0,logPage).forEach(function(l){
-    html+='<div class="log-item"><span class="log-who">'+l.user_name+'</span><span class="log-what">'+(jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &mdash; ':'')+l.action+'</span><span class="log-when">'+timeAgo(l.created_at)+'</span></div>';
+  var filtered = logSearch ? activityLog.filter(function(l){
+    var name = (jobMap[l.job_id]||'').toLowerCase();
+    var who = (l.user_name||'').toLowerCase();
+    var what = (l.action||'').toLowerCase();
+    var q = logSearch.toLowerCase();
+    return name.includes(q)||who.includes(q)||what.includes(q);
+  }) : activityLog;
+  var html='<div class="log-section">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+  html+='<div class="log-title">Activity log ('+filtered.length+(logSearch?' results':''+' entries')+')</div>';
+  html+='<input type="text" id="log-search-input" placeholder="Search by customer, user, action..." value="'+logSearch+'" oninput="setLogSearch(this.value)" style="font-size:12px;padding:5px 10px;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;font-family:inherit;width:260px;">';
+  html+='</div>';
+  html+='<div class="log-list">';
+  filtered.slice(0,logPage).forEach(function(l){
+    html+='<div class="log-item">';
+    html+='<span class="log-who">'+l.user_name+'</span>';
+    html+='<span class="log-what">'+(jobMap[l.job_id]?'<strong>'+jobMap[l.job_id]+'</strong> &mdash; ':'')+l.action+'</span>';
+    html+='<span class="log-when">'+formatLogTime(l.created_at)+'</span>';
+    html+='</div>';
   });
   html+='</div>';
-  if(activityLog.length > logPage){
-    html+='<button onclick="loadMoreLog()" style="margin-top:10px;width:100%;padding:10px;background:#fff;border:0.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px;color:#888;font-family:inherit;">Load more ('+( activityLog.length - logPage)+' remaining)</button>';
+  if(filtered.length > logPage){
+    html+='<button onclick="loadMoreLog()" style="margin-top:10px;width:100%;padding:10px;background:#fff;border:0.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px;color:#888;font-family:inherit;">Load more ('+(filtered.length-logPage)+' remaining)</button>';
   }
   html+='</div>';
   el.innerHTML=html;
+  // re-focus search if was searching
+  if(logSearch){var si=document.getElementById('log-search-input');if(si){si.focus();si.setSelectionRange(si.value.length,si.value.length);}}
 }
+
+function setLogSearch(val){logSearch=val;logPage=50;renderLog();}
 
 function loadMoreLog(){
   logPage += 50;
