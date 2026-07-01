@@ -756,15 +756,35 @@ var logPage = 50;
 var logSearch = '';
 
 function formatLogTime(ts) {
+  // Manually offset UTC to ET (EDT = UTC-4, EST = UTC-5)
+  // Determine DST: second Sunday in March to first Sunday in November
   var dt = new Date(ts);
-  var tz = 'America/New_York';
-  var timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true, timeZone:tz});
-  var dateStr = dt.toLocaleDateString('en-US', {month:'short', day:'numeric', timeZone:tz});
-  var todayStr = new Date().toLocaleDateString('en-US', {timeZone:tz});
-  var dtDayStr = dt.toLocaleDateString('en-US', {timeZone:tz});
-  var isToday = todayStr === dtDayStr;
-  if (isToday) return timeStr + ' ET';
-  return dateStr + ' &middot; ' + timeStr + ' ET';
+  var y = dt.getUTCFullYear();
+  // DST start: 2nd Sunday in March at 2am
+  var dstStart = new Date(Date.UTC(y, 2, 1));
+  dstStart.setUTCDate(1 + (7 - dstStart.getUTCDay()) % 7 + 7);
+  dstStart.setUTCHours(7); // 2am ET = 7am UTC
+  // DST end: 1st Sunday in November at 2am
+  var dstEnd = new Date(Date.UTC(y, 10, 1));
+  dstEnd.setUTCDate(1 + (7 - dstEnd.getUTCDay()) % 7);
+  dstEnd.setUTCHours(6); // 2am ET = 6am UTC
+  var isDST = dt >= dstStart && dt < dstEnd;
+  var offsetHours = isDST ? -4 : -5;
+  var local = new Date(dt.getTime() + offsetHours * 3600000);
+  var h = local.getUTCHours();
+  var m = local.getUTCMinutes();
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  var mStr = m < 10 ? '0' + m : '' + m;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var timeStr = h + ':' + mStr + ' ' + ampm + ' ET';
+  var today = new Date();
+  var todayLocal = new Date(today.getTime() + offsetHours * 3600000);
+  var isToday = local.getUTCFullYear() === todayLocal.getUTCFullYear() &&
+                local.getUTCMonth() === todayLocal.getUTCMonth() &&
+                local.getUTCDate() === todayLocal.getUTCDate();
+  if (isToday) return timeStr;
+  return months[local.getUTCMonth()] + ' ' + local.getUTCDate() + ' &middot; ' + timeStr;
 }
 
 
