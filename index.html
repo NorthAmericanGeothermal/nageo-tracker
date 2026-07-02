@@ -755,36 +755,22 @@ function renderCards(){
 var logPage = 50;
 var logSearch = '';
 
+function parseTS(ts) {
+  if (!ts) return new Date();
+  var s = ts.replace(' ', 'T');
+  if (!s.endsWith('Z') && !s.includes('+')) s += 'Z';
+  return new Date(s);
+}
+
 function formatLogTime(ts) {
-  // Manually offset UTC to ET (EDT = UTC-4, EST = UTC-5)
-  // Determine DST: second Sunday in March to first Sunday in November
-  var dt = new Date(ts);
-  var y = dt.getUTCFullYear();
-  // DST start: 2nd Sunday in March at 2am
-  var dstStart = new Date(Date.UTC(y, 2, 1));
-  dstStart.setUTCDate(1 + (7 - dstStart.getUTCDay()) % 7 + 7);
-  dstStart.setUTCHours(7); // 2am ET = 7am UTC
-  // DST end: 1st Sunday in November at 2am
-  var dstEnd = new Date(Date.UTC(y, 10, 1));
-  dstEnd.setUTCDate(1 + (7 - dstEnd.getUTCDay()) % 7);
-  dstEnd.setUTCHours(6); // 2am ET = 6am UTC
-  var isDST = dt >= dstStart && dt < dstEnd;
-  var offsetHours = isDST ? -4 : -5;
-  var local = new Date(dt.getTime() + offsetHours * 3600000);
-  var h = local.getUTCHours();
-  var m = local.getUTCMinutes();
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  var mStr = m < 10 ? '0' + m : '' + m;
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var timeStr = h + ':' + mStr + ' ' + ampm + ' ET';
-  var today = new Date();
-  var todayLocal = new Date(today.getTime() + offsetHours * 3600000);
-  var isToday = local.getUTCFullYear() === todayLocal.getUTCFullYear() &&
-                local.getUTCMonth() === todayLocal.getUTCMonth() &&
-                local.getUTCDate() === todayLocal.getUTCDate();
+  var dt = parseTS(ts);
+  var timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+  var dateStr = dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  var todayStr = new Date().toLocaleDateString('en-US');
+  var dtStr = dt.toLocaleDateString('en-US');
+  var isToday = todayStr === dtStr;
   if (isToday) return timeStr;
-  return months[local.getUTCMonth()] + ' ' + local.getUTCDate() + ' &middot; ' + timeStr;
+  return dateStr + ' &middot; ' + timeStr;
 }
 
 
