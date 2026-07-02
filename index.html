@@ -140,6 +140,17 @@ tr:last-child td{border-bottom:none;}
 .duct-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
 .duct-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#f3e8ff;color:#7c3aed;font-weight:500;}
 .delete-btn{font-size:12px;padding:5px 12px;border:0.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
+.archive-btn{font-size:12px;padding:5px 12px;border:0.5px solid #888;border-radius:8px;background:#fff;color:#555;cursor:pointer;font-family:inherit;margin-right:6px;}
+.archive-btn:hover{background:#f4f4f0;}
+.archived-card{background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;overflow:hidden;opacity:0.8;}
+.archived-header{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+.archived-name{font-size:14px;font-weight:600;color:#888;}
+.archived-addr{font-size:12px;color:#bbb;margin-top:1px;}
+.archived-equip{font-size:11px;color:#bbb;margin-top:2px;}
+.archived-pills{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.reactivate-btn{font-size:12px;padding:5px 14px;border:0.5px solid #2563eb;border-radius:8px;background:#fff;color:#2563eb;cursor:pointer;font-family:inherit;}
+.reactivate-btn:hover{background:#eff6ff;}
+.archived-empty{padding:2rem;text-align:center;color:#aaa;font-size:13px;}
 .delete-btn:hover{background:#fee2e2;}
 .delete-confirm-area{display:none;align-items:center;gap:8px;flex-wrap:wrap;}
 .delete-confirm-area.show{display:flex;}
@@ -263,10 +274,12 @@ tr:last-child td{border-bottom:none;}
       <button class="vbtn active" id="btn-overview" onclick="setView('overview')">&#9776; Overview</button>
       <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Installs</button>
       <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
+    <button class="vbtn" id="btn-archived" onclick="setView('archived')">&#128451; Archived</button>
     </div>
     <div id="view-overview"></div>
     <div id="view-cards" style="display:none"></div>
     <div id="view-log" style="display:none"></div>
+    <div id="view-archived" style="display:none"></div>
     <button class="add-btn" id="add-job-btn" onclick="addInstall()">+ Add install</button>
   </div>
 </div>
@@ -300,8 +313,8 @@ var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
 var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
-var currentUser = null, users = [], installs = [], activityLog = [];
-var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set();
+var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [];
+var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
 var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
 
 async function init() {
@@ -368,7 +381,7 @@ async function loadAll() {
   var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
   var rawJobs = r1.data || [], allMS = r2.data || [];
   activityLog = r3.data || [];
-  installs = rawJobs.map(function(j) {
+  var allJobs = rawJobs.map(function(j) {
     return Object.assign({},j,{
       hcp_notes: j.hcp_notes||[],
       milestones: MS.map(function(_,i){
@@ -377,6 +390,8 @@ async function loadAll() {
       })
     });
   });
+  installs = allJobs.filter(function(j){ return !j.archived; });
+  archivedJobs = allJobs.filter(function(j){ return !!j.archived; });
   render();
 }
 
@@ -606,11 +621,11 @@ function updateStats(){
 
 function setView(v){
   currentView=v;
-  ['overview','cards','log'].forEach(function(n){
+  ['overview','cards','log','archived'].forEach(function(n){
     document.getElementById('view-'+n).style.display=v===n?'block':'none';
     document.getElementById('btn-'+n).className='vbtn'+(v===n?' active':'');
   });
-  document.getElementById('add-job-btn').style.display=v==='log'?'none':'block';
+  document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived')?'none':'block';
 }
 
 function renderOverview(){
@@ -732,6 +747,17 @@ function renderCards(){
     if(j.duct) html += renderDuct(j);
     if(j.repl) html += renderRepl(j);
         html+='<div class="delete-zone">';
+    var archOpen = showArchive.has(j.id);
+    if(!delOpen && !archOpen){
+      html+='<button class="archive-btn" data-job="'+j.id+'" onclick="showArchiveConfirm(this.dataset.job)">&#128451; Archive install</button>';
+    }
+    if(archOpen){
+      html+='<span style="font-size:11px;color:#555;">Archive this install? It will be removed from the active list but all data is preserved.</span>';
+      html+='<div style="display:flex;gap:8px;margin-top:6px">';
+      html+='<button class="reactivate-btn" onclick="confirmArchive(''+j.id+'')">Yes, archive it</button>';
+      html+='<button class="delete-cancel-btn" onclick="cancelArchive(''+j.id+'')">Cancel</button>';
+      html+='</div>';
+    }
     if(!delOpen){
       html+='<button class="add-repl-btn" data-job="'+j.id+'" onclick="toggleRepl(this.dataset.job)" style="margin-right:8px'+((j.repl)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.repl?'Remove replacement':'&#128260; Add replacement')+'</button>';
       html+='<button class="add-duct-btn" data-job="'+j.id+'" onclick="toggleDuct(this.dataset.job)" style="margin-right:8px'+((j.duct)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.duct?'Remove ductwork':'&#128274; Add ductwork')+'</button>';
@@ -816,7 +842,7 @@ function loadMoreLog(){
   renderLog();
 }
 
-function render(){updateStats();renderOverview();renderCards();renderLog();renderMobileTiles();}
+function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderMobileTiles();}
 
 function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
 function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
@@ -1200,6 +1226,67 @@ function closeMobileDetail() {
   document.body.style.overflow = '';
 }
 
+function showArchiveConfirm(id){ showArchive.add(id); showDel.delete(id); render(); }
+function cancelArchive(id){ showArchive.delete(id); render(); }
+
+async function confirmArchive(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  await sb.from('jobs').update({archived:true,updated_at:new Date().toISOString()}).eq('id',jobId);
+  inst.archived = true;
+  installs = installs.filter(function(j){return j.id!==jobId;});
+  archivedJobs.unshift(inst);
+  showArchive.delete(jobId);
+  openCards.delete(jobId);
+  await logActivity(jobId,'Install archived: '+inst.name);
+  showToast(inst.name+' archived.');
+  render();
+}
+
+async function reactivateInstall(jobId) {
+  var inst = archivedJobs.find(function(j){return j.id===jobId;});
+  if(!inst) return;
+  await sb.from('jobs').update({archived:false,updated_at:new Date().toISOString()}).eq('id',jobId);
+  inst.archived = false;
+  archivedJobs = archivedJobs.filter(function(j){return j.id!==jobId;});
+  installs.unshift(inst);
+  await logActivity(jobId,'Install reactivated: '+inst.name);
+  showToast(inst.name+' reactivated.');
+  render();
+}
+
+function renderArchived() {
+  var el = document.getElementById('view-archived');
+  if(!archivedJobs.length){
+    el.innerHTML='<div class="archived-empty">No archived installs yet.</div>';
+    return;
+  }
+  var html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  archivedJobs.forEach(function(j){
+    var done = doneCount(j);
+    var total = 9 - naCount(j);
+    html += '<div class="archived-card">';
+    html += '<div class="archived-header">';
+    html += '<div class="avatar" style="background:#f4f4f0;color:#aaa;">'+initials(j.name)+'</div>';
+    html += '<div class="card-meta"><div class="archived-name">'+j.name+'</div>';
+    if(j.address) html += '<div class="archived-addr">'+j.address+'</div>';
+    if(j.equipment) html += '<div class="archived-equip">&#9881; '+j.equipment+'</div>';
+    html += '</div>';
+    html += '<div class="archived-pills">';
+    html += '<span class="pill pill-prog" style="color:#bbb">'+done+'/'+total+'</span>';
+    var tags = [];
+    if(j.nc===true||j.nc==='true') tags.push('<span class="nc-overview-badge">NC</span>');
+    if(j.duct) tags.push('<span class="duct-overview-badge">DUCT</span>');
+    if(j.repl) tags.push('<span class="repl-overview-badge">REPL</span>');
+    if(tags.length) html += tags.join('');
+    html += '</div>';
+    html += '<button class="reactivate-btn" data-job="'+j.id+'" onclick="reactivateInstall(this.dataset.job)">&#9654; Reactivate</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function printReport() {
   var today = new Date();
   var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1392,7 +1479,7 @@ async function silentRefresh() {
     var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
     var rawJobs = r1.data || [], allMS = r2.data || [];
     activityLog = r3.data || [];
-    installs = rawJobs.map(function(j) {
+    var allJobs = rawJobs.map(function(j) {
       return Object.assign({},j,{
         hcp_notes: j.hcp_notes||[],
         milestones: MS.map(function(_,i){
@@ -1401,6 +1488,8 @@ async function silentRefresh() {
         })
       });
     });
+    installs = allJobs.filter(function(j){ return !j.archived; });
+    archivedJobs = allJobs.filter(function(j){ return !!j.archived; });
     render();
   } catch(e) {}
   refreshing = false;
