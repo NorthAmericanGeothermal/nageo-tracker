@@ -754,8 +754,8 @@ function renderCards(){
     if(archOpen){
       html+='<span style="font-size:11px;color:#555;">Archive this install? It will be removed from the active list but all data is preserved.</span>';
       html+='<div style="display:flex;gap:8px;margin-top:6px">';
-      html+='<button class="reactivate-btn" onclick="confirmArchive(''+j.id+'')">Yes, archive it</button>';
-      html+='<button class="delete-cancel-btn" onclick="cancelArchive(''+j.id+'')">Cancel</button>';
+      html+='<button class="reactivate-btn" data-job="'+j.id+'" onclick="confirmArchive(this.dataset.job)">Yes, archive it</button>';
+      html+='<button class="delete-cancel-btn" data-job="'+j.id+'" onclick="cancelArchive(this.dataset.job)">Cancel</button>';
       html+='</div>';
     }
     if(!delOpen){
