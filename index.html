@@ -1262,7 +1262,7 @@ function renderArchived() {
     var isOpen = openArchived.has(j.id);
     html += '<div class="archived-card">';
     // header - clickable to expand
-    html += '<div class="archived-header" onclick="toggleArchived(''+j.id+'')" style="cursor:pointer;">';
+    html += '<div class="archived-header" data-job="'+j.id+'" onclick="toggleArchived(this.dataset.job)" style="cursor:pointer;">';
     html += '<div class="avatar" style="background:#f4f4f0;color:#aaa;">'+initials(j.name)+'</div>';
     html += '<div class="card-meta"><div class="archived-name">'+j.name+'</div>';
     if(j.address) html += '<div class="archived-addr">'+j.address+'</div>';
