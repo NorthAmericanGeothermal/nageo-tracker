@@ -748,21 +748,13 @@ function renderCards(){
     if(j.repl) html += renderRepl(j);
         html+='<div class="delete-zone">';
     var archOpen = showArchive.has(j.id);
-    if(!delOpen && !archOpen){
-      html+='<button class="archive-btn" data-job="'+j.id+'" onclick="showArchiveConfirm(this.dataset.job)">&#128451; Archive install</button>';
-    }
-    if(archOpen){
-      html+='<span style="font-size:11px;color:#555;">Archive this install? It will be removed from the active list but all data is preserved.</span>';
-      html+='<div style="display:flex;gap:8px;margin-top:6px">';
-      html+='<button class="reactivate-btn" data-job="'+j.id+'" onclick="confirmArchive(this.dataset.job)">Yes, archive it</button>';
-      html+='<button class="delete-cancel-btn" data-job="'+j.id+'" onclick="cancelArchive(this.dataset.job)">Cancel</button>';
-      html+='</div>';
-    }
     if(!delOpen){
       html+='<button class="add-repl-btn" data-job="'+j.id+'" onclick="toggleRepl(this.dataset.job)" style="margin-right:8px'+((j.repl)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.repl?'Remove replacement':'&#128260; Add replacement')+'</button>';
       html+='<button class="add-duct-btn" data-job="'+j.id+'" onclick="toggleDuct(this.dataset.job)" style="margin-right:8px'+((j.duct)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.duct?'Remove ductwork':'&#128274; Add ductwork')+'</button>';
       html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+((j.nc===true||j.nc==='true')?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+((j.nc===true||j.nc==='true')?'Remove NC flag':'Mark as New Construction')+'</button>';
-      html+='<button class="delete-btn" onclick="showDeleteConfirm(\''+j.id+'\')">&#128465; Delete install</button>';
+      html+='<button class="delete-btn" data-job="'+j.id+'" onclick="showDeleteConfirm(this.dataset.job)" style="margin-right:6px">&#128465; Delete install</button>';
+      if(!archOpen){html+='<button class="archive-btn" data-job="'+j.id+'" onclick="showArchiveConfirm(this.dataset.job)">&#128451; Archive</button>';}
+      else{html+='<span style="font-size:11px;color:#555;display:block;margin-top:6px">Archive this install? All data is preserved.</span><div style="display:flex;gap:8px;margin-top:6px"><button class="reactivate-btn" data-job="'+j.id+'" onclick="confirmArchive(this.dataset.job)" style="font-size:11px;padding:4px 10px;">Yes, archive</button><button class="delete-cancel-btn" data-job="'+j.id+'" onclick="cancelArchive(this.dataset.job)">Cancel</button></div>';}
     } else {
       html+='<span class="delete-hint">Type DELETE to confirm:</span>';
       html+='<div class="delete-confirm-area show">';
@@ -1254,18 +1246,23 @@ async function reactivateInstall(jobId) {
   render();
 }
 
+var openArchived = new Set();
+
 function renderArchived() {
   var el = document.getElementById('view-archived');
   if(!archivedJobs.length){
-    el.innerHTML='<div class="archived-empty">No archived installs yet.</div>';
+    el.innerHTML='<div class="archived-empty">No archived installs yet. Completed jobs you archive will appear here.</div>';
     return;
   }
+  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',na:'N/A',none:'Not Started'};
   var html = '<div style="display:flex;flex-direction:column;gap:10px;">';
   archivedJobs.forEach(function(j){
     var done = doneCount(j);
     var total = 9 - naCount(j);
+    var isOpen = openArchived.has(j.id);
     html += '<div class="archived-card">';
-    html += '<div class="archived-header">';
+    // header - clickable to expand
+    html += '<div class="archived-header" onclick="toggleArchived(''+j.id+'')" style="cursor:pointer;">';
     html += '<div class="avatar" style="background:#f4f4f0;color:#aaa;">'+initials(j.name)+'</div>';
     html += '<div class="card-meta"><div class="archived-name">'+j.name+'</div>';
     if(j.address) html += '<div class="archived-addr">'+j.address+'</div>';
@@ -1273,19 +1270,51 @@ function renderArchived() {
     html += '</div>';
     html += '<div class="archived-pills">';
     html += '<span class="pill pill-prog" style="color:#bbb">'+done+'/'+total+'</span>';
-    var tags = [];
-    if(j.nc===true||j.nc==='true') tags.push('<span class="nc-overview-badge">NC</span>');
-    if(j.duct) tags.push('<span class="duct-overview-badge">DUCT</span>');
-    if(j.repl) tags.push('<span class="repl-overview-badge">REPL</span>');
-    if(tags.length) html += tags.join('');
+    if(j.nc===true||j.nc==='true') html += '<span class="nc-overview-badge">NC</span>';
+    if(j.duct) html += '<span class="duct-overview-badge">DUCT</span>';
+    if(j.repl) html += '<span class="repl-overview-badge">REPL</span>';
     html += '</div>';
-    html += '<button class="reactivate-btn" data-job="'+j.id+'" onclick="reactivateInstall(this.dataset.job)">&#9654; Reactivate</button>';
+    html += '<button class="reactivate-btn" data-job="'+j.id+'" onclick="event.stopPropagation();reactivateInstall(this.dataset.job)" style="margin-right:8px">&#9654; Reactivate</button>';
+    html += '<span class="chevron '+(isOpen?'open':'')+'">&#9662;</span>';
     html += '</div>';
+    // expandable detail - read only
+    if(isOpen){
+      html += '<div style="border-top:0.5px solid #f0f0f0;padding:14px 16px;">';
+      if(j.equipment) html += '<div style="font-size:12px;color:#2563eb;margin-bottom:12px;">&#9881; '+j.equipment+'</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">';
+      j.milestones.forEach(function(m,i){
+        var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='na'?'#888':'#ccc';
+        var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':'#fff';
+        html += '<div style="background:'+bg+';border:0.5px solid #e5e5e5;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:flex-start;">';
+        html += '<span style="font-size:12px;color:#888;'+(m.state==='done'?'text-decoration:line-through':'')+'">'+MS[i]+'</span>';
+        html += '<div style="text-align:right"><span style="font-size:11px;font-weight:600;color:'+statusColor+'">'+MS_STATUS[m.state]+'</span>';
+        if(m.state==='done'&&m.date) html += '<div style="font-size:10px;color:#aaa;">'+m.date+'</div>';
+        if(m.notes&&m.notes.trim()) html += '<div style="font-size:11px;color:#888;font-style:italic;margin-top:2px;">'+m.notes+'</div>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+      // NC checklist if applicable
+      if(j.nc===true||j.nc==='true'){
+        var nc=j.nc_data||{};
+        html += '<div style="background:#fafaf8;border:0.5px solid #e5e5e5;border-radius:8px;padding:10px 12px;margin-bottom:8px;">';
+        html += '<div style="font-size:11px;font-weight:600;margin-bottom:6px;">&#127959; New Construction</div>';
+        if(nc.oven_notes||nc.oven_done) html += '<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Oven hood:</strong> '+(nc.oven_done?'&#10003; ':'')+(nc.oven_notes||'')+'</div>';
+        if(nc.accessories) html += '<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Accessories:</strong> '+nc.accessories+'</div>';
+        if(nc.bath_fan_specs||nc.bath_fan_supplier) html += '<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Bath fans:</strong> '+(nc.bath_fan_specs||'')+' '+(nc.bath_fan_supplier?'| Supplier: '+nc.bath_fan_supplier:'')+'</div>';
+        if(nc.elec_notes||nc.elec_done) html += '<div style="font-size:11px;color:#555;"><strong>Electrical:</strong> '+(nc.elec_done?'&#10003; ':'')+(nc.elec_notes||'')+'</div>';
+        html += '</div>';
+      }
+      // Ductwork notes
+      if(j.duct&&j.duct_notes) html += '<div style="background:#faf8ff;border:0.5px solid #e9d5ff;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;"><strong>&#128274; Ductwork:</strong> '+j.duct_notes+'</div>';
+      html += '</div>';
+    }
     html += '</div>';
   });
   html += '</div>';
   el.innerHTML = html;
 }
+
+function toggleArchived(id){ if(openArchived.has(id))openArchived.delete(id);else openArchived.add(id); renderArchived(); }
 
 function printReport() {
   var today = new Date();
