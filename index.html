@@ -791,12 +791,6 @@ function renderCards(){
       if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
       html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
       html+='<div class="ms-detail" style="display:'+(msOpen?'flex':'none')+'">';
-      // doc upload zone for permitted milestones
-      var msUploadable = [0,2,7];
-      if(msUploadable.indexOf(i) !== -1) {
-        var msDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category===('ms-'+i); });
-        html += renderMiniDropZone(j.id, 'ms-'+i, msDocs);
-      }
       html+='<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
       html+='<button class="sbtn '+(m.state==='none'?'a-none':'')+'" onclick="setState(\''+j.id+'\','+i+',\'none\')">Not started</button>';
       html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
