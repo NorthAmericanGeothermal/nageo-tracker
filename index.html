@@ -1052,6 +1052,14 @@ document.addEventListener('click', function(e) {
   }
 });
 
+function saveCustomerId(el) {
+  var jobId = el.dataset.job;
+  var val = el.value.trim();
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if(inst) { inst.customer_id = val; render(); }
+  sb.from('jobs').update({customer_id:val,updated_at:new Date().toISOString()}).eq('id',jobId);
+}
+
 function saveNCCheck(el) {
   saveNC(el.dataset.job, el.dataset.field, el.checked);
 }
