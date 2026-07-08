@@ -469,11 +469,24 @@ async function syncHCP() {
       var hcpId = 'cust-'+c.id;
       var existing = installs.find(function(j){return j.hcp_job_id===hcpId;});
       if (existing) {
-        // update notes only, never touch milestones or anything else
+        // update notes and customer_id if missing, never touch milestones
         var freshNotes = c.all_notes || (c.notes&&c.notes.trim()?[{id:'customer-note',type:'Customer',date:c.updated_at,text:c.notes.trim()}]:[]);
+        var freshId = '';
+        (c.tags||[]).forEach(function(t){ var s=typeof t==='string'?t:(t.name||''); if(/^\d{5}$/.test(s)) freshId=s; });
+        var needsUpdate = false;
+        var updatePayload = {updated_at:new Date().toISOString()};
         if (JSON.stringify(freshNotes) !== JSON.stringify(existing.hcp_notes)) {
           existing.hcp_notes = freshNotes;
-          await sb.from('jobs').update({hcp_notes:freshNotes,updated_at:new Date().toISOString()}).eq('id',existing.id);
+          updatePayload.hcp_notes = freshNotes;
+          needsUpdate = true;
+        }
+        if (freshId && (!existing.customer_id || existing.customer_id === '')) {
+          existing.customer_id = freshId;
+          updatePayload.customer_id = freshId;
+          needsUpdate = true;
+        }
+        if (needsUpdate) {
+          await sb.from('jobs').update(updatePayload).eq('id',existing.id);
           updated++;
         }
       } else {
