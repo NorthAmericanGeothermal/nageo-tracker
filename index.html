@@ -132,6 +132,35 @@ tr:last-child td{border-bottom:none;}
 .add-repl-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ca8a04;border-radius:8px;background:#fff;color:#ca8a04;cursor:pointer;font-family:inherit;}
 .add-repl-btn:hover{background:#fef9c3;}
 .repl-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fefef0;}
+.docs-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;}
+.docs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.docs-title{font-size:12px;font-weight:600;color:#1a1a1a;}
+.drop-zone{border:1.5px dashed #ddd;border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:#fafaf8;margin-bottom:10px;}
+.drop-zone:hover,.drop-zone.drag-active{border-color:#2563eb;background:#eff6ff;}
+.drop-zone-text{font-size:12px;color:#888;}
+.drop-zone-text strong{color:#2563eb;cursor:pointer;}
+.doc-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid #e5e5e5;border-radius:8px;margin-bottom:6px;background:#fff;}
+.doc-icon{font-size:18px;flex-shrink:0;}
+.doc-info{flex:1;min-width:0;}
+.doc-name{font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.doc-meta{font-size:10px;color:#aaa;margin-top:1px;}
+.doc-category{font-size:10px;padding:2px 7px;border-radius:4px;background:#f4f4f0;color:#555;border:none;font-family:inherit;cursor:pointer;}
+.doc-actions{display:flex;gap:6px;flex-shrink:0;}
+.doc-btn{font-size:11px;padding:3px 9px;border-radius:6px;border:0.5px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;color:#555;}
+.doc-btn:hover{background:#f4f4f0;}
+.doc-btn.danger{border-color:#fca5a5;color:#dc2626;}
+.doc-btn.danger:hover{background:#fee2e2;}
+.doc-uploading{font-size:11px;color:#2563eb;padding:4px 0;}
+.docs-tab-section{margin-top:0;}
+.docs-job-group{background:#fff;border:0.5px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-bottom:10px;}
+.docs-job-header{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid #f0f0f0;}
+.docs-job-header:hover{background:#fafaf8;}
+.docs-job-name{font-size:14px;font-weight:600;color:#1a1a1a;flex:1;}
+.docs-job-count{font-size:11px;color:#888;}
+.docs-job-body{padding:12px 16px;display:none;}
+.docs-job-body.open{display:block;}
+.upload-progress{height:4px;background:#dbeafe;border-radius:2px;margin-top:4px;overflow:hidden;}
+.upload-progress-bar{height:100%;background:#2563eb;border-radius:2px;transition:width 0.2s;}
 .repl-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#fef9c3;color:#854d0e;font-weight:500;}
 .add-duct-btn{font-size:12px;padding:5px 12px;border:0.5px solid #7c3aed;border-radius:8px;background:#fff;color:#7c3aed;cursor:pointer;font-family:inherit;}
 .add-duct-btn:hover{background:#f3e8ff;}
@@ -275,11 +304,13 @@ tr:last-child td{border-bottom:none;}
       <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Installs</button>
       <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
     <button class="vbtn" id="btn-archived" onclick="setView('archived')">&#128451; Archived</button>
+    <button class="vbtn" id="btn-docs" onclick="setView('docs')">&#128196; Documents</button>
     </div>
     <div id="view-overview"></div>
     <div id="view-cards" style="display:none"></div>
     <div id="view-log" style="display:none"></div>
     <div id="view-archived" style="display:none"></div>
+    <div id="view-docs" style="display:none"></div>
     <button class="add-btn" id="add-job-btn" onclick="addInstall()">+ Add install</button>
   </div>
 </div>
@@ -313,7 +344,7 @@ var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
 var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
-var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [];
+var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [], allDocuments = [];
 var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
 var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
 
@@ -379,8 +410,10 @@ async function loadAll() {
   var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
   var r2 = await sb.from('milestones').select('*').order('index');
   var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
+  var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
   var rawJobs = r1.data || [], allMS = r2.data || [];
   activityLog = r3.data || [];
+  allDocuments = r4.data || [];
   var allJobs = rawJobs.map(function(j) {
     return Object.assign({},j,{
       hcp_notes: j.hcp_notes||[],
@@ -640,11 +673,11 @@ function updateStats(){
 
 function setView(v){
   currentView=v;
-  ['overview','cards','log','archived'].forEach(function(n){
+  ['overview','cards','log','archived','docs'].forEach(function(n){
     document.getElementById('view-'+n).style.display=v===n?'block':'none';
     document.getElementById('btn-'+n).className='vbtn'+(v===n?' active':'');
   });
-  document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived')?'none':'block';
+  document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived'||v==='docs')?'none':'block';
 }
 
 function renderOverview(){
@@ -876,7 +909,7 @@ function loadMoreLog(){
   renderLog();
 }
 
-function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderMobileTiles();}
+function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderDocsTab();renderMobileTiles();}
 
 function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
 function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
@@ -1366,6 +1399,180 @@ function renderArchived() {
 
 function toggleArchived(id){ if(openArchived.has(id))openArchived.delete(id);else openArchived.add(id); renderArchived(); }
 
+
+var openDocSections = new Set();
+var openDocsGroups = new Set();
+var CATEGORIES = ['General','Permit','Electrical','Oven Hood','Equipment Specs','Loop Field','Contract','Inspection','Other'];
+
+function getFileIcon(name) {
+  var ext = (name.split('.').pop()||'').toLowerCase();
+  if(['pdf'].includes(ext)) return '&#128196;';
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return '&#128247;';
+  if(['doc','docx'].includes(ext)) return '&#128209;';
+  if(['xls','xlsx','csv'].includes(ext)) return '&#128202;';
+  if(['dwg','dxf'].includes(ext)) return '&#9999;';
+  return '&#128196;';
+}
+
+function formatFileSize(bytes) {
+  if(!bytes) return '';
+  if(bytes < 1024) return bytes+'B';
+  if(bytes < 1048576) return Math.round(bytes/1024)+'KB';
+  return (bytes/1048576).toFixed(1)+'MB';
+}
+
+function getJobDocs(jobId) {
+  return allDocuments.filter(function(d){ return d.job_id === jobId; });
+}
+
+function renderDocsSection(j) {
+  var docs = getJobDocs(j.id);
+  var isOpen = openDocSections.has(j.id);
+  var h = '<div class="docs-section">';
+  h += '<div class="docs-header"><span class="docs-title">&#128196; Documents ('+ docs.length +')</span>';
+  h += '<button onclick="toggleDocSection(\''+j.id+'\')" style="font-size:11px;padding:2px 8px;border:0.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#888;font-family:inherit;">'+(isOpen?'Hide':'Show')+'</button></div>';
+  if(isOpen) {
+    h += renderDropZone(j.id);
+    if(docs.length) {
+      docs.forEach(function(d) { h += renderDocItem(d); });
+    } else {
+      h += '<div style="font-size:12px;color:#aaa;text-align:center;padding:8px 0;">No documents yet</div>';
+    }
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDropZone(jobId) {
+  return '<div class="drop-zone" id="dz-'+jobId+'" ondragover="dzOver(event,\''+jobId+'\',true)" ondragleave="dzOver(event,\''+jobId+'\',false)" ondrop="dzDrop(event,\''+jobId+'\')"><div class="drop-zone-text">&#128228; Drag files here or <strong onclick="dzClick(\''+jobId+'\')">browse</strong><br><span style="font-size:10px;color:#ccc;">PDF, images, Word, Excel — up to 50MB each</span></div><input type="file" id="fi-'+jobId+'" style="display:none" multiple onchange="dzFiles(this,\''+jobId+'\')"></div>';
+}
+
+function renderDocItem(d) {
+  var h = '<div class="doc-item" id="doc-'+d.id+'">';
+  h += '<span class="doc-icon">'+getFileIcon(d.file_name)+'</span>';
+  h += '<div class="doc-info"><div class="doc-name" title="'+d.file_name+'">'+d.file_name+'</div>';
+  h += '<div class="doc-meta">'+d.category+' &middot; '+formatFileSize(d.file_size)+(d.uploaded_by_name?' &middot; '+d.uploaded_by_name:'')+'</div></div>';
+  h += '<select class="doc-category" data-doc="'+d.id+'" onchange="updateDocCategory(this)"><option value="">Category</option>';
+  CATEGORIES.forEach(function(c){ h += '<option value="'+c+'" '+(d.category===c?'selected':'')+'>'+c+'</option>'; });
+  h += '</select>';
+  h += '<div class="doc-actions">';
+  h += '<button class="doc-btn" data-path="'+d.file_path+'" data-name="'+d.file_name+'" onclick="downloadDoc(this)">&#11123; Download</button>';
+  h += '<button class="doc-btn danger" data-doc="'+d.id+'" data-path="'+d.file_path+'" onclick="deleteDoc(this)">&#128465;</button>';
+  h += '</div></div>';
+  return h;
+}
+
+function renderDocsTab() {
+  var el = document.getElementById('view-docs');
+  if(!allDocuments.length) {
+    el.innerHTML = '<div class="empty">No documents uploaded yet. Open an install card to upload files.</div>';
+    return;
+  }
+  // group by job
+  var jobMap = {};
+  installs.forEach(function(j){ jobMap[j.id] = j; });
+  archivedJobs.forEach(function(j){ jobMap[j.id] = j; });
+  var byJob = {};
+  allDocuments.forEach(function(d){
+    if(!byJob[d.job_id]) byJob[d.job_id] = [];
+    byJob[d.job_id].push(d);
+  });
+  var html = '<div class="docs-tab-section">';
+  Object.keys(byJob).forEach(function(jobId){
+    var j = jobMap[jobId];
+    var name = j ? j.name : 'Unknown';
+    var docs = byJob[jobId];
+    var isOpen = openDocsGroups.has(jobId);
+    html += '<div class="docs-job-group">';
+    html += '<div class="docs-job-header" data-job="'+jobId+'" onclick="toggleDocsGroup(this.dataset.job)">';
+    html += '<span class="docs-job-name">'+name+'</span>';
+    html += '<span class="docs-job-count">'+docs.length+' file'+(docs.length!==1?'s':'')+'</span>';
+    html += '<span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
+    html += '<div class="docs-job-body '+(isOpen?'open':'')+'">';
+    docs.forEach(function(d){ html += renderDocItem(d); });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function toggleDocSection(id){ if(openDocSections.has(id))openDocSections.delete(id);else openDocSections.add(id); render(); }
+function toggleDocsGroup(id){ if(openDocsGroups.has(id))openDocsGroups.delete(id);else openDocsGroups.add(id); renderDocsTab(); }
+
+function dzOver(e, jobId, active) {
+  e.preventDefault();
+  var dz = document.getElementById('dz-'+jobId);
+  if(dz) dz.classList.toggle('drag-active', active);
+}
+
+function dzClick(jobId) {
+  var fi = document.getElementById('fi-'+jobId);
+  if(fi) fi.click();
+}
+
+function dzDrop(e, jobId) {
+  e.preventDefault();
+  var dz = document.getElementById('dz-'+jobId);
+  if(dz) dz.classList.remove('drag-active');
+  if(e.dataTransfer.files.length) uploadFiles(Array.from(e.dataTransfer.files), jobId);
+}
+
+function dzFiles(input, jobId) {
+  if(input.files.length) uploadFiles(Array.from(input.files), jobId);
+  input.value = '';
+}
+
+async function uploadFiles(files, jobId) {
+  var dz = document.getElementById('dz-'+jobId);
+  if(dz) dz.innerHTML = '<div class="doc-uploading">Uploading '+files.length+' file'+(files.length!==1?'s':'')+'...</div>';
+  for(var i=0;i<files.length;i++) {
+    var file = files[i];
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var path = jobId+'/'+Date.now()+'_'+safeName;
+    var res = await sb.storage.from('install-docs').upload(path, file, {upsert:false});
+    if(res.error){ showToast('Upload failed: '+file.name); continue; }
+    var docRow = {job_id:jobId,file_name:file.name,file_path:path,file_size:file.size,category:'General',uploaded_by:currentUser.id,uploaded_by_name:currentUser.name};
+    var ins = await sb.from('documents').insert(docRow).select().single();
+    if(ins.data) allDocuments.unshift(ins.data);
+  }
+  openDocSections.add(jobId);
+  render();
+  showToast(files.length+' file'+(files.length!==1?'s':'')+' uploaded.');
+}
+
+async function downloadDoc(el) {
+  var path = el.dataset.path;
+  var name = el.dataset.name;
+  var res = await sb.storage.from('install-docs').createSignedUrl(path, 60);
+  if(res.data && res.data.signedUrl) {
+    var a = document.createElement('a');
+    a.href = res.data.signedUrl;
+    a.download = name;
+    a.target = '_blank';
+    a.click();
+  } else { showToast('Download failed.'); }
+}
+
+async function deleteDoc(el) {
+  if(!confirm('Delete this file? This cannot be undone.')) return;
+  var docId = el.dataset.doc;
+  var path = el.dataset.path;
+  await sb.storage.from('install-docs').remove([path]);
+  await sb.from('documents').delete().eq('id', docId);
+  allDocuments = allDocuments.filter(function(d){ return d.id !== docId; });
+  render();
+  showToast('File deleted.');
+}
+
+async function updateDocCategory(el) {
+  var docId = el.dataset.doc;
+  var cat = el.value;
+  await sb.from('documents').update({category:cat}).eq('id',docId);
+  var doc = allDocuments.find(function(d){ return d.id===docId; });
+  if(doc) doc.category = cat;
+}
+
+
 function printReport() {
   var today = new Date();
   var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1556,8 +1763,12 @@ async function silentRefresh() {
     var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
     var r2 = await sb.from('milestones').select('*').order('index');
     var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
+    var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
+  var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
     var rawJobs = r1.data || [], allMS = r2.data || [];
     activityLog = r3.data || [];
+    allDocuments = r4.data || [];
+  allDocuments = r4.data || [];
     var allJobs = rawJobs.map(function(j) {
       return Object.assign({},j,{
         hcp_notes: j.hcp_notes||[],
