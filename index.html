@@ -1693,6 +1693,47 @@ function printReport() {
   setTimeout(function() { win.print(); }, 500);
 }
 
+// Desktop tooltip positioning
+document.addEventListener('mouseover', function(e) {
+  if (window.innerWidth <= 600) return;
+  var wrap = e.target.closest('.dot-wrap');
+  if (!wrap) return;
+  var tip = wrap.querySelector('.tip');
+  if (!tip) return;
+  var rect = wrap.getBoundingClientRect();
+  if (tip.style.top === 'auto' || !tip.style.top) {
+    tip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+    tip.style.top = 'auto';
+  }
+  if (rect.top < 80) {
+    tip.style.top = (rect.bottom + 8) + 'px';
+    tip.style.bottom = 'auto';
+  } else {
+    tip.style.top = 'auto';
+    tip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  }
+  var tipLeft = rect.left + rect.width / 2;
+  var rightEdge = tipLeft + 140;
+  if (rightEdge > window.innerWidth - 10) {
+    tip.style.left = (window.innerWidth - 150) + 'px';
+    tip.style.transform = 'none';
+  } else {
+    tip.style.left = tipLeft + 'px';
+    tip.style.transform = 'translateX(-50%)';
+  }
+  tip.style.display = 'block';
+});
+
+document.addEventListener('mouseout', function(e) {
+  if (window.innerWidth <= 600) return;
+  var wrap = e.target.closest('.dot-wrap');
+  if (!wrap) return;
+  if (!wrap.contains(e.relatedTarget)) {
+    var tip = wrap.querySelector('.tip');
+    if (tip) tip.style.display = 'none';
+  }
+});
+
 init();
 
 // ── REAL-TIME + AUTO REFRESH ──────────────────────────
