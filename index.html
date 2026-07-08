@@ -1090,6 +1090,24 @@ function renderNC(j) {
   h += '</div>';
   return h;
 }
+function renderDuct(j) {
+  var ductDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='duct'; });
+  var h = '<div class="duct-section">';
+  h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="duct_notes" placeholder="Ductwork notes..." value="'+(j.duct_notes||'').replace(/"/g,'&quot;')+'" onchange="saveDuctNotes(this)">';
+  h += renderMiniDropZone(j.id,'duct',ductDocs);
+  h += '</div>';
+  return h;
+}
+
+function renderRepl(j) {
+  var h = '<div class="repl-section">';
+  h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" onchange="saveReplNotes(this)">';
+  h += '</div>';
+  return h;
+}
+
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.duct_notes = el.value;
