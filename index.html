@@ -161,6 +161,22 @@ tr:last-child td{border-bottom:none;}
 .docs-job-body.open{display:block;}
 .upload-progress{height:4px;background:#dbeafe;border-radius:2px;margin-top:4px;overflow:hidden;}
 .upload-progress-bar{height:100%;background:#2563eb;border-radius:2px;transition:width 0.2s;}
+.mini-drop-zone{border:1.5px dashed #ddd;border-radius:6px;padding:8px 12px;text-align:center;cursor:pointer;margin-top:6px;background:#fafaf8;font-size:11px;color:#888;transition:all 0.15s;}
+.mini-drop-zone:hover,.mini-drop-zone.drag-active{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+.mini-doc-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border:0.5px solid #e5e5e5;border-radius:6px;margin-top:4px;background:#fff;font-size:11px;}
+.mini-doc-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;}
+.mini-doc-btn{font-size:10px;padding:2px 7px;border-radius:4px;border:0.5px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;color:#555;white-space:nowrap;}
+.mini-doc-btn.danger{border-color:#fca5a5;color:#dc2626;}
+.ms-dropzone{border:1px dashed #ddd;border-radius:6px;padding:8px 12px;margin-top:6px;cursor:pointer;background:#fafaf8;transition:all 0.15s;}
+.ms-dropzone:hover,.ms-dropzone.drag-active{border-color:#2563eb;background:#eff6ff;}
+.ms-dropzone-text{font-size:11px;color:#aaa;text-align:center;}
+.ms-dropzone-text strong{color:#2563eb;cursor:pointer;}
+.ms-doc-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border:0.5px solid #e5e5e5;border-radius:6px;margin-top:4px;background:#fff;}
+.ms-doc-name{flex:1;font-size:11px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ms-doc-btn{font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;color:#555;}
+.ms-doc-btn:hover{background:#f4f4f0;}
+.ms-doc-btn.danger{border-color:#fca5a5;color:#dc2626;}
+.ms-doc-btn.danger:hover{background:#fee2e2;}
 .repl-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#fef9c3;color:#854d0e;font-weight:500;}
 .add-duct-btn{font-size:12px;padding:5px 12px;border:0.5px solid #7c3aed;border-radius:8px;background:#fff;color:#7c3aed;cursor:pointer;font-family:inherit;}
 .add-duct-btn:hover{background:#f3e8ff;}
@@ -775,6 +791,12 @@ function renderCards(){
       if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
       html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
       html+='<div class="ms-detail" style="display:'+(msOpen?'flex':'none')+'">';
+      // doc upload zone for permitted milestones
+      var msUploadable = [0,2,7];
+      if(msUploadable.indexOf(i) !== -1) {
+        var msDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category===('ms-'+i); });
+        html += renderMiniDropZone(j.id, 'ms-'+i, msDocs);
+      }
       html+='<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
       html+='<button class="sbtn '+(m.state==='none'?'a-none':'')+'" onclick="setState(\''+j.id+'\','+i+',\'none\')">Not started</button>';
       html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
@@ -782,6 +804,23 @@ function renderCards(){
       html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
       html+='<button class="sbtn '+(m.state==='na'?'a-na':'')+'" onclick="setState(\''+j.id+'\','+i+',\'na\')">N/A</button>';
       html+='</div></div>';
+      // Milestone upload zone for equipment ordered (0), permits (2), final inspection (7)
+      var MS_UPLOAD = [0,2,7];
+      if(MS_UPLOAD.indexOf(i) !== -1) {
+        var msDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.ms_index===i; });
+        html += '<div class="det-row"><span class="det-lbl">Files</span><div style="flex:1">';
+        html += '<div class="ms-dropzone" id="msdz-'+j.id+'-'+i+'" ondragover="msDzOver(event,\''+j.id+'\','+i+',true)" ondragleave="msDzOver(event,\''+j.id+'\','+i+',false)" ondrop="msDzDrop(event,\''+j.id+'\','+i+')">';
+        html += '<div class="ms-dropzone-text">&#128228; Drop files or <strong onclick="msDzClick(\''+j.id+'\','+i+')">browse</strong></div>';
+        html += '<input type="file" id="msfi-'+j.id+'-'+i+'" style="display:none" multiple onchange="msDzFiles(this,\''+j.id+'\','+i+')">';
+        html += '</div>';
+        msDocs.forEach(function(d){
+          html += '<div class="ms-doc-item"><span>'+getFileIcon(d.file_name)+'</span><span class="ms-doc-name" title="'+d.file_name+'">'+d.file_name+'</span>';
+          html += '<button class="ms-doc-btn" data-path="'+d.file_path+'" data-name="'+d.file_name+'" onclick="downloadDoc(this)">&#11123;</button>';
+          html += '<button class="ms-doc-btn danger" data-doc="'+d.id+'" data-path="'+d.file_path+'" onclick="deleteDoc(this)">&#128465;</button>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      }
       if(i===3) {
         // Drilling sub-steps
         var ds = m.drill_steps || {};
@@ -822,6 +861,21 @@ function renderCards(){
     if(j.duct) html += renderDuct(j);
     if(j.repl) html += renderRepl(j);
         html+='<div class="delete-zone">';
+    // General files section
+    var genDocs = allDocuments.filter(function(d){ return d.job_id===j.id && !d.ms_index && !d.nc_section; });
+    html += '<div class="docs-section">';
+    html += '<div class="docs-header"><span class="docs-title">&#128196; Additional files ('+ genDocs.length +')</span></div>';
+    html += '<div class="ms-dropzone" id="msdz-'+j.id+'-gen" ondragover="msDzOver(event,\''+j.id+'\',\'gen\',true)" ondragleave="msDzOver(event,\''+j.id+'\',\'gen\',false)" ondrop="msDzDrop(event,\''+j.id+'\',\'gen\')">';
+    html += '<div class="ms-dropzone-text">&#128228; Drop files or <strong onclick="msDzClick(\''+j.id+'\',\'gen\')">browse</strong></div>';
+    html += '<input type="file" id="msfi-'+j.id+'-gen" style="display:none" multiple onchange="msDzFiles(this,\''+j.id+'\',\'gen\')">';
+    html += '</div>';
+    genDocs.forEach(function(d){
+      html += '<div class="ms-doc-item"><span>'+getFileIcon(d.file_name)+'</span><span class="ms-doc-name">'+d.file_name+'</span>';
+      html += '<button class="ms-doc-btn" data-path="'+d.file_path+'" data-name="'+d.file_name+'" onclick="downloadDoc(this)">&#11123;</button>';
+      html += '<button class="ms-doc-btn danger" data-doc="'+d.id+'" data-path="'+d.file_path+'" onclick="deleteDoc(this)">&#128465;</button>';
+      html += '</div>';
+    });
+    html += '</div>';
     var archOpen = showArchive.has(j.id);
     if(!delOpen){
       html+='<button class="add-repl-btn" data-job="'+j.id+'" onclick="toggleRepl(this.dataset.job)" style="margin-right:8px'+((j.repl)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.repl?'Remove replacement':'&#128260; Add replacement')+'</button>';
@@ -1004,203 +1058,38 @@ async function saveNC(jobId, field, value) {
 function renderNC(j) {
   var nc = j.nc_data || {};
   var id = j.id;
+  var ovenDocs = allDocuments.filter(function(d){ return d.job_id===id && d.category==='nc-oven'; });
+  var accDocs  = allDocuments.filter(function(d){ return d.job_id===id && d.category==='nc-acc'; });
+  var bathDocs = allDocuments.filter(function(d){ return d.job_id===id && d.category==='nc-bath'; });
+  var elecDocs = allDocuments.filter(function(d){ return d.job_id===id && d.category==='nc-elec'; });
   var h = '<div class="nc-section">';
   h += '<div class="nc-header"><span class="nc-title">&#127959; New Construction checklist <span class="nc-badge">NC</span></span></div>';
-  h += '<div class="nc-item">';
-  h += '<div class="nc-item-header">';
-  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="oven_done" ' + (nc.oven_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
+  // oven hood
+  h += '<div class="nc-item"><div class="nc-item-header">';
+  h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="oven_done" '+(nc.oven_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Oven hood specs</span></div>';
-  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="oven_notes" placeholder="Specs, model, notes..." value="' + (nc.oven_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="oven_notes" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += renderMiniDropZone(id,'nc-oven',ovenDocs)+'</div>';
+  // accessories
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
-  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="accessories" placeholder="List accessories..." value="' + (nc.accessories || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="accessories" placeholder="List accessories..." value="'+(nc.accessories||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += renderMiniDropZone(id,'nc-acc',accDocs)+'</div>';
+  // bath fans
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
   h += '<div class="nc-label-small">Specs / details</div>';
-  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="' + id + '" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="' + (nc.bath_fan_specs || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)">';
+  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="'+id+'" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
   h += '<div class="nc-label-small">Who is supplying?</div>';
-  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="bath_fan_supplier" placeholder="Supplier name..." value="' + (nc.bath_fan_supplier || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_supplier" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += renderMiniDropZone(id,'nc-bath',bathDocs)+'</div>';
+  // electrical
   h += '<div class="nc-item"><div class="nc-item-header">';
-  h += '<input type="checkbox" class="nc-check" data-job="' + id + '" data-field="elec_done" ' + (nc.elec_done ? 'checked' : '') + ' onchange="saveNCCheck(this)">';
+  h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="elec_done" '+(nc.elec_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Electrical requirements</span></div>';
-  h += '<input type="text" class="nc-input" data-job="' + id + '" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="' + (nc.elec_notes || '').replace(/"/g, '&quot;') + '" onchange="saveNCText(this)"></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += renderMiniDropZone(id,'nc-elec',elecDocs)+'</div>';
   h += '</div>';
   return h;
 }
-
-// Desktop tooltip positioning using mouse coords
-document.addEventListener('mouseover', function(e) {
-  if (window.innerWidth <= 600) return;
-  var wrap = e.target.closest('.dot-wrap');
-  if (!wrap) return;
-  var tip = wrap.querySelector('.tip');
-  if (!tip) return;
-  var rect = wrap.getBoundingClientRect();
-  var tipTop = rect.top - 10;
-  var tipLeft = rect.left + rect.width / 2;
-  // flip below if too close to top
-  if (tipTop < 80) {
-    tip.style.top = (rect.bottom + 8) + 'px';
-    tip.style.bottom = 'auto';
-  } else {
-    tip.style.top = 'auto';
-    tip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-  }
-  tip.style.left = tipLeft + 'px';
-  // keep within right edge
-  var rightEdge = tipLeft + 140;
-  if (rightEdge > window.innerWidth - 10) {
-    tip.style.left = (window.innerWidth - 150) + 'px';
-    tip.style.transform = 'none';
-  } else {
-    tip.style.transform = 'translateX(-50%)';
-  }
-  tip.style.display = 'block';
-});
-
-document.addEventListener('mouseout', function(e) {
-  if (window.innerWidth <= 600) return;
-  var wrap = e.target.closest('.dot-wrap');
-  if (!wrap) return;
-  if (!wrap.contains(e.relatedTarget)) {
-    var tip = wrap.querySelector('.tip');
-    if (tip) tip.style.display = 'none';
-  }
-});
-
-// Mobile tap for dots
-document.addEventListener('click', function(e) {
-  var isMobile = window.innerWidth <= 600;
-  if (!isMobile) return;
-  var wrap = e.target.closest('.dot-wrap');
-  if (wrap) {
-    e.stopPropagation();
-    // close all others
-    document.querySelectorAll('.dot-wrap .tip').forEach(function(t) {
-      if (t !== wrap.querySelector('.tip')) t.classList.remove('tip-visible');
-    });
-    // remove overlay if exists
-    var existing = document.querySelector('.tip-mobile-overlay');
-    if (existing) existing.remove();
-    var tip = wrap.querySelector('.tip');
-    if (tip) {
-      var isVisible = tip.classList.contains('tip-visible');
-      tip.classList.toggle('tip-visible');
-      if (!isVisible) {
-        // add overlay to close on outside tap
-        var overlay = document.createElement('div');
-        overlay.className = 'tip-mobile-overlay';
-        overlay.onclick = function() {
-          tip.classList.remove('tip-visible');
-          overlay.remove();
-        };
-        document.body.appendChild(overlay);
-      }
-    }
-  }
-});
-
-function saveCustomerId(el) {
-  var jobId = el.dataset.job;
-  var val = el.value.trim();
-  var inst = installs.find(function(j){return j.id===jobId;});
-  if(inst) { inst.customer_id = val; render(); }
-  sb.from('jobs').update({customer_id:val,updated_at:new Date().toISOString()}).eq('id',jobId);
-}
-
-function saveNCCheck(el) {
-  saveNC(el.dataset.job, el.dataset.field, el.checked);
-}
-function saveNCText(el) {
-  saveNC(el.dataset.job, el.dataset.field, el.value);
-}
-
-
-function getDrillState(m) {
-  var d = m.drill_steps || {};
-  var done1 = (d.step1&&d.step1.trim()) || d.step1_check;
-  var done2 = (d.step2&&d.step2.trim()) || d.step2_check;
-  var done3 = (d.step3&&d.step3.trim()) || d.step3_check;
-  var filled = [done1,done2,done3].filter(Boolean).length;
-  if (filled === 0) return 'none';
-  if (filled === 3) return 'done';
-  return 'inprog';
-}
-
-async function saveDrillCheck(el) {
-  var jobId = el.dataset.job;
-  var stepKey = el.dataset.step; // e.g. step1_check
-  var inst = installs.find(function(j){return j.id===jobId;});
-  var m = inst.milestones[3];
-  if (!m.drill_steps) m.drill_steps = {};
-  m.drill_steps[stepKey] = el.checked;
-  var newState = getDrillState(m);
-  var newDate = newState === 'done' ? (m.date || new Date().toISOString().slice(0,10)) : '';
-  m.state = newState;
-  m.date = newDate;
-  var payload = {state:newState,date:newDate||null,drill_steps:m.drill_steps,updated_by:currentUser.id,updated_at:new Date().toISOString()};
-  if (m.id) { await sb.from('milestones').update(payload).eq('id',m.id); }
-  else { var r = await sb.from('milestones').insert(Object.assign({job_id:jobId,index:3,notes:null,pinned_note:null},payload)).select().single(); if(r.data) m.id=r.data.id; }
-  await logActivity(jobId, 'Updated Drilling '+stepKey+': '+(el.checked?'checked':'unchecked'));
-  render();
-}
-
-async function saveDrillStep(jobId, stepKey, value) {
-  var inst = installs.find(function(j){return j.id===jobId;});
-  var m = inst.milestones[3]; // drilling is index 3
-  if (!m.drill_steps) m.drill_steps = {};
-  m.drill_steps[stepKey] = value;
-  // auto-calculate state
-  var newState = getDrillState(m);
-  var newDate = newState === 'done' ? (m.date || new Date().toISOString().slice(0,10)) : '';
-  m.state = newState;
-  m.date = newDate;
-  var payload = {
-    state: newState,
-    date: newDate || null,
-    drill_steps: m.drill_steps,
-    updated_by: currentUser.id,
-    updated_at: new Date().toISOString()
-  };
-  if (m.id) {
-    await sb.from('milestones').update(payload).eq('id', m.id);
-  } else {
-    var r = await sb.from('milestones').insert(Object.assign({job_id:jobId,index:3,notes:null,pinned_note:null},payload)).select().single();
-    if (r.data) m.id = r.data.id;
-  }
-  await logActivity(jobId, 'Updated Drilling step: ' + stepKey + (value ? ' — ' + value : ' cleared'));
-  render();
-}
-
-function renderRepl(j) {
-  var h = '<div class="repl-section">';
-  h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
-  h += '<input type="text" class="nc-input" data-job="' + j.id + '" data-field="repl_notes" placeholder="Replacement notes..." value="' + ((j.repl_notes||'').replace(/"/g,'&quot;')) + '" onchange="saveReplNotes(this)">';
-  h += '</div>';
-  return h;
-}
-
-function saveReplNotes(el) {
-  var inst = installs.find(function(j){return j.id===el.dataset.job;});
-  inst.repl_notes = el.value;
-  sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
-}
-
-async function toggleRepl(jobId) {
-  var inst = installs.find(function(j){return j.id===jobId;});
-  inst.repl = !inst.repl;
-  if(!inst.repl) inst.repl_notes = '';
-  await sb.from('jobs').update({repl:inst.repl,repl_notes:inst.repl_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
-  await logActivity(jobId, inst.repl ? 'Marked as Replacement' : 'Removed Replacement flag');
-  render();
-}
-
-function renderDuct(j) {
-  var h = '<div class="duct-section">';
-  h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
-  h += '<input type="text" class="nc-input" data-job="' + j.id + '" data-field="duct_notes" placeholder="Ductwork notes..." value="' + ((j.duct_notes||'').replace(/"/g,'&quot;')) + '" onchange="saveDuctNotes(this)">';
-  h += '</div>';
-  return h;
-}
-
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.duct_notes = el.value;
@@ -1401,6 +1290,81 @@ function toggleArchived(id){ if(openArchived.has(id))openArchived.delete(id);els
 
 
 var openDocSections = new Set();
+
+function renderMiniDropZone(jobId, category, docs) {
+  var zoneId = 'mdz-' + jobId + '-' + category;
+  var inputId = 'mfi-' + jobId + '-' + category;
+  var h = '';
+  // show existing docs
+  if(docs && docs.length) {
+    docs.forEach(function(d) {
+      h += '<div class="mini-doc-item">';
+      h += '<span>'+getFileIcon(d.file_name)+'</span>';
+      h += '<span class="mini-doc-name" title="'+d.file_name+'">'+d.file_name+'</span>';
+      h += '<span style="font-size:10px;color:#aaa;">'+formatFileSize(d.file_size)+'</span>';
+      h += '<button class="mini-doc-btn" data-path="'+d.file_path+'" data-name="'+d.file_name+'" onclick="downloadDoc(this)">&#11123;</button>';
+      h += '<button class="mini-doc-btn danger" data-doc="'+d.id+'" data-path="'+d.file_path+'" onclick="deleteDoc(this)">&#128465;</button>';
+      h += '</div>';
+    });
+  }
+  h += '<div class="mini-drop-zone" id="'+zoneId+'" ondragover="mdzOver(event,\''+zoneId+'\',true)" ondragleave="mdzOver(event,\''+zoneId+'\',false)" ondrop="mdzDrop(event,\''+jobId+'\',\''+category+'\')">';
+  h += '&#128228; Drop files or <span style="color:#2563eb;cursor:pointer;text-decoration:underline" onclick="mdzClick(\''+inputId+'\')">browse</span>';
+  h += '</div>';
+  h += '<input type="file" id="'+inputId+'" style="display:none" multiple onchange="mdzFiles(this,\''+jobId+'\',\''+category+'\')">';
+  return h;
+}
+
+function renderAdditionalDocs(j) {
+  var addDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='additional'; });
+  var isOpen = openDocSections.has(j.id);
+  var h = '<div class="docs-section">';
+  h += '<div class="docs-header"><span class="docs-title">&#128196; Additional files ('+ addDocs.length +')</span>';
+  h += '<button onclick="toggleDocSection(\''+j.id+'\');" style="font-size:11px;padding:2px 8px;border:0.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#888;font-family:inherit;">'+(isOpen?'Hide':'Show')+'</button></div>';
+  if(isOpen) {
+    h += renderMiniDropZone(j.id, 'additional', addDocs);
+  }
+  h += '</div>';
+  return h;
+}
+
+function mdzOver(e, zoneId, active) {
+  e.preventDefault();
+  var dz = document.getElementById(zoneId);
+  if(dz) dz.classList.toggle('drag-active', active);
+}
+function mdzClick(inputId) {
+  var fi = document.getElementById(inputId);
+  if(fi) fi.click();
+}
+function mdzDrop(e, jobId, category) {
+  e.preventDefault();
+  var zoneId = 'mdz-'+jobId+'-'+category;
+  var dz = document.getElementById(zoneId);
+  if(dz) dz.classList.remove('drag-active');
+  if(e.dataTransfer.files.length) uploadFilesWithCategory(Array.from(e.dataTransfer.files), jobId, category);
+}
+function mdzFiles(input, jobId, category) {
+  if(input.files.length) uploadFilesWithCategory(Array.from(input.files), jobId, category);
+  input.value = '';
+}
+
+async function uploadFilesWithCategory(files, jobId, category) {
+  for(var i=0;i<files.length;i++) {
+    var file = files[i];
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var path = jobId+'/'+category+'/'+Date.now()+'_'+safeName;
+    var res = await sb.storage.from('install-docs').upload(path, file, {upsert:false});
+    if(res.error){ showToast('Upload failed: '+file.name); continue; }
+    var docRow = {job_id:jobId,file_name:file.name,file_path:path,file_size:file.size,category:category,uploaded_by:currentUser.id,uploaded_by_name:currentUser.name};
+    var ins = await sb.from('documents').insert(docRow).select().single();
+    if(ins.data) allDocuments.unshift(ins.data);
+  }
+  // keep section open
+  openDocSections.add(jobId);
+  openCards.add(jobId);
+  render();
+  showToast(files.length+' file'+(files.length!==1?'s':'')+' uploaded.');
+}
 var openDocsGroups = new Set();
 var CATEGORIES = ['General','Permit','Electrical','Oven Hood','Equipment Specs','Loop Field','Contract','Inspection','Other'];
 
