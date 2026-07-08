@@ -508,7 +508,13 @@ async function importCustomer(c, addr, sortOrder) {
   var addrStr = addr ? [addr.street, addr.street_line_2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ') : '';
   var hcpNotes = [];
   if (c.notes && c.notes.trim()) hcpNotes.push({id:'note-0',text:c.notes.trim()});
-  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
+  var customerId = '';
+  var ctags = c.tags || [];
+  for(var ti=0;ti<ctags.length;ti++){
+    var ct = typeof ctags[ti]==='string'?ctags[ti]:(ctags[ti].name||'');
+    if(ct.length===5 && !isNaN(ct)){ customerId = ct; break; }
+  }
+  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,customer_id:customerId,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
   if (r.data) {
     r.data.milestones=MS.map(function(_,mi){return {job_id:r.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
     r.data.hcp_notes=hcpNotes;
@@ -635,9 +641,30 @@ function renderOverview(){
   MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
   html+='<th>Delay</th></tr></thead><tbody>';
   installs.forEach(function(j){
-    var nameCell = j.equipment
-      ? '<div class="dot-wrap" style="display:block"><div class="inst-name-cell" style="cursor:default">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div><div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:280px;">'+j.equipment+'</div></div>'
-      : '<div class="inst-name-cell">'+j.name+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div><div class="inst-addr-cell">'+(j.address||'')+'</div>';
+    // Build full tooltip content
+    var tipParts = [];
+    if(j.equipment) tipParts.push('<strong>Equipment:</strong> '+j.equipment);
+    if(j.duct){
+      var dLine = '&#128274; <strong>Ductwork</strong>';
+      if(j.duct_notes&&j.duct_notes.trim()) dLine += ': '+j.duct_notes;
+      tipParts.push(dLine);
+    }
+    if(j.repl) tipParts.push('&#128260; <strong>Replacement</strong>'+(j.repl_notes&&j.repl_notes.trim()?': '+j.repl_notes:''));
+    if(j.nc===true||j.nc==='true'){
+      var nc=j.nc_data||{};
+      tipParts.push('&#127959; <strong>New Construction</strong>');
+      if(nc.oven_done||nc.oven_notes) tipParts.push('&nbsp;&nbsp;Oven hood: '+(nc.oven_done?'&#10003; ':'')+(nc.oven_notes||''));
+      if(nc.accessories) tipParts.push('&nbsp;&nbsp;Accessories: '+nc.accessories);
+      if(nc.bath_fan_specs||nc.bath_fan_supplier) tipParts.push('&nbsp;&nbsp;Bath fans: '+(nc.bath_fan_specs||'')+(nc.bath_fan_supplier?' | Supplier: '+nc.bath_fan_supplier:''));
+      if(nc.elec_done||nc.elec_notes) tipParts.push('&nbsp;&nbsp;Electrical: '+(nc.elec_done?'&#10003; ':'')+(nc.elec_notes||''));
+    }
+    var tipHtml = tipParts.join('<br>');
+    var idBadge = j.customer_id ? '<span style="font-size:10px;color:#888;font-weight:400;margin-left:6px;">#'+j.customer_id+'</span>' : '';
+    var nameLine = '<div class="inst-name-cell">'+j.name+idBadge+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div>';
+    var addrLine = '<div class="inst-addr-cell">'+(j.address||'')+'</div>';
+    var nameCell = tipHtml
+      ? '<div class="dot-wrap" style="display:block">'+nameLine+addrLine+'<div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:300px;">'+tipHtml+'</div></div>'
+      : nameLine+addrLine;
     html+='<tr><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
