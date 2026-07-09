@@ -226,7 +226,6 @@ tr:last-child td{border-bottom:none;}
 .add-btn:hover{background:#f4f4f0;color:#1a1a1a;}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;}
 .toast.show{opacity:1;}
-
 .mobile-detail{display:none;position:fixed;inset:0;background:#f4f4f0;z-index:150;overflow-y:auto;}
 .mobile-detail.open{display:block;}
 .mobile-detail-header{background:#fff;padding:12px 16px;border-bottom:0.5px solid #e5e5e5;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
@@ -251,7 +250,6 @@ tr:last-child td{border-bottom:none;}
 .mobile-tile-prog{font-size:12px;color:#888;}
 .mobile-tile-delay{font-size:10px;padding:2px 7px;border-radius:5px;background:#fee2e2;color:#dc2626;}
 .mobile-tile-arrow{font-size:16px;color:#ccc;}
-
 @media (max-width:600px){
   .topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:6px;}
   .topbar-logo{font-size:14px;width:100%;}
@@ -288,7 +286,6 @@ tr:last-child td{border-bottom:none;}
 </style>
 </head>
 <body>
-
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">NAGeo <span>Tracker</span></div>
@@ -298,7 +295,6 @@ tr:last-child td{border-bottom:none;}
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
-
 <div id="app">
   <div class="topbar">
     <div class="topbar-logo">NAGeo <span>Tracker</span></div>
@@ -330,7 +326,6 @@ tr:last-child td{border-bottom:none;}
     <button class="add-btn" id="add-job-btn" onclick="addInstall()">+ Add install</button>
   </div>
 </div>
-
 <div class="modal-bg" id="settings-modal">
   <div class="modal">
     <div class="modal-title">Settings</div>
@@ -344,7 +339,6 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 </div>
-
 <div class="mobile-detail" id="mobile-detail">
   <div class="mobile-detail-header">
     <button class="mobile-back" onclick="closeMobileDetail()">&#8592; Back</button>
@@ -353,7 +347,6 @@ tr:last-child td{border-bottom:none;}
   <div class="mobile-detail-body" id="mobile-detail-body"></div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script>
 var SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
@@ -363,25 +356,19 @@ var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard
 var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [], allDocuments = [];
 var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
 var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
-
 async function init() {
   var saved = localStorage.getItem('nageo_user');
   if (saved) { currentUser = JSON.parse(saved); showApp(); }
   else { await loadUsers(); showLogin(); }
 }
-
 async function loadUsers() {
   var res = await sb.from('users').select('*').order('name');
   users = res.data || [];
 }
-
 function showLogin() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
-
-
-
 async function doLogin() {
   var pin = document.getElementById('pin-input').value.trim();
   if (!pin) { document.getElementById('login-error').textContent = 'Please enter your PIN.'; return; }
@@ -394,25 +381,21 @@ async function doLogin() {
   localStorage.setItem('nageo_user', JSON.stringify(user));
   showApp();
 }
-
 document.addEventListener('keydown', function(e) {
   if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') doLogin();
 });
-
 document.getElementById('pin-input').addEventListener('input', function() {
   if (this.value.length >= 4) {
     var user = users.find(function(u){ return u.pin === this.value; }, this);
     if (user) doLogin();
   }
 });
-
 function doLogout() {
   currentUser = null; localStorage.removeItem('nageo_user');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pin-input').value = '';
 }
-
 async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -421,7 +404,6 @@ async function showApp() {
   await loadAll();
   startRealtime();
 }
-
 async function loadAll() {
   var r1 = await sb.from('jobs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false});
   var r2 = await sb.from('milestones').select('*').order('index');
@@ -443,7 +425,6 @@ async function loadAll() {
   archivedJobs = allJobs.filter(function(j){ return !!j.archived; });
   render();
 }
-
 async function saveMilestone(jobId, idx, fields) {
   var inst = installs.find(function(j){return j.id===jobId;});
   var m = inst.milestones[idx];
@@ -454,20 +435,17 @@ async function saveMilestone(jobId, idx, fields) {
   await logActivity(jobId,'Updated "'+MS[idx]+'" to '+m.state+(m.notes?': '+m.notes:''));
   render();
 }
-
 async function saveJobField(jobId, field, value) {
   await sb.from('jobs').update({[field]:value,updated_at:new Date().toISOString()}).eq('id',jobId);
   installs.find(function(j){return j.id===jobId;})[field]=value;
   await logActivity(jobId,'Updated '+field+': '+value);
   render();
 }
-
 async function logActivity(jobId, action) {
   var entry = {job_id:jobId,user_id:currentUser.id,user_name:currentUser.name,action:action,created_at:new Date().toISOString(),detail:null};
   await sb.from('activity_log').insert(entry);
   activityLog.unshift(entry);
 }
-
 async function deleteInstall(jobId) {
   var inst = installs.find(function(j){return j.id===jobId;});
   await sb.from('milestones').delete().eq('job_id',jobId);
@@ -478,7 +456,6 @@ async function deleteInstall(jobId) {
   showToast((inst?inst.name:'Install')+' deleted.');
   render();
 }
-
 async function addInstall() {
   var name = prompt('Customer full name:');
   if (!name) return;
@@ -494,12 +471,9 @@ async function addInstall() {
     setView('cards'); render();
   }
 }
-
 var pendingHCPCustomers = [];
-
 async function syncHCP() {
   var settings = getSettings();
-
   showToast('Syncing from Housecall Pro...');
   try {
     var res = await fetch('https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/swift-api', {
@@ -563,7 +537,6 @@ async function syncHCP() {
     }
   } catch(e) { showToast('HCP sync error. Check your API key and tag.'); }
 }
-
 async function importCustomer(c, addr, sortOrder) {
   var hcpId = 'cust-'+c.id;
   var fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim()||'Unknown';
@@ -586,7 +559,6 @@ async function importCustomer(c, addr, sortOrder) {
   }
   return 0;
 }
-
 function showAddressPicker() {
   var modal = document.getElementById('addr-picker-modal');
   var body = document.getElementById('addr-picker-body');
@@ -605,7 +577,6 @@ function showAddressPicker() {
   body.innerHTML = html;
   modal.classList.add('open');
 }
-
 async function selectAddress(addrIdx) {
   var c = pendingHCPCustomers.shift();
   var maxOrder = installs.reduce(function(max,j){return Math.max(max,j.sort_order||0);},0);
@@ -618,9 +589,7 @@ async function selectAddress(addrIdx) {
     render();
   }
 }
-
 var appSettings = {};
-
 async function loadSettings() {
   // try Supabase first
   var r = await sb.from('settings').select('*');
@@ -632,17 +601,13 @@ async function loadSettings() {
   if (local.hcpKey && !appSettings.hcpKey) appSettings.hcpKey = local.hcpKey;
   if (local.hcpTag && !appSettings.hcpTag) appSettings.hcpTag = local.hcpTag;
 }
-
 function getSettings(){ return appSettings; }
-
 async function openSettings(){
   await loadSettings();
   document.getElementById('hcp-tag-input').value=appSettings.hcpTag||'geo-install';
   document.getElementById('settings-modal').classList.add('open');
 }
-
 function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
-
 async function saveSettings(){
   var hcpTag = document.getElementById('hcp-tag-input').value.trim()||'geo-install';
   appSettings.hcpTag = hcpTag;
@@ -650,7 +615,6 @@ async function saveSettings(){
   closeSettings();
   showToast('Settings saved.');
 }
-
 function initials(n){return n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);}
 function doneCount(j){return j.milestones.filter(function(m){return m.state==='done';}).length;}
 function naCount(j){return j.milestones.filter(function(m){return m.state==='na';}).length;}
@@ -679,14 +643,12 @@ function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog'
 function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='na'?'N/A':'';}
 function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':s==='na'?'si-na':'');}
 function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':s==='na'?'na-row':'');}
-
 function updateStats(){
   document.getElementById('s-active').textContent=installs.filter(function(j){return !isComplete(j);}).length;
   document.getElementById('s-delayed').textContent=installs.filter(function(j){return hasDelay(j);}).length;
   document.getElementById('s-inprog').textContent=installs.filter(function(j){return j.milestones.some(function(m){return m.state==='inprog';});}).length;
   document.getElementById('s-complete').textContent=installs.filter(function(j){return isComplete(j);}).length;
 }
-
 function setView(v){
   currentView=v;
   ['overview','cards','log','archived','docs'].forEach(function(n){
@@ -695,7 +657,6 @@ function setView(v){
   });
   document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived'||v==='docs')?'none':'block';
 }
-
 function renderOverview(){
   var el=document.getElementById('view-overview');
   if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
@@ -758,7 +719,6 @@ function renderOverview(){
   html+='</tbody></table></div>';
   el.innerHTML=html;
 }
-
 function renderCards(){
   var el=document.getElementById('view-cards');
   if(!installs.length){el.innerHTML='<div class="empty">No installs yet.</div>';return;}
@@ -779,7 +739,7 @@ function renderCards(){
     html+='<div class="card-body '+(isOpen?'open':'')+'">';
     html+='<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
     html+='<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="'+(j.equipment||'')+'" onchange="saveJobField(\''+j.id+'\',\'equipment\',this.value)"></div>';
-    
+
     html+='<div class="equip-section"><span class="equip-label" style="color:#aaa"># Customer ID</span><input type="text" class="equip-input" data-job="'+j.id+'" placeholder="5-digit HCP ID" value="'+(j.customer_id||'')+'" onchange="saveCustomerId(this)" maxlength="5" style="max-width:100px;"></div>';
     html+='<div class="ms-list">';
     j.milestones.forEach(function(m,i){
@@ -801,7 +761,7 @@ function renderCards(){
       // Milestone upload zone for equipment ordered (0), permits (2), final inspection (7)
       var MS_UPLOAD = [0,2,7];
       if(MS_UPLOAD.indexOf(i) !== -1) {
-        var msDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.ms_index===i; });
+        var msDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='ms'+i; });
         html += '<div class="det-row"><span class="det-lbl">Files</span><div style="flex:1">';
         html += '<div class="ms-dropzone" id="msdz-'+j.id+'-'+i+'" ondragover="msDzOver(event,\''+j.id+'\','+i+',true)" ondragleave="msDzOver(event,\''+j.id+'\','+i+',false)" ondrop="msDzDrop(event,\''+j.id+'\','+i+')">';
         html += '<div class="ms-dropzone-text">&#128228; Drop files or <strong onclick="msDzClick(\''+j.id+'\','+i+')">browse</strong></div>';
@@ -856,7 +816,7 @@ function renderCards(){
     if(j.repl) html += renderRepl(j);
         html+='<div class="delete-zone">';
     // General files section
-    var genDocs = allDocuments.filter(function(d){ return d.job_id===j.id && !d.ms_index && !d.nc_section; });
+    var genDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='general'; });
     html += '<div class="docs-section">';
     html += '<div class="docs-header"><span class="docs-title">&#128196; Additional files ('+ genDocs.length +')</span></div>';
     html += '<div class="ms-dropzone" id="msdz-'+j.id+'-gen" ondragover="msDzOver(event,\''+j.id+'\',\'gen\',true)" ondragleave="msDzOver(event,\''+j.id+'\',\'gen\',false)" ondrop="msDzDrop(event,\''+j.id+'\',\'gen\')">';
@@ -892,17 +852,14 @@ function renderCards(){
   html+='</div>';
   el.innerHTML=html;
 }
-
 var logPage = 50;
 var logSearch = '';
-
 function parseTS(ts) {
   if (!ts) return new Date();
   var s = ts.replace(' ', 'T');
   if (!s.endsWith('Z') && !s.includes('+')) s += 'Z';
   return new Date(s);
 }
-
 function formatLogTime(ts) {
   var dt = parseTS(ts);
   var timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
@@ -913,8 +870,6 @@ function formatLogTime(ts) {
   if (isToday) return timeStr;
   return dateStr + ' &middot; ' + timeStr;
 }
-
-
 function renderLog(){
   var el=document.getElementById('view-log');
   if(!activityLog.length){el.innerHTML='<div class="empty">No activity yet.</div>';return;}
@@ -949,16 +904,12 @@ function renderLog(){
   // re-focus search if was searching
   if(logSearch){var si=document.getElementById('log-search-input');if(si){si.focus();si.setSelectionRange(si.value.length,si.value.length);}}
 }
-
 function setLogSearch(val){logSearch=val;logPage=50;renderLog();}
-
 function loadMoreLog(){
   logPage += 50;
   renderLog();
 }
-
 function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderDocsTab();renderMobileTiles();}
-
 function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
 function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
 function toggleNotes(id){if(openNotes.has(id))openNotes.delete(id);else openNotes.add(id);render();}
@@ -969,14 +920,12 @@ function confirmDelete(id){
   if(!val||val.value.trim()!=='DELETE'){showToast('Type DELETE in all caps to confirm.');return;}
   deleteInstall(id);
 }
-
 function setState(jobId,idx,state){
   var m=installs.find(function(j){return j.id===jobId;}).milestones[idx];
   var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
   saveMilestone(jobId,idx,{state:state,date:date,notes:state==='na'?'':m.notes});
 }
 function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
-
 async function pinToEquip(jobId,noteId){
   var inst=installs.find(function(j){return j.id===jobId;});
   var isPinned=inst.pinned_equip_note===noteId;
@@ -986,7 +935,6 @@ async function pinToEquip(jobId,noteId){
   await logActivity(jobId,isPinned?'Unpinned equipment note':'Pinned note to equipment');
   render();
 }
-
 async function pinToMS(jobId,noteId,msIdx){
   if(msIdx==='')return;
   var inst=installs.find(function(j){return j.id===jobId;});
@@ -995,12 +943,10 @@ async function pinToMS(jobId,noteId,msIdx){
   await saveMilestone(jobId,idx,{pinned_note:noteId});
   await logActivity(jobId,'Pinned note to "'+MS[idx]+'"');
 }
-
 async function unpinMS(jobId,idx){
   await saveMilestone(jobId,idx,{pinned_note:null});
   await logActivity(jobId,'Unpinned note from "'+MS[idx]+'"');
 }
-
 function dragStart(e,id){
   dragId=id; e.dataTransfer.effectAllowed='move';
   setTimeout(function(){var el=document.getElementById('card-'+id);if(el)el.classList.add('dragging');},0);
@@ -1032,7 +978,6 @@ async function drop(e,targetId){
   await Promise.all(installs.map(function(j,i){return sb.from('jobs').update({sort_order:i}).eq('id',j.id);}));
   showToast('Order saved.');
 }
-
 async function toggleNC(jobId) {
   var inst = installs.find(function(j){return j.id===jobId;});
   inst.nc = !inst.nc;
@@ -1041,14 +986,12 @@ async function toggleNC(jobId) {
   await logActivity(jobId, inst.nc ? 'Marked as New Construction' : 'Removed New Construction flag');
   render();
 }
-
 async function saveNC(jobId, field, value) {
   var inst = installs.find(function(j){return j.id===jobId;});
   if(!inst.nc_data) inst.nc_data = {};
   inst.nc_data[field] = value;
   await sb.from('jobs').update({nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
 }
-
 function renderNC(j) {
   var nc = j.nc_data || {};
   var id = j.id;
@@ -1093,7 +1036,6 @@ function renderDuct(j) {
   h += '</div>';
   return h;
 }
-
 function renderRepl(j) {
   var h = '<div class="repl-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
@@ -1101,13 +1043,11 @@ function renderRepl(j) {
   h += '</div>';
   return h;
 }
-
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.duct_notes = el.value;
   sb.from('jobs').update({duct_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
-
 async function toggleDuct(jobId) {
   var inst = installs.find(function(j){return j.id===jobId;});
   inst.duct = !inst.duct;
@@ -1116,7 +1056,6 @@ async function toggleDuct(jobId) {
   await logActivity(jobId, inst.duct ? 'Marked as Ductwork' : 'Removed Ductwork flag');
   render();
 }
-
 function renderMobileTiles() {
   var el = document.getElementById('view-overview');
   // remove old tiles if any
@@ -1148,7 +1087,6 @@ function renderMobileTiles() {
   });
   el.appendChild(div);
 }
-
 function openMobileDetail(jobId) {
   var j = installs.find(function(x){return x.id===jobId;});
   if (!j) return;
@@ -1196,15 +1134,12 @@ function openMobileDetail(jobId) {
   document.getElementById('mobile-detail').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
 function closeMobileDetail() {
   document.getElementById('mobile-detail').classList.remove('open');
   document.body.style.overflow = '';
 }
-
 function showArchiveConfirm(id){ showArchive.add(id); showDel.delete(id); render(); }
 function cancelArchive(id){ showArchive.delete(id); render(); }
-
 async function confirmArchive(jobId) {
   var inst = installs.find(function(j){return j.id===jobId;});
   await sb.from('jobs').update({archived:true,updated_at:new Date().toISOString()}).eq('id',jobId);
@@ -1217,7 +1152,6 @@ async function confirmArchive(jobId) {
   showToast(inst.name+' archived.');
   render();
 }
-
 async function reactivateInstall(jobId) {
   var inst = archivedJobs.find(function(j){return j.id===jobId;});
   if(!inst) return;
@@ -1229,9 +1163,7 @@ async function reactivateInstall(jobId) {
   showToast(inst.name+' reactivated.');
   render();
 }
-
 var openArchived = new Set();
-
 function renderArchived() {
   var el = document.getElementById('view-archived');
   if(!archivedJobs.length){
@@ -1297,12 +1229,8 @@ function renderArchived() {
   html += '</div>';
   el.innerHTML = html;
 }
-
 function toggleArchived(id){ if(openArchived.has(id))openArchived.delete(id);else openArchived.add(id); renderArchived(); }
-
-
 var openDocSections = new Set();
-
 function renderMiniDropZone(jobId, category, docs) {
   var zoneId = 'mdz-' + jobId + '-' + category;
   var inputId = 'mfi-' + jobId + '-' + category;
@@ -1325,7 +1253,6 @@ function renderMiniDropZone(jobId, category, docs) {
   h += '<input type="file" id="'+inputId+'" style="display:none" multiple onchange="mdzFiles(this,\''+jobId+'\',\''+category+'\')">';
   return h;
 }
-
 function renderAdditionalDocs(j) {
   var addDocs = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='additional'; });
   var isOpen = openDocSections.has(j.id);
@@ -1338,7 +1265,6 @@ function renderAdditionalDocs(j) {
   h += '</div>';
   return h;
 }
-
 function mdzOver(e, zoneId, active) {
   e.preventDefault();
   var dz = document.getElementById(zoneId);
@@ -1359,7 +1285,25 @@ function mdzFiles(input, jobId, category) {
   if(input.files.length) uploadFilesWithCategory(Array.from(input.files), jobId, category);
   input.value = '';
 }
-
+function msDzOver(e, jobId, i, active) {
+  e.preventDefault();
+  var dz = document.getElementById('msdz-'+jobId+'-'+i);
+  if(dz) dz.classList.toggle('drag-active', active);
+}
+function msDzClick(jobId, i) {
+  var fi = document.getElementById('msfi-'+jobId+'-'+i);
+  if(fi) fi.click();
+}
+function msDzDrop(e, jobId, i) {
+  e.preventDefault();
+  var dz = document.getElementById('msdz-'+jobId+'-'+i);
+  if(dz) dz.classList.remove('drag-active');
+  if(e.dataTransfer.files.length) uploadFilesWithCategory(Array.from(e.dataTransfer.files), jobId, (i==='gen'?'general':'ms'+i));
+}
+function msDzFiles(input, jobId, i) {
+  if(input.files.length) uploadFilesWithCategory(Array.from(input.files), jobId, (i==='gen'?'general':'ms'+i));
+  input.value = '';
+}
 async function uploadFilesWithCategory(files, jobId, category) {
   var uploaded = 0;
   for(var i=0;i<files.length;i++) {
@@ -1380,7 +1324,6 @@ async function uploadFilesWithCategory(files, jobId, category) {
 }
 var openDocsGroups = new Set();
 var CATEGORIES = ['General','Permit','Electrical','Oven Hood','Equipment Specs','Loop Field','Contract','Inspection','Other'];
-
 function getFileIcon(name) {
   var ext = (name.split('.').pop()||'').toLowerCase();
   if(['pdf'].includes(ext)) return '&#128196;';
@@ -1390,18 +1333,15 @@ function getFileIcon(name) {
   if(['dwg','dxf'].includes(ext)) return '&#9999;';
   return '&#128196;';
 }
-
 function formatFileSize(bytes) {
   if(!bytes) return '';
   if(bytes < 1024) return bytes+'B';
   if(bytes < 1048576) return Math.round(bytes/1024)+'KB';
   return (bytes/1048576).toFixed(1)+'MB';
 }
-
 function getJobDocs(jobId) {
   return allDocuments.filter(function(d){ return d.job_id === jobId; });
 }
-
 function renderDocsSection(j) {
   var docs = getJobDocs(j.id);
   var isOpen = openDocSections.has(j.id);
@@ -1419,11 +1359,9 @@ function renderDocsSection(j) {
   h += '</div>';
   return h;
 }
-
 function renderDropZone(jobId) {
   return '<div class="drop-zone" id="dz-'+jobId+'" ondragover="dzOver(event,\''+jobId+'\',true)" ondragleave="dzOver(event,\''+jobId+'\',false)" ondrop="dzDrop(event,\''+jobId+'\')"><div class="drop-zone-text">&#128228; Drag files here or <strong onclick="dzClick(\''+jobId+'\')">browse</strong><br><span style="font-size:10px;color:#ccc;">PDF, images, Word, Excel — up to 50MB each</span></div><input type="file" id="fi-'+jobId+'" style="display:none" multiple onchange="dzFiles(this,\''+jobId+'\')"></div>';
 }
-
 function renderDocItem(d) {
   var h = '<div class="doc-item" id="doc-'+d.id+'">';
   h += '<span class="doc-icon">'+getFileIcon(d.file_name)+'</span>';
@@ -1438,7 +1376,6 @@ function renderDocItem(d) {
   h += '</div></div>';
   return h;
 }
-
 function renderDocsTab() {
   var el = document.getElementById('view-docs');
   if(!allDocuments.length) {
@@ -1472,33 +1409,27 @@ function renderDocsTab() {
   html += '</div>';
   el.innerHTML = html;
 }
-
 function toggleDocSection(id){ if(openDocSections.has(id))openDocSections.delete(id);else openDocSections.add(id); render(); }
 function toggleDocsGroup(id){ if(openDocsGroups.has(id))openDocsGroups.delete(id);else openDocsGroups.add(id); renderDocsTab(); }
-
 function dzOver(e, jobId, active) {
   e.preventDefault();
   var dz = document.getElementById('dz-'+jobId);
   if(dz) dz.classList.toggle('drag-active', active);
 }
-
 function dzClick(jobId) {
   var fi = document.getElementById('fi-'+jobId);
   if(fi) fi.click();
 }
-
 function dzDrop(e, jobId) {
   e.preventDefault();
   var dz = document.getElementById('dz-'+jobId);
   if(dz) dz.classList.remove('drag-active');
   if(e.dataTransfer.files.length) uploadFiles(Array.from(e.dataTransfer.files), jobId);
 }
-
 function dzFiles(input, jobId) {
   if(input.files.length) uploadFiles(Array.from(input.files), jobId);
   input.value = '';
 }
-
 async function uploadFiles(files, jobId) {
   var dz = document.getElementById('dz-'+jobId);
   if(dz) dz.innerHTML = '<div class="doc-uploading">Uploading '+files.length+' file'+(files.length!==1?'s':'')+'...</div>';
@@ -1516,7 +1447,6 @@ async function uploadFiles(files, jobId) {
   render();
   showToast(files.length+' file'+(files.length!==1?'s':'')+' uploaded.');
 }
-
 async function downloadDoc(el) {
   var path = el.dataset.path;
   var name = el.dataset.name;
@@ -1529,7 +1459,6 @@ async function downloadDoc(el) {
     a.click();
   } else { showToast('Download failed.'); }
 }
-
 async function deleteDoc(el) {
   if(!confirm('Delete this file? This cannot be undone.')) return;
   var docId = el.dataset.doc;
@@ -1540,7 +1469,6 @@ async function deleteDoc(el) {
   render();
   showToast('File deleted.');
 }
-
 async function updateDocCategory(el) {
   var docId = el.dataset.doc;
   var cat = el.value;
@@ -1548,15 +1476,11 @@ async function updateDocCategory(el) {
   var doc = allDocuments.find(function(d){ return d.id===docId; });
   if(doc) doc.category = cat;
 }
-
-
 function printReport() {
   var today = new Date();
   var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   var active = installs.filter(function(j) { return !isComplete(j); });
-
   var MS_STATUS = { done: 'Complete', inprog: 'In Progress', delayed: 'Delayed', na: 'N/A', none: 'Not Started' };
-
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>NAGeo Install Status Report</title><style>';
   html += 'body{font-family:Georgia,serif;color:#1a1a1a;margin:0;padding:0;font-size:12px;}';
   html += '.page{width:7.5in;margin:0 auto;padding:0.75in;page-break-after:always;}';
@@ -1593,7 +1517,6 @@ function printReport() {
   html += '.divider{border:none;border-top:1px solid #1a1a1a;margin:16px 0;}';
   html += '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
   html += '</style></head><body>';
-
   // SUMMARY PAGE
   html += '<div class="page">';
   html += '<div class="logo">North American Geothermal</div>';
@@ -1620,7 +1543,6 @@ function printReport() {
   });
   html += '</tbody></table>';
   html += '</div>';
-
   // DETAIL PAGES
   active.forEach(function(j) {
     html += '<div class="page">';
@@ -1632,7 +1554,6 @@ function printReport() {
     html += '</div>';
     html += '<hr class="divider">';
     html += '<div class="section-title">Milestone progress</div>';
-
     j.milestones.forEach(function(m, i) {
       var statusLabel = MS_STATUS[m.state] || 'Not Started';
       html += '<div class="ms-row">';
@@ -1642,7 +1563,6 @@ function printReport() {
       if (m.notes && m.notes.trim()) html += '<div class="ms-note">' + m.notes + '</div>';
       html += '</div></div>';
     });
-
     // Replacement if applicable
     if(j.repl) {
       html += '<div class="section-title">Replacement</div>';
@@ -1653,7 +1573,6 @@ function printReport() {
       }
       html += '</tbody></table>';
     }
-
     // Ductwork if applicable
     if(j.duct) {
       html += '<div class="section-title">Ductwork</div>';
@@ -1664,7 +1583,6 @@ function printReport() {
       }
       html += '</tbody></table>';
     }
-
     // NC checklist if applicable
     if(j.nc === true || j.nc === 'true') {
       var nc = j.nc_data || {};
@@ -1681,19 +1599,15 @@ function printReport() {
       html += '<tr><td style="font-weight:bold">Electrical requirements</td><td>' + (nc.elec_done ? '&#10003; Complete' : '&#9711; Pending') + (nc.elec_notes ? ' &mdash; ' + nc.elec_notes : '') + '</td></tr>';
       html += '</tbody></table>';
     }
-
     html += '</div>';
   });
-
   html += '</body></html>';
-
   var win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
   win.focus();
   setTimeout(function() { win.print(); }, 500);
 }
-
 // Desktop tooltip positioning
 document.addEventListener('mouseover', function(e) {
   if (window.innerWidth <= 600) return;
@@ -1724,7 +1638,6 @@ document.addEventListener('mouseover', function(e) {
   }
   tip.style.display = 'block';
 });
-
 document.addEventListener('mouseout', function(e) {
   if (window.innerWidth <= 600) return;
   var wrap = e.target.closest('.dot-wrap');
@@ -1734,18 +1647,14 @@ document.addEventListener('mouseout', function(e) {
     if (tip) tip.style.display = 'none';
   }
 });
-
 init();
-
 // ── REAL-TIME + AUTO REFRESH ──────────────────────────
 var realtimeChannel = null;
-
 function startRealtime() {
   // Auto-refresh every 30 seconds
   setInterval(function() {
     silentRefresh();
   }, 30000);
-
   // Real-time subscription via Supabase
   realtimeChannel = sb.channel('tracker-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, function() {
@@ -1759,10 +1668,8 @@ function startRealtime() {
     })
     .subscribe();
 }
-
 var refreshing = false;
 var userTyping = false;
-
 document.addEventListener('focusin', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
     userTyping = true;
@@ -1773,7 +1680,6 @@ document.addEventListener('focusout', function(e) {
     setTimeout(function() { userTyping = false; }, 500);
   }
 });
-
 async function silentRefresh() {
   if (refreshing || userTyping) return;
   refreshing = true;
@@ -1782,11 +1688,9 @@ async function silentRefresh() {
     var r2 = await sb.from('milestones').select('*').order('index');
     var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
     var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
-  var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
     var rawJobs = r1.data || [], allMS = r2.data || [];
     activityLog = r3.data || [];
     allDocuments = r4.data || [];
-  allDocuments = r4.data || [];
     var allJobs = rawJobs.map(function(j) {
       return Object.assign({},j,{
         hcp_notes: j.hcp_notes||[],
@@ -1803,7 +1707,6 @@ async function silentRefresh() {
   refreshing = false;
 }
 </script>
-
 <div class="modal-bg" id="addr-picker-modal">
   <div class="modal">
     <div class="modal-title">Choose install address</div>
