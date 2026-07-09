@@ -313,10 +313,10 @@ tr:last-child td{border-bottom:none;}
     </div>
     <div class="view-toggle">
       <button class="vbtn active" id="btn-overview" onclick="setView('overview')">&#9776; Overview</button>
+    <button class="vbtn" id="btn-docs" onclick="setView('docs')">&#128196; Documents</button>
       <button class="vbtn" id="btn-cards" onclick="setView('cards')">&#9783; Installs</button>
       <button class="vbtn" id="btn-log" onclick="setView('log')">&#128203; Activity log</button>
     <button class="vbtn" id="btn-archived" onclick="setView('archived')">&#128451; Archived</button>
-    <button class="vbtn" id="btn-docs" onclick="setView('docs')">&#128196; Documents</button>
     </div>
     <div id="view-overview"></div>
     <div id="view-cards" style="display:none"></div>
@@ -710,6 +710,10 @@ function renderOverview(){
       else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='na'){tipText=MS[mi]+': N/A';}
       else{tipText=MS[mi]+': Not started'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      var msDocsForTip = allDocuments.filter(function(d){ return d.job_id===j.id && d.category==='ms'+mi; });
+      if(msDocsForTip.length){
+        tipText += '<br>&#128206; <strong>'+msDocsForTip.length+' file'+(msDocsForTip.length!==1?'s':'')+' attached:</strong> '+msDocsForTip.map(function(d){return d.file_name;}).join(', ');
+      }
       html+='<td><div class="dot-wrap"><span class="'+dc(m.state)+'">'+di(m.state)+'</span><div class="tip">'+tipText+'</div></div></td>';
     });
     var delayInfo = '';
