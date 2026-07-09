@@ -1361,21 +1361,22 @@ function mdzFiles(input, jobId, category) {
 }
 
 async function uploadFilesWithCategory(files, jobId, category) {
+  var uploaded = 0;
   for(var i=0;i<files.length;i++) {
     var file = files[i];
     var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
     var path = jobId+'/'+category+'/'+Date.now()+'_'+safeName;
-    var res = await sb.storage.from('install-docs').upload(path, file, {upsert:false});
-    if(res.error){ showToast('Upload failed: '+file.name); continue; }
+    var res = await sb.storage.from('install-docs').upload(path, file, {upsert:true});
+    if(res.error){ console.error('Storage error:', res.error); showToast('Upload failed: '+file.name+' — '+res.error.message); continue; }
     var docRow = {job_id:jobId,file_name:file.name,file_path:path,file_size:file.size,category:category,uploaded_by:currentUser.id,uploaded_by_name:currentUser.name};
     var ins = await sb.from('documents').insert(docRow).select().single();
-    if(ins.data) allDocuments.unshift(ins.data);
+    if(ins.error){ console.error('DB insert error:', ins.error); showToast('File saved but DB record failed: '+ins.error.message); continue; }
+    if(ins.data){ allDocuments.unshift(ins.data); uploaded++; }
   }
-  // keep section open
   openDocSections.add(jobId);
   openCards.add(jobId);
   render();
-  showToast(files.length+' file'+(files.length!==1?'s':'')+' uploaded.');
+  if(uploaded > 0) showToast(uploaded+' file'+(uploaded!==1?'s':'')+' uploaded.');
 }
 var openDocsGroups = new Set();
 var CATEGORIES = ['General','Permit','Electrical','Oven Hood','Equipment Specs','Loop Field','Contract','Inspection','Other'];
