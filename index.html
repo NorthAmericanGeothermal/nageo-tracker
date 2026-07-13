@@ -799,11 +799,21 @@ function renderOverview(){
   html += renderOverviewTable(replJobs);
   el.innerHTML=html;
 }
+var CARD_GROUPS = [
+  {key:'nc', label:'&#127959; New Construction'},
+  {key:'retrofit', label:'&#8635; Retrofit'},
+  {key:'repl', label:'&#128260; Replacement'}
+];
 function renderCards(){
   var el=document.getElementById('view-cards');
   if(!installs.length){el.innerHTML='<div class="empty">No installs yet.</div>';return;}
-  var html='<div class="installs">';
-  installs.forEach(function(j){
+  var html='';
+  CARD_GROUPS.forEach(function(g){
+  var groupJobs = installs.filter(function(j){ return jobCategory(j)===g.key; });
+  html += '<div class="overview-section-title">'+g.label+' <span class="overview-section-count">'+groupJobs.length+'</span></div>';
+  if(!groupJobs.length){ html += '<div class="empty" style="background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;margin-bottom:8px;">No installs in this category.</div>'; return; }
+  html += '<div class="installs" style="margin-bottom:20px;">';
+  groupJobs.forEach(function(j){
     var isOpen=openCards.has(j.id), notesOpen=openNotes.has(j.id), delOpen=showDel.has(j.id);
     html+='<div class="card" id="card-'+j.id+'" ondragover="dragOver(event,\''+j.id+'\')" ondrop="drop(event,\''+j.id+'\')">';
     html+='<div class="card-header" onclick="toggleCard(\''+j.id+'\')">';
@@ -935,7 +945,8 @@ function renderCards(){
     }
     html+='</div></div>';
   });
-  html+='</div>';
+  html += '</div>';
+  });
   el.innerHTML=html;
 }
 var logPage = 50;
