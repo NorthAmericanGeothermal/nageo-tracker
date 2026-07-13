@@ -116,6 +116,17 @@ tr:last-child td{border-bottom:none;}
 .pin-btn:hover{background:#f4f4f0;}.pin-btn.pinned{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
 .pin-select{font-size:10px;padding:2px 6px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .delete-zone{padding:10px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tag-toggle-row{padding:10px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.tag-toggle-label{font-size:11px;color:#888;margin-right:2px;}
+.tag-toggle-btn{font-size:11px;padding:4px 11px;border-radius:14px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.tag-toggle-btn:hover{background:#f4f4f0;}
+.tag-toggle-btn.tag-repl.active{background:#fef9c3;color:#854d0e;border-color:#fde047;}
+.tag-toggle-btn.tag-duct.active{background:#f3e8ff;color:#7c3aed;border-color:#e9d5ff;}
+.tag-toggle-btn.tag-nc.active{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
+.tag-toggle-btn.tag-lease.active{background:#d1fae5;color:#059669;border-color:#6ee7b7;}
+.danger-zone-row{padding:8px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+.lease-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#d1fae5;color:#059669;font-weight:500;}
+.lease-overview-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#d1fae5;color:#059669;font-weight:600;margin-left:4px;vertical-align:middle;}
 .nc-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fafaf8;}
 .nc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .nc-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
@@ -284,7 +295,8 @@ tr:last-child td{border-bottom:none;}
   .card-name{font-size:13px;}
   .card-addr{font-size:11px;}
   .delete-zone{flex-wrap:wrap;gap:6px;}
-  .add-duct-btn,.add-nc-btn,.delete-btn{font-size:11px;padding:4px 8px;}
+  .tag-toggle-btn{font-size:10px;padding:3px 8px;}
+  .delete-btn,.archive-btn{font-size:11px;padding:4px 8px;}
   .state-btns{gap:3px;}
   .sbtn{font-size:10px;padding:2px 6px;}
 }
@@ -668,6 +680,9 @@ function jobCategory(j){
   if(j.repl) return 'repl';
   return 'retrofit';
 }
+function tagToggleBtn(jobId, fnName, cssKey, active, icon, label){
+  return '<button class="tag-toggle-btn tag-'+cssKey+(active?' active':'')+'" data-job="'+jobId+'" onclick="'+fnName+'(this.dataset.job)">'+icon+' '+label+'</button>';
+}
 function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
 function timeAgo(ts){
   var d=Math.floor((Date.now()-new Date(ts))/1000);
@@ -718,6 +733,7 @@ function renderOverviewTable(jobsList){
       tipParts.push(dLine);
     }
     if(j.repl) tipParts.push('&#128260; <strong>Replacement</strong>'+(j.repl_notes&&j.repl_notes.trim()?': '+j.repl_notes:''));
+    if(j.lease) tipParts.push('&#128220; <strong>Lease</strong>'+(j.lease_notes&&j.lease_notes.trim()?': '+j.lease_notes:''));
     if(j.nc===true||j.nc==='true'){
       var nc=j.nc_data||{};
       tipParts.push('&#127959; <strong>New Construction</strong>');
@@ -728,7 +744,7 @@ function renderOverviewTable(jobsList){
     }
     var tipHtml = tipParts.join('<br>');
     var idBadge = j.customer_id ? '<span style="font-size:10px;color:#888;font-weight:400;margin-left:6px;">#'+j.customer_id+'</span>' : '';
-    var nameLine = '<div class="inst-name-cell">'+j.name+idBadge+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+'</div>';
+    var nameLine = '<div class="inst-name-cell">'+j.name+idBadge+((j.nc===true||j.nc==='true')?'<span class="nc-overview-badge">NC</span>':'')+(j.duct?'<span class="duct-overview-badge">DUCT</span>':'')+(j.repl?'<span class="repl-overview-badge">REPL</span>':'')+(j.lease?'<span class="lease-overview-badge">LEASE</span>':'')+'</div>';
     var addrLine = '<div class="inst-addr-cell">'+(j.address||'')+'</div>';
     var nameCell = tipHtml
       ? '<div class="dot-wrap" style="display:block">'+nameLine+addrLine+'<div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:300px;">'+tipHtml+'</div></div>'
@@ -878,7 +894,7 @@ function renderCards(){
     if(j.nc === true || j.nc === 'true') html += renderNC(j);
     if(j.duct) html += renderDuct(j);
     if(j.repl) html += renderRepl(j);
-        html+='<div class="delete-zone">';
+    if(j.lease) html += renderLease(j);
     // General files section
     var genDocs = allDocuments.filter(function(d){ return d.job_id===j.id && docCat(d)==='general'; });
     html += '<div class="docs-section">';
@@ -896,21 +912,27 @@ function renderCards(){
     html += '</div>';
     var archOpen = showArchive.has(j.id);
     if(!delOpen){
-      html+='<button class="add-repl-btn" data-job="'+j.id+'" onclick="toggleRepl(this.dataset.job)" style="margin-right:8px'+((j.repl)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.repl?'Remove replacement':'&#128260; Add replacement')+'</button>';
-      html+='<button class="add-duct-btn" data-job="'+j.id+'" onclick="toggleDuct(this.dataset.job)" style="margin-right:8px'+((j.duct)?';border-color:#dc2626;color:#dc2626':'')+'">'+(j.duct?'Remove ductwork':'&#128274; Add ductwork')+'</button>';
-      html+='<button class="add-nc-btn" data-job="'+j.id+'" onclick="toggleNC(this.dataset.job)" style="margin-right:8px'+((j.nc===true||j.nc==='true')?';border-color:#dc2626;color:#dc2626':'')+'">&#127959; '+((j.nc===true||j.nc==='true')?'Remove NC flag':'Mark as New Construction')+'</button>';
-      html+='<button class="delete-btn" data-job="'+j.id+'" onclick="showDeleteConfirm(this.dataset.job)" style="margin-right:6px">&#128465; Delete install</button>';
+      html+='<div class="tag-toggle-row"><span class="tag-toggle-label">Tags:</span>';
+      html+=tagToggleBtn(j.id,'toggleRepl','repl',j.repl,'&#128260;','Replacement');
+      html+=tagToggleBtn(j.id,'toggleDuct','duct',j.duct,'&#128274;','Ductwork');
+      html+=tagToggleBtn(j.id,'toggleNC','nc',(j.nc===true||j.nc==='true'),'&#127959;','New Construction');
+      html+=tagToggleBtn(j.id,'toggleLease','lease',j.lease,'&#128220;','Lease');
+      html+='</div>';
+      html+='<div class="danger-zone-row">';
       if(!archOpen){html+='<button class="archive-btn" data-job="'+j.id+'" onclick="showArchiveConfirm(this.dataset.job)">&#128451; Archive</button>';}
-      else{html+='<span style="font-size:11px;color:#555;display:block;margin-top:6px">Archive this install? All data is preserved.</span><div style="display:flex;gap:8px;margin-top:6px"><button class="reactivate-btn" data-job="'+j.id+'" onclick="confirmArchive(this.dataset.job)" style="font-size:11px;padding:4px 10px;">Yes, archive</button><button class="delete-cancel-btn" data-job="'+j.id+'" onclick="cancelArchive(this.dataset.job)">Cancel</button></div>';}
+      else{html+='<span style="font-size:11px;color:#555;">Archive this install? All data is preserved.</span><button class="reactivate-btn" data-job="'+j.id+'" onclick="confirmArchive(this.dataset.job)" style="font-size:11px;padding:4px 10px;">Yes, archive</button><button class="delete-cancel-btn" data-job="'+j.id+'" onclick="cancelArchive(this.dataset.job)">Cancel</button>';}
+      html+='<button class="delete-btn" data-job="'+j.id+'" onclick="showDeleteConfirm(this.dataset.job)">&#128465; Delete install</button>';
+      html+='</div>';
     } else {
+      html+='<div class="danger-zone-row">';
       html+='<span class="delete-hint">Type DELETE to confirm:</span>';
       html+='<div class="delete-confirm-area show">';
       html+='<input type="text" class="delete-type-input" id="del-input-'+j.id+'" placeholder="DELETE">';
       html+='<button class="delete-go-btn" onclick="confirmDelete(\''+j.id+'\')">Delete</button>';
       html+='<button class="delete-cancel-btn" onclick="cancelDelete(\''+j.id+'\')">Cancel</button>';
       html+='</div>';
+      html+='</div>';
     }
-    html+='</div>';
     html+='</div></div>';
   });
   html+='</div>';
@@ -1126,6 +1148,26 @@ function saveReplNotes(el) {
   inst.repl_notes = el.value;
   sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
+function renderLease(j) {
+  var h = '<div class="duct-section" style="background:#f0fdfa;">';
+  h += '<div class="duct-header"><span class="duct-title">&#128220; Lease <span class="lease-badge">LEASE</span></span></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="lease_notes" placeholder="Lease notes, company, term..." value="'+(j.lease_notes||'').replace(/"/g,'&quot;')+'" onchange="saveLeaseNotes(this)">';
+  h += '</div>';
+  return h;
+}
+async function toggleLease(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.lease = !inst.lease;
+  if(!inst.lease) inst.lease_notes = '';
+  await sb.from('jobs').update({lease:inst.lease,lease_notes:inst.lease_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.lease ? 'Marked as Lease' : 'Removed Lease flag');
+  render();
+}
+function saveLeaseNotes(el) {
+  var inst = installs.find(function(j){return j.id===el.dataset.job;});
+  inst.lease_notes = el.value;
+  sb.from('jobs').update({lease_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+}
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.duct_notes = el.value;
@@ -1168,6 +1210,7 @@ function renderMobileTiles() {
       if (j.nc===true||j.nc==='true') badges += '<span class="nc-overview-badge">NC</span>';
       if (j.duct) badges += '<span class="duct-overview-badge">DUCT</span>';
       if (j.repl) badges += '<span class="repl-overview-badge">REPL</span>';
+      if (j.lease) badges += '<span class="lease-overview-badge">LEASE</span>';
       tile.innerHTML = '<div class="mobile-tile-meta">' +
         '<div class="mobile-tile-name">' + j.name + badges + '</div>' +
         '<div class="mobile-tile-addr">' + (j.address||'') + '</div>' +
@@ -1212,6 +1255,14 @@ function openMobileDetail(jobId) {
     h += '<div style="background:#faf8ff;border:0.5px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;">';
     h += '<div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:6px;">&#128274; Ductwork</div>';
     if (j.duct_notes&&j.duct_notes.trim()) h += '<div style="font-size:12px;color:#555;">'+j.duct_notes+'</div>';
+    else h += '<div style="font-size:12px;color:#aaa;">No notes</div>';
+    h += '</div>';
+  }
+  // lease
+  if (j.lease) {
+    h += '<div style="background:#f0fdfa;border:0.5px solid #6ee7b7;border-radius:8px;padding:12px;margin-bottom:12px;">';
+    h += '<div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:6px;">&#128220; Lease</div>';
+    if (j.lease_notes&&j.lease_notes.trim()) h += '<div style="font-size:12px;color:#555;">'+j.lease_notes+'</div>';
     else h += '<div style="font-size:12px;color:#aaa;">No notes</div>';
     h += '</div>';
   }
@@ -1285,6 +1336,7 @@ function renderArchived() {
     if(j.nc===true||j.nc==='true') html += '<span class="nc-overview-badge">NC</span>';
     if(j.duct) html += '<span class="duct-overview-badge">DUCT</span>';
     if(j.repl) html += '<span class="repl-overview-badge">REPL</span>';
+    if(j.lease) html += '<span class="lease-overview-badge">LEASE</span>';
     html += '</div>';
     html += '<button class="reactivate-btn" data-job="'+j.id+'" onclick="event.stopPropagation();reactivateInstall(this.dataset.job)" style="margin-right:8px">&#9654; Reactivate</button>';
     html += '<span class="chevron '+(isOpen?'open':'')+'">&#9662;</span>';
@@ -1318,6 +1370,7 @@ function renderArchived() {
       }
       // Ductwork notes
       if(j.duct&&j.duct_notes) html += '<div style="background:#faf8ff;border:0.5px solid #e9d5ff;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;"><strong>&#128274; Ductwork:</strong> '+j.duct_notes+'</div>';
+      if(j.lease) html += '<div style="background:#f0fdfa;border:0.5px solid #6ee7b7;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;"><strong>&#128220; Lease:</strong> '+(j.lease_notes||'&mdash;')+'</div>';
       html += '</div>';
     }
     html += '</div>';
@@ -1646,6 +1699,7 @@ function printReport() {
     if(j.nc===true||j.nc==='true') badges += '<span class="badge" style="background:#dbeafe;color:#2563eb">NC</span> ';
     if(j.duct) badges += '<span class="badge" style="background:#f3e8ff;color:#7c3aed">Duct</span>';
     if(j.repl) badges += '<span class="badge" style="background:#fef9c3;color:#854d0e">Replacement</span>';
+    if(j.lease) badges += '<span class="badge" style="background:#d1fae5;color:#059669">Lease</span>';
     html += '<td>' + badges + '</td>';
     html += '</tr>';
   });
@@ -1688,6 +1742,16 @@ function printReport() {
       html += '<tr><td style="width:160px;font-weight:bold">Status</td><td>Ductwork required for this install</td></tr>';
       if(j.duct_notes && j.duct_notes.trim()) {
         html += '<tr><td style="font-weight:bold">Notes</td><td>' + j.duct_notes + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    }
+    // Lease if applicable
+    if(j.lease) {
+      html += '<div class="section-title">Lease</div>';
+      html += '<table><tbody>';
+      html += '<tr><td style="width:160px;font-weight:bold">Status</td><td>Leased system</td></tr>';
+      if(j.lease_notes && j.lease_notes.trim()) {
+        html += '<tr><td style="font-weight:bold">Notes</td><td>' + j.lease_notes + '</td></tr>';
       }
       html += '</tbody></table>';
     }
