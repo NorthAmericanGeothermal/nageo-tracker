@@ -35,7 +35,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .view-toggle{display:flex;gap:6px;margin-bottom:1.25rem;}
 .vbtn{padding:6px 14px;font-size:13px;border-radius:8px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;}
 .vbtn.active{background:#f4f4f0;color:#1a1a1a;font-weight:500;border-color:#bbb;}
-.overview-wrap{overflow-x:auto;background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;}
+.overview-wrap{overflow-x:auto;background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;margin-bottom:20px;}
+.overview-section-title{font-size:14px;font-weight:600;color:#1a1a1a;margin:20px 0 10px 0;display:flex;align-items:center;gap:8px;}
+.overview-section-title:first-child{margin-top:0;}
+.overview-section-count{font-size:11px;font-weight:500;color:#888;background:#f4f4f0;padding:2px 8px;border-radius:10px;}
+.mobile-group-title{font-size:13px;font-weight:600;color:#1a1a1a;margin:14px 0 4px 0;}
+.mobile-group-title:first-child{margin-top:0;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 thead tr{border-bottom:0.5px solid #e5e5e5;}
 th{padding:10px 12px;text-align:left;color:#888;font-weight:400;white-space:nowrap;}
@@ -238,6 +243,7 @@ tr:last-child td{border-bottom:none;}
 @media (max-width:600px){
   .mobile-tiles{display:flex;flex-direction:column;gap:10px;}
   #view-overview .overview-wrap{display:none;}
+  #view-overview .overview-section-title{display:none;}
   #view-overview .mobile-tiles{display:flex;}
 }
 .mobile-tile{background:#fff;border:0.5px solid #e5e5e5;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;}
@@ -657,6 +663,11 @@ function progressLabel(j){var done=doneCount(j);var total=9-naCount(j);return do
 function hasDelay(j){return j.milestones.some(function(m){return m.state==='delayed';});}
 function isComplete(j){return j.milestones.every(function(m){return m.state==='done'||m.state==='na';});}
 function curMS(j){var i=j.milestones.findIndex(function(m){return m.state!=='done';});return i===-1?MS[MS.length-1]:MS[i];}
+function jobCategory(j){
+  if(j.nc===true||j.nc==='true') return 'nc';
+  if(j.repl) return 'repl';
+  return 'retrofit';
+}
 function getNoteText(inst,nid){var n=(inst.hcp_notes||[]).find(function(n){return n.id===nid;});return n?n.text:null;}
 function timeAgo(ts){
   var d=Math.floor((Date.now()-new Date(ts))/1000);
@@ -692,13 +703,12 @@ function setView(v){
   });
   document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived'||v==='docs')?'none':'block';
 }
-function renderOverview(){
-  var el=document.getElementById('view-overview');
-  if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
+function renderOverviewTable(jobsList){
+  if(!jobsList.length){return '<div class="overview-wrap"><div class="empty">No installs in this category.</div></div>';}
   var html='<div class="overview-wrap"><table><thead><tr><th>Customer</th><th>Current milestone</th><th>Progress</th>';
   MS_SHORT.forEach(function(s){html+='<th style="font-size:10px">'+s+'</th>';});
   html+='<th>Delay</th></tr></thead><tbody>';
-  installs.forEach(function(j){
+  jobsList.forEach(function(j){
     // Build full tooltip content
     var tipParts = [];
     if(j.equipment) tipParts.push('<strong>Equipment:</strong> '+j.equipment);
@@ -756,6 +766,21 @@ function renderOverview(){
     html+='<td>'+(hasDelay(j)?'<div class="dot-wrap"><span class="delay-badge">! Yes</span><div class="tip" style="left:auto;right:0;transform:none;">'+delayInfo+'</div></div>':'<span style="color:#ccc;font-size:12px">&mdash;</span>')+'</td></tr>';
   });
   html+='</tbody></table></div>';
+  return html;
+}
+function renderOverview(){
+  var el=document.getElementById('view-overview');
+  if(!installs.length){el.innerHTML='<div class="overview-wrap"><div class="empty">No installs yet. Add one below or sync from HCP.</div></div>';return;}
+  var ncJobs = installs.filter(function(j){return jobCategory(j)==='nc';});
+  var retrofitJobs = installs.filter(function(j){return jobCategory(j)==='retrofit';});
+  var replJobs = installs.filter(function(j){return jobCategory(j)==='repl';});
+  var html = '';
+  html += '<div class="overview-section-title">&#127959; New Construction <span class="overview-section-count">'+ncJobs.length+'</span></div>';
+  html += renderOverviewTable(ncJobs);
+  html += '<div class="overview-section-title">&#8635; Retrofit <span class="overview-section-count">'+retrofitJobs.length+'</span></div>';
+  html += renderOverviewTable(retrofitJobs);
+  html += '<div class="overview-section-title">&#128260; Replacement <span class="overview-section-count">'+replJobs.length+'</span></div>';
+  html += renderOverviewTable(replJobs);
   el.innerHTML=html;
 }
 function renderCards(){
@@ -1122,26 +1147,39 @@ function renderMobileTiles() {
   if (window.innerWidth > 600) return;
   var div = document.createElement('div');
   div.className = 'mobile-tiles';
-  installs.forEach(function(j) {
-    var delayed = hasDelay(j);
-    var tile = document.createElement('div');
-    tile.className = 'mobile-tile';
-    tile.onclick = function() { openMobileDetail(j.id); };
-    var badges = '';
-    if (j.nc===true||j.nc==='true') badges += '<span class="nc-overview-badge">NC</span>';
-    if (j.duct) badges += '<span class="duct-overview-badge">DUCT</span>';
-    if (j.repl) badges += '<span class="repl-overview-badge">REPL</span>';
-    tile.innerHTML = '<div class="mobile-tile-meta">' +
-      '<div class="mobile-tile-name">' + j.name + badges + '</div>' +
-      '<div class="mobile-tile-addr">' + (j.address||'') + '</div>' +
-      '<div class="mobile-tile-ms">' + curMS(j) + '</div>' +
-      '</div>' +
-      '<div class="mobile-tile-right">' +
-        '<span class="mobile-tile-prog">' + progressLabel(j) + '</span>' +
-        (delayed ? '<span class="mobile-tile-delay">! Delayed</span>' : '') +
-        '<span class="mobile-tile-arrow">&#8250;</span>' +
-      '</div>';
-    div.appendChild(tile);
+  var groups = [
+    {key:'nc', label:'New Construction'},
+    {key:'retrofit', label:'Retrofit'},
+    {key:'repl', label:'Replacement'}
+  ];
+  groups.forEach(function(g) {
+    var jobsInGroup = installs.filter(function(j){ return jobCategory(j)===g.key; });
+    if(!jobsInGroup.length) return;
+    var header = document.createElement('div');
+    header.className = 'mobile-group-title';
+    header.textContent = g.label + ' (' + jobsInGroup.length + ')';
+    div.appendChild(header);
+    jobsInGroup.forEach(function(j) {
+      var delayed = hasDelay(j);
+      var tile = document.createElement('div');
+      tile.className = 'mobile-tile';
+      tile.onclick = function() { openMobileDetail(j.id); };
+      var badges = '';
+      if (j.nc===true||j.nc==='true') badges += '<span class="nc-overview-badge">NC</span>';
+      if (j.duct) badges += '<span class="duct-overview-badge">DUCT</span>';
+      if (j.repl) badges += '<span class="repl-overview-badge">REPL</span>';
+      tile.innerHTML = '<div class="mobile-tile-meta">' +
+        '<div class="mobile-tile-name">' + j.name + badges + '</div>' +
+        '<div class="mobile-tile-addr">' + (j.address||'') + '</div>' +
+        '<div class="mobile-tile-ms">' + curMS(j) + '</div>' +
+        '</div>' +
+        '<div class="mobile-tile-right">' +
+          '<span class="mobile-tile-prog">' + progressLabel(j) + '</span>' +
+          (delayed ? '<span class="mobile-tile-delay">! Delayed</span>' : '') +
+          '<span class="mobile-tile-arrow">&#8250;</span>' +
+        '</div>';
+      div.appendChild(tile);
+    });
   });
   el.appendChild(div);
 }
