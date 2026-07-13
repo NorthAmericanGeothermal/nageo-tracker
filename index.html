@@ -429,11 +429,46 @@ async function saveMilestone(jobId, idx, fields) {
   var inst = installs.find(function(j){return j.id===jobId;});
   var m = inst.milestones[idx];
   Object.assign(m, fields);
-  var payload = {job_id:jobId,index:idx,state:m.state,date:m.date||null,notes:m.notes||null,pinned_note:m.pinned_note||null,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+  var payload = {job_id:jobId,index:idx,state:m.state,date:m.date||null,notes:m.notes||null,pinned_note:m.pinned_note||null,drill_steps:m.drill_steps||null,updated_by:currentUser.id,updated_at:new Date().toISOString()};
   if (m.id) { await sb.from('milestones').update(payload).eq('id',m.id); }
   else { var r = await sb.from('milestones').insert(payload).select().single(); if(r.data) m.id=r.data.id; }
   await logActivity(jobId,'Updated "'+MS[idx]+'" to '+m.state+(m.notes?': '+m.notes:''));
   render();
+}
+function saveCustomerId(el) {
+  saveJobField(el.dataset.job, 'customer_id', el.value.trim());
+}
+function applyDrillUpdate(jobId, ds) {
+  var stepsDone = ['step1','step2','step3'].filter(function(sk){
+    var sv = ds[sk];
+    return (sv && sv.trim && sv.trim()) || ds[sk+'_check'];
+  }).length;
+  var fields = { drill_steps: ds };
+  if (stepsDone === 3) {
+    var inst = installs.find(function(j){return j.id===jobId;});
+    fields.state = 'done';
+    fields.date = (inst && inst.milestones[3].date) || new Date().toISOString().slice(0,10);
+  } else if (stepsDone > 0) {
+    fields.state = 'inprog';
+  } else {
+    fields.state = 'none';
+  }
+  saveMilestone(jobId, 3, fields);
+}
+function saveDrillCheck(el) {
+  var jobId = el.dataset.job, stepKey = el.dataset.step;
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if (!inst) return;
+  var ds = Object.assign({}, inst.milestones[3].drill_steps||{});
+  ds[stepKey] = el.checked;
+  applyDrillUpdate(jobId, ds);
+}
+function saveDrillStep(jobId, step, value) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if (!inst) return;
+  var ds = Object.assign({}, inst.milestones[3].drill_steps||{});
+  ds[step] = value;
+  applyDrillUpdate(jobId, ds);
 }
 async function saveJobField(jobId, field, value) {
   await sb.from('jobs').update({[field]:value,updated_at:new Date().toISOString()}).eq('id',jobId);
@@ -996,6 +1031,12 @@ async function saveNC(jobId, field, value) {
   inst.nc_data[field] = value;
   await sb.from('jobs').update({nc_data:inst.nc_data, updated_at:new Date().toISOString()}).eq('id',jobId);
 }
+function saveNCCheck(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.checked);
+}
+function saveNCText(el) {
+  saveNC(el.dataset.job, el.dataset.field, el.value);
+}
 function renderNC(j) {
   var nc = j.nc_data || {};
   var id = j.id;
@@ -1046,6 +1087,19 @@ function renderRepl(j) {
   h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" onchange="saveReplNotes(this)">';
   h += '</div>';
   return h;
+}
+async function toggleRepl(jobId) {
+  var inst = installs.find(function(j){return j.id===jobId;});
+  inst.repl = !inst.repl;
+  if(!inst.repl) inst.repl_notes = '';
+  await sb.from('jobs').update({repl:inst.repl,repl_notes:inst.repl_notes||'',updated_at:new Date().toISOString()}).eq('id',jobId);
+  await logActivity(jobId, inst.repl ? 'Marked as Replacement' : 'Removed Replacement flag');
+  render();
+}
+function saveReplNotes(el) {
+  var inst = installs.find(function(j){return j.id===el.dataset.job;});
+  inst.repl_notes = el.value;
+  sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
@@ -1686,14 +1740,17 @@ function startRealtime() {
 }
 var refreshing = false;
 var userTyping = false;
+var typingBlurTimer = null;
 document.addEventListener('focusin', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    if (typingBlurTimer) { clearTimeout(typingBlurTimer); typingBlurTimer = null; }
     userTyping = true;
   }
 });
 document.addEventListener('focusout', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-    setTimeout(function() { userTyping = false; }, 500);
+    if (typingBlurTimer) clearTimeout(typingBlurTimer);
+    typingBlurTimer = setTimeout(function() { userTyping = false; typingBlurTimer = null; }, 800);
   }
 });
 async function silentRefresh() {
