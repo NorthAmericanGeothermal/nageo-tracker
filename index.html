@@ -80,24 +80,33 @@ svg{display:block;}
 .tile.flag{box-shadow:var(--shadow-sm),inset 4px 0 0 var(--danger);}
 .tile:hover.flag{box-shadow:var(--shadow-md),inset 4px 0 0 var(--danger);}
 
-/* ── Pipeline board ── */
+/* ── Pipeline board (styled to match the team's Housecall Pro pipeline
+   board, since that's the layout the sales team already knows) ── */
 .main.wide{max-width:1700px;}
 .pipeline-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start;}
-.pipeline-col{flex:0 0 250px;background:var(--surface-alt);border-radius:var(--radius-lg);display:flex;flex-direction:column;max-height:calc(100vh - 280px);min-height:160px;transition:background .12s;}
+.pipeline-col{flex:0 0 240px;background:var(--surface-alt);border-radius:var(--radius-lg);display:flex;flex-direction:column;max-height:calc(100vh - 300px);min-height:160px;transition:background .12s;}
 .pipeline-col.drag-over{background:var(--accent-tint);}
 .pipeline-col.special{background:var(--surface);border:1.5px dashed var(--border);}
 .pipeline-col.special.drag-over{border-color:var(--accent);background:var(--accent-tint);}
-.pipeline-col-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 14px 10px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+.pipeline-col-hd{padding:14px 14px 10px;}
+.pipeline-col-hd-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.pipeline-col-title{font-size:15px;font-weight:700;color:var(--ink);}
+.pipeline-col-count{font-size:14px;font-weight:700;color:var(--muted);}
+.pipeline-col-total{font-size:12px;color:var(--muted);margin-top:2px;}
 .pipeline-col-body{overflow-y:auto;padding:0 10px 10px;display:flex;flex-direction:column;gap:8px;flex:1;}
 .pipeline-empty{font-size:13px;color:var(--muted);padding:10px 4px;}
 .pipeline-drop-hint{font-size:13px;color:var(--muted);padding:16px 8px;text-align:center;font-style:italic;}
-.pipeline-card{background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:12px 14px;cursor:grab;transition:box-shadow .15s,transform .1s,opacity .15s;}
+.pipeline-card{background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:14px;cursor:grab;transition:box-shadow .15s,opacity .15s;}
 .pipeline-card:hover{box-shadow:var(--shadow-md);}
 .pipeline-card.flag{box-shadow:var(--shadow-sm),inset 3px 0 0 var(--danger);}
 .pipeline-card.dragging{opacity:0.4;}
-.pipeline-card-name{font-size:14px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px;}
-.pipeline-card-meta{font-size:12px;color:var(--muted);margin-top:4px;}
-.pipeline-card-flag{font-size:12px;color:var(--danger-text);font-weight:600;margin-top:4px;}
+.pipeline-card-tagid{font-size:12px;color:var(--muted);margin-bottom:2px;}
+.pipeline-card-name{font-size:14px;font-weight:700;letter-spacing:-0.01em;margin-bottom:2px;line-height:1.3;}
+.pipeline-card-value{font-size:13px;color:var(--muted);margin-bottom:10px;}
+.pipeline-card-select{width:100%;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:8px 10px;cursor:pointer;margin-bottom:8px;}
+.pipeline-card-footer{font-size:11.5px;color:var(--muted);}
+.pipeline-card-footer b{color:var(--ink);font-weight:600;}
+.pipeline-card-flag{font-size:12px;color:var(--danger-text);font-weight:600;margin-bottom:6px;}
 .tile-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px;}
 .tile-name{font-size:19px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;}
 .tile-info{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;min-height:20px;}
@@ -889,7 +898,11 @@ function renderLeadTile(l, i) {
   if (l.phone) html += '<a class="call-btn" href="tel:'+digitsOnly(l.phone)+'" onclick="event.stopPropagation()">'+ICONS.phone+' '+esc(l.phone)+'</a>';
   else html += '<div class="call-btn" style="background:var(--surface-alt);color:var(--muted);cursor:default;box-shadow:none">No phone on file</div>';
   if (leadHasEmail(l)) html += '<button class="icon-btn" onclick="event.stopPropagation();openEmailChoice(\''+esc(l.id)+'\')" title="Email">'+ICONS.mailLg+'</button>';
-  html += '</div></div>';
+  html += '</div>';
+  // Quick reactivate straight from the Cold leads tile — no need to open
+  // the full profile just to move a lead back into the pipeline.
+  if (isCold) html += '<button class="btn btn-sm" style="width:100%;margin-top:10px" onclick="event.stopPropagation();openReactivateModal(\''+esc(l.id)+'\')">Add to pipeline</button>';
+  html += '</div>';
   return html;
 }
 
@@ -1122,6 +1135,14 @@ function prettyPipelineStage(s){
 }
 
 // ── Pipeline board rendering + drag-and-drop ────────────────────────────────
+// $ value per lead = sum of every estimate's total on file for that lead —
+// a rough "deal size" figure, same idea as the $ totals on the HCP board.
+function leadPipelineValue(l) {
+  return (l.estimates||[]).reduce(function(sum, e){ return sum + (Number(e.total) || 0); }, 0);
+}
+function formatMoney(n) {
+  return '$' + Number(n||0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 function renderPipelineBoard(q) {
   var pool = leads.filter(function(l){ return l.status!=='cold' && l.status!=='on_hold' && l.status!=='won'; });
   if (q) {
@@ -1137,8 +1158,10 @@ function renderPipelineBoard(q) {
   allColumns.forEach(function(col){
     var isSpecial = specialKeys.indexOf(col.key) !== -1;
     var colLeads = isSpecial ? [] : pool.filter(function(l){ return (l.pipeline_stage || 'new_lead') === col.key; });
+    var colTotal = colLeads.reduce(function(sum, l){ return sum + leadPipelineValue(l); }, 0);
     html += '<div class="pipeline-col'+(isSpecial?' special':'')+'" ondragover="allowDrop(event)" ondragleave="dragLeaveCol(event)" ondrop="dropOnColumn(event,\''+col.key+'\')">';
-    html += '<div class="pipeline-col-hd"><span>'+esc(col.label)+'</span><span class="section-count">'+colLeads.length+'</span></div>';
+    html += '<div class="pipeline-col-hd"><div class="pipeline-col-hd-top"><span class="pipeline-col-title">'+esc(col.label)+'</span><span class="pipeline-col-count">'+colLeads.length+'</span></div>';
+    html += '<div class="pipeline-col-total">'+formatMoney(colTotal)+' total</div></div>';
     html += '<div class="pipeline-col-body">';
     if (isSpecial) {
       var hint = col.key==='on_hold' ? 'Drop a lead here to put it on hold'
@@ -1157,12 +1180,19 @@ function renderPipelineBoard(q) {
 }
 function renderPipelineCard(l) {
   var replyCount = leadReplyCount(l.id);
-  var estimates = l.estimates || [];
+  var currentStage = l.pipeline_stage || 'new_lead';
   var html = '<div class="pipeline-card'+(replyCount>0?' flag':'')+'" draggable="true" ondragstart="dragStartCard(event,\''+l.id+'\')" ondragend="dragEndCard(event)" onclick="openLeadDetail(\''+l.id+'\')">';
+  if (l.customer_tag_id) html += '<div class="pipeline-card-tagid">Lead #'+esc(l.customer_tag_id)+'</div>';
   html += '<div class="pipeline-card-name">'+esc(l.customer_name||'Unknown')+'</div>';
-  if (l.job_type) html += '<span class="badge badge-jobtype-'+esc(l.job_type)+'" style="margin-top:2px">'+esc(prettyJobType(l.job_type))+'</span>';
-  if (estimates.length) html += '<div class="pipeline-card-meta">'+estimates.length+' estimate'+(estimates.length!==1?'s':'')+'</div>';
+  html += '<div class="pipeline-card-value">'+formatMoney(leadPipelineValue(l))+'</div>';
   if (replyCount>0) html += '<div class="pipeline-card-flag">Needs a reply</div>';
+  if (l.job_type) html += '<div style="margin-bottom:8px"><span class="badge badge-jobtype-'+esc(l.job_type)+'">'+esc(prettyJobType(l.job_type))+'</span></div>';
+  html += '<select class="pipeline-card-select" draggable="false" onclick="event.stopPropagation()" onchange="handleStageSelect(this,\''+l.id+'\')">';
+  PIPELINE_STAGES.concat(PIPELINE_SPECIAL_COLUMNS).forEach(function(col){
+    html += '<option value="'+col.key+'"'+(col.key===currentStage?' selected':'')+'>'+esc(col.label)+'</option>';
+  });
+  html += '</select>';
+  html += '<div class="pipeline-card-footer">Status updated <b>'+timeAgo(l.pipeline_stage_updated_at || l.created_at)+'</b></div>';
   html += '</div>';
   return html;
 }
@@ -1200,17 +1230,37 @@ function dropOnColumn(e, columnKey) {
   if ((l.pipeline_stage || 'new_lead') === columnKey) return;
   moveLeadPipelineStage(leadId, columnKey);
 }
+// Same routing as dropOnColumn, but from the dropdown selector on each card
+// — an explicit-click alternative to dragging, for anyone who'd rather pick
+// from a list than drag. Special columns snap the dropdown back to the
+// current stage immediately (since they trigger a confirm step that might
+// get cancelled); loadAll()/re-render handles it properly once confirmed.
+function handleStageSelect(selectEl, leadId) {
+  var newStage = selectEl.value;
+  var l = leads.find(function(x){return x.id===leadId;});
+  if (!l) return;
+  var current = l.pipeline_stage || 'new_lead';
+  if (newStage === current) return;
+  if (newStage === 'on_hold') { selectEl.value = current; putOnHold(leadId); return; }
+  if (newStage === 'marketing_effort') { selectEl.value = current; openColdModal(leadId); return; }
+  if (newStage === 'won') { selectEl.value = current; confirmMarkWon(leadId); return; }
+  moveLeadPipelineStage(leadId, newStage);
+}
 // Local-only move between the 7 non-terminal columns — no HCP call, same
 // idea as job_type. Optimistic UI update with rollback on failure.
 async function moveLeadPipelineStage(leadId, stage) {
   var l = leads.find(function(x){return x.id===leadId;});
   if (!l) return;
   var prev = l.pipeline_stage;
+  var prevStamp = l.pipeline_stage_updated_at;
+  var nowIso = new Date().toISOString();
   l.pipeline_stage = stage;
+  l.pipeline_stage_updated_at = nowIso;
   renderPipelineBoard((document.getElementById('search-input').value||'').toLowerCase());
-  var r = await sb.from('leads').update({ pipeline_stage: stage, updated_at: new Date().toISOString() }).eq('id', leadId);
+  var r = await sb.from('leads').update({ pipeline_stage: stage, pipeline_stage_updated_at: nowIso, updated_at: nowIso }).eq('id', leadId);
   if (r.error) {
     l.pipeline_stage = prev;
+    l.pipeline_stage_updated_at = prevStamp;
     showToast('Could not move that lead — try again.');
     renderPipelineBoard((document.getElementById('search-input').value||'').toLowerCase());
     return;
