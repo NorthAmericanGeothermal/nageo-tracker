@@ -51,6 +51,7 @@ tr:last-child td{border-bottom:none;}
 .ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
 .dot-done{background:#dcfce7;color:#16a34a;}.dot-inprog{background:#fef9c3;color:#ca8a04;}
 .dot-delayed{background:#fee2e2;color:#dc2626;}.dot-none{background:#f4f4f0;color:#bbb;}.dot-na{background:#e5e5e5;color:#555;font-size:9px;font-weight:600;}
+.dot-scheduled{background:#dbeafe;color:#2563eb;}
 .delay-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;}
 .dot-wrap{position:relative;display:inline-block;}
 .dot-wrap .tip{display:none;position:fixed;background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:500;line-height:1.6;text-align:left;pointer-events:none;transform:translateX(-50%);}.dot-wrap .tip.tip-down{bottom:auto;top:calc(100% + 6px);}
@@ -77,11 +78,11 @@ tr:last-child td{border-bottom:none;}
 .equip-input:focus{outline:none;border-color:#2563eb;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
-.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}
+.ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}.ms-row.scheduled-row{border-color:#93c5fd;background:#eff6ff;}
 .ms-main{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
 .ms-main:hover{background:rgba(0,0,0,0.02);}
 .si{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;}
-.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}.si-na{background:#e5e5e5;border-color:#bbb;color:#555;font-size:8px;font-weight:600;}
+.si-done{background:#dcfce7;border-color:#86efac;color:#16a34a;}.si-inprog{background:#fef9c3;border-color:#fde047;color:#ca8a04;}.si-delayed{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}.si-na{background:#e5e5e5;border-color:#bbb;color:#555;font-size:8px;font-weight:600;}.si-scheduled{background:#dbeafe;border-color:#93c5fd;color:#2563eb;}
 .ms-label{flex:1;font-size:13px;color:#1a1a1a;}.ms-label.done-lbl{text-decoration:line-through;color:#aaa;}
 .ms-date-tag{font-size:11px;color:#888;white-space:nowrap;}
 .ms-pinned-tag{font-size:10px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
@@ -100,7 +101,7 @@ tr:last-child td{border-bottom:none;}
 .sbtn{font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #ddd;background:#fff;color:#888;cursor:pointer;font-family:inherit;}
 .sbtn:hover{background:#f4f4f0;}
 .sbtn.a-none{background:#f4f4f0;color:#555;border-color:#bbb;}.sbtn.a-inprog{background:#fef9c3;color:#ca8a04;border-color:#fde047;}
-.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}.sbtn.a-na{background:#e5e5e5;color:#555;border-color:#bbb;}
+.sbtn.a-delayed{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}.sbtn.a-done{background:#dcfce7;color:#16a34a;border-color:#86efac;}.sbtn.a-na{background:#e5e5e5;color:#555;border-color:#bbb;}.sbtn.a-scheduled{background:#dbeafe;color:#2563eb;border-color:#93c5fd;}
 .det-input{font-size:12px;padding:4px 8px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .det-input:focus{outline:none;border-color:#2563eb;}.det-input.wide{flex:1;min-width:0;}
 .pinned-note-box{flex:1;font-size:12px;color:#2563eb;line-height:1.4;}
@@ -370,6 +371,7 @@ var SUPABASE_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_D2PqYQoJjZ8koEM9NPvmeg_KB_Wa66H';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling / loop field','Equipment installation','Startup & commissioning','Yard remediation','Final inspection','Job complete'];
+var SCHEDULED_MS = [1,3,4,5,6,7];
 var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
 var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [], allDocuments = [];
 var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
@@ -700,10 +702,10 @@ function timeAgo(ts){
   return dateStr+' &middot; '+timeStr;
 }
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':s==='na'?'dot-na':'dot-none');}
-function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='na'?'N/A':'';}
-function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':s==='na'?'si-na':'');}
-function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':s==='na'?'na-row':'');}
+function dc(s){return 'ms-dot '+(s==='done'?'dot-done':s==='inprog'?'dot-inprog':s==='delayed'?'dot-delayed':s==='scheduled'?'dot-scheduled':s==='na'?'dot-na':'dot-none');}
+function di(s){return s==='done'?'&#10003;':s==='inprog'?'&#9711;':s==='delayed'?'!':s==='scheduled'?'&#128197;':s==='na'?'N/A':'';}
+function sic(s){return 'si '+(s==='done'?'si-done':s==='inprog'?'si-inprog':s==='delayed'?'si-delayed':s==='scheduled'?'si-scheduled':s==='na'?'si-na':'');}
+function rc(s){return 'ms-row '+(s==='done'?'done-row':s==='inprog'?'inprog-row':s==='delayed'?'delayed-row':s==='scheduled'?'scheduled-row':s==='na'?'na-row':'');}
 function updateStats(){
   document.getElementById('s-active').textContent=installs.filter(function(j){return !isComplete(j);}).length;
   document.getElementById('s-delayed').textContent=installs.filter(function(j){return hasDelay(j);}).length;
@@ -767,6 +769,7 @@ function renderOverviewTable(jobsList){
         });
         if(m.notes) tipText += '<br><em>'+m.notes+'</em>';
       } else if(m.state==='done'){tipText=MS[mi]+': Completed'+(m.date?' on '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
+      else if(m.state==='scheduled'){tipText=MS[mi]+': Scheduled'+(m.date?' for '+m.date:'')+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='inprog'){tipText=MS[mi]+': In progress'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='delayed'){tipText=MS[mi]+': Delayed'+(m.notes?'<br><em>'+m.notes+'</em>':'');}
       else if(m.state==='na'){tipText=MS[mi]+': N/A';}
@@ -839,10 +842,14 @@ function renderCards(){
       html+='<span class="ms-label '+(m.state==='done'||m.state==='na'?'done-lbl':'')+'">'+MS[i]+'</span>';
       if(pt) html+='<span class="ms-pinned-tag">&#128204; '+(pt.length>40?pt.slice(0,40)+'&#8230;':pt)+'</span>';
       if(m.state==='done'&&m.date) html+='<span class="ms-date-tag">'+m.date+'</span>';
+      if(m.state==='scheduled'&&m.date) html+='<span class="ms-date-tag">&#128197; '+m.date+'</span>';
       html+='<span class="ms-chevron '+(msOpen?'open':'')+'">&#9662;</span></div>';
       html+='<div class="ms-detail" style="display:'+(msOpen?'flex':'none')+'">';
       html+='<div class="det-row"><span class="det-lbl">Status</span><div class="state-btns">';
       html+='<button class="sbtn '+(m.state==='none'?'a-none':'')+'" onclick="setState(\''+j.id+'\','+i+',\'none\')">Not started</button>';
+      if(SCHEDULED_MS.indexOf(i)!==-1){
+        html+='<button class="sbtn '+(m.state==='scheduled'?'a-scheduled':'')+'" onclick="setState(\''+j.id+'\','+i+',\'scheduled\')">&#128197; Scheduled</button>';
+      }
       html+='<button class="sbtn '+(m.state==='inprog'?'a-inprog':'')+'" onclick="setState(\''+j.id+'\','+i+',\'inprog\')">In progress</button>';
       html+='<button class="sbtn '+(m.state==='delayed'?'a-delayed':'')+'" onclick="setState(\''+j.id+'\','+i+',\'delayed\')">Delayed</button>';
       html+='<button class="sbtn '+(m.state==='done'?'a-done':'')+'" onclick="setState(\''+j.id+'\','+i+',\'done\')">Done</button>';
@@ -882,6 +889,8 @@ function renderCards(){
         html+='</div>';
       } else if(m.state==='done') {
         html+='<div class="det-row"><span class="det-lbl">Date done</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
+      } else if(m.state==='scheduled') {
+        html+='<div class="det-row"><span class="det-lbl">Scheduled for</span><input type="date" class="det-input" value="'+(m.date||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'date\',this.value)"></div>';
       }
       html+='<div class="det-row"><span class="det-lbl">Notes</span><input type="text" class="det-input wide" placeholder="Add a note..." value="'+(m.notes||'')+'" onchange="setMSField(\''+j.id+'\','+i+',\'notes\',this.value)"></div>';
       if(pt) html+='<div class="det-row"><span class="det-lbl">Pinned</span><span class="pinned-note-box">'+pt+'</span><button class="unpin-btn" onclick="unpinMS(\''+j.id+'\','+i+')">Unpin</button></div>';
@@ -1019,7 +1028,7 @@ function confirmDelete(id){
 }
 function setState(jobId,idx,state){
   var m=installs.find(function(j){return j.id===jobId;}).milestones[idx];
-  var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):'';
+  var date=state==='done'?(m.date||new Date().toISOString().slice(0,10)):(state==='scheduled'?(m.date||''):'');
   saveMilestone(jobId,idx,{state:state,date:date,notes:state==='na'?'':m.notes});
 }
 function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
@@ -1240,7 +1249,7 @@ function renderMobileTiles() {
 function openMobileDetail(jobId) {
   var j = installs.find(function(x){return x.id===jobId;});
   if (!j) return;
-  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',na:'N/A',none:'Not Started'};
+  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',scheduled:'Scheduled',na:'N/A',none:'Not Started'};
   document.getElementById('mobile-detail-name').textContent = j.name;
   var body = document.getElementById('mobile-detail-body');
   var h = '';
@@ -1249,8 +1258,8 @@ function openMobileDetail(jobId) {
   // milestones
   h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">';
   j.milestones.forEach(function(m,i) {
-    var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='na'?'#888':'#bbb';
-    var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':m.state==='inprog'?'#fefce8':'#fff';
+    var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='scheduled'?'#2563eb':m.state==='na'?'#888':'#bbb';
+    var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':m.state==='inprog'?'#fefce8':m.state==='scheduled'?'#eff6ff':'#fff';
     h += '<div style="background:'+bg+';border:0.5px solid #e5e5e5;border-radius:8px;padding:10px 12px;">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
     h += '<span style="font-size:13px;font-weight:500;color:#1a1a1a;'+(m.state==='done'||m.state==='na'?'text-decoration:line-through;color:#aaa':'')+'">'+MS[i]+'</span>';
@@ -1328,7 +1337,7 @@ function renderArchived() {
     el.innerHTML='<div class="archived-empty">No archived installs yet. Completed jobs you archive will appear here.</div>';
     return;
   }
-  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',na:'N/A',none:'Not Started'};
+  var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',scheduled:'Scheduled',na:'N/A',none:'Not Started'};
   var html = '<div style="display:flex;flex-direction:column;gap:10px;">';
   archivedJobs.forEach(function(j){
     var done = doneCount(j);
@@ -1358,8 +1367,8 @@ function renderArchived() {
       if(j.equipment) html += '<div style="font-size:12px;color:#2563eb;margin-bottom:12px;">&#9881; '+j.equipment+'</div>';
       html += '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">';
       j.milestones.forEach(function(m,i){
-        var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='na'?'#888':'#ccc';
-        var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':'#fff';
+        var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='scheduled'?'#2563eb':m.state==='na'?'#888':'#ccc';
+        var bg = m.state==='done'?'#f0fdf4':m.state==='delayed'?'#fff5f5':m.state==='scheduled'?'#eff6ff':'#fff';
         html += '<div style="background:'+bg+';border:0.5px solid #e5e5e5;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:flex-start;">';
         html += '<span style="font-size:12px;color:#888;'+(m.state==='done'?'text-decoration:line-through':'')+'">'+MS[i]+'</span>';
         html += '<div style="text-align:right"><span style="font-size:11px;font-weight:600;color:'+statusColor+'">'+MS_STATUS[m.state]+'</span>';
@@ -1652,7 +1661,7 @@ function printReport() {
   var today = new Date();
   var dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   var active = installs.filter(function(j) { return !isComplete(j); });
-  var MS_STATUS = { done: 'Complete', inprog: 'In Progress', delayed: 'Delayed', na: 'N/A', none: 'Not Started' };
+  var MS_STATUS = { done: 'Complete', inprog: 'In Progress', delayed: 'Delayed', scheduled: 'Scheduled', na: 'N/A', none: 'Not Started' };
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>NAGeo Install Status Report</title><style>';
   html += 'body{font-family:Georgia,serif;color:#1a1a1a;margin:0;padding:0;font-size:12px;}';
   html += '.page{width:7.5in;margin:0 auto;padding:0.75in;page-break-after:always;}';
@@ -1678,6 +1687,7 @@ function printReport() {
   html += '.ms-status.done{color:#16a34a;}';
   html += '.ms-status.inprog{color:#ca8a04;}';
   html += '.ms-status.delayed{color:#dc2626;}';
+  html += '.ms-status.scheduled{color:#2563eb;}';
   html += '.ms-status.na{color:#888;}';
   html += '.ms-status.none{color:#bbb;}';
   html += '.ms-name{flex:1;font-size:12px;}';
