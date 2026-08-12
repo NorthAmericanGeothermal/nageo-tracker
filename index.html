@@ -46,6 +46,8 @@ thead tr{border-bottom:0.5px solid #e5e5e5;}
 th{padding:10px 12px;text-align:left;color:#888;font-weight:400;white-space:nowrap;}
 td{padding:9px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
+.overview-row{cursor:pointer;}
+.overview-row:hover{background:#fafaf8;}
 .inst-name-cell{font-weight:500;color:#1a1a1a;font-size:13px;}.inst-addr-cell{font-size:11px;color:#888;margin-top:1px;}
 .equip-cell{font-size:11px;color:#555;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ms-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
@@ -231,6 +233,16 @@ tr:last-child td{border-bottom:none;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
 .modal{background:#fff;border-radius:14px;padding:1.5rem;width:420px;max-width:95vw;}
+.job-modal-box{width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:0;}
+.job-modal-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:0.5px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:2;border-radius:14px 14px 0 0;}
+.job-modal-title{font-size:15px;font-weight:600;color:#1a1a1a;}
+.job-modal-close{font-size:24px;line-height:1;background:none;border:none;color:#888;cursor:pointer;padding:0 4px;}
+.job-modal-close:hover{color:#1a1a1a;}
+.job-modal-box .card{border:none;border-radius:0;}
+@media (max-width:600px){
+  .job-modal-box{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0;}
+  .job-modal-header{border-radius:0;}
+}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:1.25rem;}
 .modal-row{margin-bottom:1rem;}
 .modal-label{font-size:12px;color:#888;margin-bottom:4px;}
@@ -356,6 +368,15 @@ tr:last-child td{border-bottom:none;}
       <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
       <button class="modal-save" onclick="saveSettings()">Save</button>
     </div>
+  </div>
+</div>
+<div class="modal-bg" id="job-modal">
+  <div class="modal job-modal-box">
+    <div class="job-modal-header">
+      <span class="job-modal-title" id="job-modal-title"></span>
+      <button class="job-modal-close" onclick="closeJobModal()">&times;</button>
+    </div>
+    <div id="job-modal-body"></div>
   </div>
 </div>
 <div class="mobile-detail" id="mobile-detail">
@@ -751,7 +772,7 @@ function renderOverviewTable(jobsList){
     var nameCell = tipHtml
       ? '<div class="dot-wrap" style="display:block">'+nameLine+addrLine+'<div class="tip tip-right" style="left:calc(100% + 10px);top:0;bottom:auto;transform:none;width:300px;">'+tipHtml+'</div></div>'
       : nameLine+addrLine;
-    html+='<tr><td>'+nameCell+'</td>';
+    html+='<tr class="overview-row" onclick="openJobModal(\''+j.id+'\')"><td>'+nameCell+'</td>';
     html+='<td style="font-size:12px">'+curMS(j)+'</td>';
     html+='<td style="font-size:12px;color:#888">'+progressLabel(j)+'</td>';
     j.milestones.forEach(function(m,mi){
@@ -816,7 +837,13 @@ function renderCards(){
   html += '<div class="overview-section-title">'+g.label+' <span class="overview-section-count">'+groupJobs.length+'</span></div>';
   if(!groupJobs.length){ html += '<div class="empty" style="background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;margin-bottom:8px;">No installs in this category.</div>'; return; }
   html += '<div class="installs" style="margin-bottom:20px;">';
-  groupJobs.forEach(function(j){
+  groupJobs.forEach(function(j){ html += renderCardHTML(j); });
+  html += '</div>';
+  });
+  el.innerHTML=html;
+}
+function renderCardHTML(j){
+    var html='';
     var isOpen=openCards.has(j.id), notesOpen=openNotes.has(j.id), delOpen=showDel.has(j.id);
     html+='<div class="card" id="card-'+j.id+'" ondragover="dragOver(event,\''+j.id+'\')" ondrop="drop(event,\''+j.id+'\')">';
     html+='<div class="card-header" onclick="toggleCard(\''+j.id+'\')">';
@@ -953,10 +980,7 @@ function renderCards(){
       html+='</div>';
     }
     html+='</div></div>';
-  });
-  html += '</div>';
-  });
-  el.innerHTML=html;
+    return html;
 }
 var logPage = 50;
 var logSearch = '';
@@ -1015,7 +1039,27 @@ function loadMoreLog(){
   logPage += 50;
   renderLog();
 }
-function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderDocsTab();renderMobileTiles();}
+function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderDocsTab();renderMobileTiles();renderJobModal();}
+var activeModalJob = null;
+function openJobModal(jobId){
+  activeModalJob = jobId;
+  openCards.add(jobId);
+  document.getElementById('job-modal').classList.add('open');
+  renderJobModal();
+}
+function closeJobModal(){
+  document.getElementById('job-modal').classList.remove('open');
+  activeModalJob = null;
+}
+function renderJobModal(){
+  if(!activeModalJob) return;
+  var modal = document.getElementById('job-modal');
+  if(!modal || !modal.classList.contains('open')) return;
+  var j = installs.find(function(x){return x.id===activeModalJob;}) || archivedJobs.find(function(x){return x.id===activeModalJob;});
+  if(!j){ closeJobModal(); return; }
+  document.getElementById('job-modal-title').textContent = j.name;
+  document.getElementById('job-modal-body').innerHTML = renderCardHTML(j);
+}
 function toggleCard(id){if(openCards.has(id))openCards.delete(id);else openCards.add(id);render();}
 function toggleMS(key){if(openMS.has(key))openMS.delete(key);else openMS.add(key);render();}
 function toggleNotes(id){if(openNotes.has(id))openNotes.delete(id);else openNotes.add(id);render();}
@@ -1247,6 +1291,8 @@ function renderMobileTiles() {
   el.appendChild(div);
 }
 function openMobileDetail(jobId) {
+  openJobModal(jobId);
+  return;
   var j = installs.find(function(x){return x.id===jobId;});
   if (!j) return;
   var MS_STATUS = {done:'Complete',inprog:'In Progress',delayed:'Delayed',scheduled:'Scheduled',na:'N/A',none:'Not Started'};
