@@ -101,6 +101,16 @@ tr:last-child td{border-bottom:none;}
 .gmail-row-email{font-size:13px;font-weight:600;color:#1a1a1a;}
 .gmail-row-sub{font-size:11px;color:#aaa;margin-top:2px;}
 .gmail-default-tag{font-size:10px;font-weight:600;color:#16a34a;background:#dcfce7;padding:3px 8px;border-radius:999px;}
+.email-tmpl-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.email-tmpl-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border:0.5px solid #e5e5e5;border-radius:7px;background:#fff;}
+.email-tmpl-item.is-default{border-color:#86efac;background:#f0fdf4;}
+.email-tmpl-name{flex:1;font-size:12.5px;color:#1a1a1a;}
+.email-tmpl-item-btns{display:flex;gap:5px;flex-shrink:0;}
+.email-tmpl-editor-box{border:0.5px solid #ddd;border-radius:8px;padding:10px;margin-top:6px;background:#fafaf8;}
+.email-reply-tag{color:#2563eb;font-weight:500;}
+.email-reply-box{font-size:12px;padding:8px 10px;border-radius:8px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;margin-bottom:10px;}
+.email-reply-box.muted{border-color:#e5e5e5;background:#f9f9f7;color:#aaa;}
+.email-reply-snippet{margin-top:4px;font-size:11.5px;color:#555;font-style:italic;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
 .ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}.ms-row.scheduled-row{border-color:#93c5fd;background:#eff6ff;}
@@ -402,8 +412,13 @@ tr:last-child td{border-bottom:none;}
       <select class="modal-input" id="email-from-select" onchange="onEmailFromChange()"></select>
     </div>
     <div class="modal-row">
+      <div class="modal-label">Template</div>
+      <select class="modal-input" id="email-template-select" onchange="onEmailTemplateChange()"></select>
+    </div>
+    <div class="modal-row">
       <div class="modal-label">To</div>
-      <input type="text" class="modal-input" id="email-to-input" placeholder="customer@email.com">
+      <input type="text" class="modal-input" id="email-to-input" placeholder="customer@email.com, spouse@email.com">
+      <div style="font-size:11px;color:#aaa;margin-top:3px;">Separate multiple recipients with commas.</div>
     </div>
     <div class="modal-row">
       <div class="modal-label">Subject</div>
@@ -431,8 +446,12 @@ tr:last-child td{border-bottom:none;}
   <div class="modal" style="width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;">
     <div class="modal-title" id="email-view-title">Sent Email</div>
     <div style="font-size:12px;color:#888;margin-bottom:10px;" id="email-view-meta"></div>
+    <div id="email-view-reply-box"></div>
     <div class="rte-editor" id="email-view-body" style="cursor:default;"></div>
-    <div class="modal-btns"><button class="modal-cancel" onclick="closeEmailViewModal()">Close</button></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" id="email-view-checkreply-btn" onclick="checkEmailReply()" style="display:none;">Check for reply</button>
+      <button class="modal-cancel" onclick="closeEmailViewModal()">Close</button>
+    </div>
   </div>
 </div>
 <div class="modal-bg" id="email-settings-modal">
@@ -446,7 +465,7 @@ tr:last-child td{border-bottom:none;}
       <button class="modal-cancel" onclick="loadGmailPool().then(renderGmailPoolInEmailSettings)">&#8635; Refresh</button>
     </div>
     <div class="email-tmpl-title">Email Templates</div>
-    <div class="email-merge-hint">Use <code>{{name}}</code> anywhere below and it'll be swapped for the customer's name when composing. Editing here only changes the starting point for future sends.</div>
+    <div class="email-merge-hint">Use <code>{{name}}</code> anywhere below and it'll be swapped for the customer's name when composing. Each step can have multiple named templates (e.g. Retrofit / New Construction / Replacement) &mdash; the one marked default is preselected when sending, but any can be picked at send time. Editing or deleting a template never touches emails already sent.</div>
     <div id="email-templates-body"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeEmailSettingsModal()">Close</button>
@@ -2002,9 +2021,20 @@ document.addEventListener('mouseout', function(e) {
 // never referenced anything GREC-specific).
 // ══════════════════════════════════════════════════════════
 async function loadEmailTemplates(){
-  var r = await sb.from('email_templates').select('*');
+  var r = await sb.from('email_templates').select('*').order('name',{ascending:true});
   emailTemplates = {};
-  (r.data||[]).forEach(function(t){ emailTemplates[t.step_number] = t; });
+  (r.data||[]).forEach(function(t){
+    if (!emailTemplates[t.step_number]) emailTemplates[t.step_number] = [];
+    emailTemplates[t.step_number].push(t);
+  });
+  Object.keys(emailTemplates).forEach(function(step){
+    emailTemplates[step].sort(function(a,b){ if(!!b.is_default - !!a.is_default) return (b.is_default?1:0)-(a.is_default?1:0); return (a.name||'').localeCompare(b.name||''); });
+  });
+}
+function templatesForStep(step){ return emailTemplates[step] || []; }
+function defaultTemplateForStep(step){
+  var list = templatesForStep(step);
+  return list.find(function(t){ return t.is_default; }) || list[0] || null;
 }
 function jobEmailsFor(jobId, step){
   return jobEmails.filter(function(e){ return e.job_id===jobId && e.step_number===step; });
@@ -2016,7 +2046,12 @@ function renderEmailSteps(j){
     var last = sent[0];
     h += '<div class="email-step-row'+(last?' sent':'')+'">';
     h += '<span class="email-step-label">Email '+step.n+': '+esc(step.label)+'</span>';
-    h += '<span class="email-step-status'+(last?' sent-tag':'')+'">'+(last ? ('&#10003; Sent '+(last.sent_at ? new Date(last.sent_at).toLocaleDateString() : '')) : 'Not sent')+'</span>';
+    var status = 'Not sent';
+    if (last) {
+      status = '&#10003; Sent '+(last.sent_at ? new Date(last.sent_at).toLocaleDateString() : '')+(sent.length>1?' ('+sent.length+'x)':'');
+      if (last.reply_received) status += ' &middot; <span class="email-reply-tag">&#8617; Replied</span>';
+    }
+    h += '<span class="email-step-status'+(last?' sent-tag':'')+'">'+status+'</span>';
     h += '<div class="email-step-btns">';
     if(last) h += '<button class="sbtn" onclick="openEmailViewModal(\''+last.id+'\')">View</button>';
     h += '<button class="sbtn" onclick="openEmailComposeModal(\''+j.id+'\','+step.n+')">'+(last?'Resend':'Send')+'</button>';
@@ -2092,12 +2127,12 @@ function openEmailComposeModal(jobId, step){
   var j = installs.find(function(x){return x.id===jobId;}) || archivedJobs.find(function(x){return x.id===jobId;});
   if (!j) return;
   activeEmailCompose = { jobId: jobId, step: step };
-  var stepInfo = EMAIL_STEPS.find(function(s){return s.n===step;}) || {};
-  var tmpl = emailTemplates[step] || {};
   document.getElementById('email-compose-title').textContent = 'Send Email ' + step + ' — ' + j.name;
   document.getElementById('email-to-input').value = j.email || '';
-  document.getElementById('email-subject-input').value = mergeText(tmpl.subject||'', j);
-  document.getElementById('email-body-editor').innerHTML = mergeHtml(tmpl.body_html||'', j);
+  populateEmailTemplateSelect(step);
+  var chosen = defaultTemplateForStep(step);
+  document.getElementById('email-template-select').value = chosen ? chosen.id : '';
+  applyTemplateToCompose(chosen, j);
   populateEmailFromSelect();
   onEmailFromChange();
   document.getElementById('email-compose-modal').classList.add('open');
@@ -2105,6 +2140,31 @@ function openEmailComposeModal(jobId, step){
 function closeEmailComposeModal(){
   document.getElementById('email-compose-modal').classList.remove('open');
   activeEmailCompose = null;
+}
+function populateEmailTemplateSelect(step){
+  var sel = document.getElementById('email-template-select');
+  var list = templatesForStep(step);
+  if (!list.length) {
+    sel.innerHTML = '<option value="">No templates saved — add one in Email settings</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = list.map(function(t){
+    return '<option value="'+esc(t.id)+'">'+esc(t.name)+(t.is_default?' (default)':'')+'</option>';
+  }).join('');
+}
+function applyTemplateToCompose(t, j){
+  document.getElementById('email-subject-input').value = mergeText(t?t.subject:'', j);
+  document.getElementById('email-body-editor').innerHTML = mergeHtml(t?t.body_html:'', j);
+}
+function onEmailTemplateChange(){
+  if (!activeEmailCompose) return;
+  var j = installs.find(function(x){return x.id===activeEmailCompose.jobId;}) || archivedJobs.find(function(x){return x.id===activeEmailCompose.jobId;});
+  var list = templatesForStep(activeEmailCompose.step);
+  var id = document.getElementById('email-template-select').value;
+  var t = list.find(function(x){ return String(x.id)===String(id); });
+  applyTemplateToCompose(t, j);
 }
 function populateEmailFromSelect(){
   var sel = document.getElementById('email-from-select');
@@ -2126,14 +2186,19 @@ function onEmailFromChange(){
 async function sendJobEmail(){
   if (!activeEmailCompose) return;
   var jobId = activeEmailCompose.jobId, step = activeEmailCompose.step;
-  var to = document.getElementById('email-to-input').value.trim();
+  var toRaw = document.getElementById('email-to-input').value.trim();
+  var recipients = toRaw.split(/[,;]+/).map(function(s){return s.trim();}).filter(Boolean);
+  if (!recipients.length) { showToast('Enter at least one "To" email address.'); return; }
+  var to = recipients.join(', ');
   var subject = document.getElementById('email-subject-input').value.trim();
   var bodyHtml = document.getElementById('email-body-editor').innerHTML;
   var fromEmail = document.getElementById('email-from-select').value;
-  if (!to) { showToast('Enter a "To" email address.'); return; }
+  var tmplSel = document.getElementById('email-template-select');
+  var tmplId = (tmplSel && tmplSel.value) ? tmplSel.value : null;
+  var tmplObj = templatesForStep(step).find(function(t){ return String(t.id)===String(tmplId); });
   var btn = document.getElementById('email-send-btn');
   btn.disabled = true; var origText = btn.textContent; btn.textContent = 'Sending…';
-  var row = { job_id: jobId, step_number: step, sent_to: to, sent_from_email: fromEmail||null, subject: subject, body_html: bodyHtml, sent_by: currentUser.name, sent_at: new Date().toISOString() };
+  var row = { job_id: jobId, step_number: step, sent_to: to, sent_from_email: fromEmail||null, subject: subject, body_html: bodyHtml, sent_by: currentUser.name, sent_at: new Date().toISOString(), template_id: tmplObj ? tmplObj.id : null, template_name: tmplObj ? tmplObj.name : null };
   if (fromEmail) {
     try {
       var res = await fetch(GREC_SEND_EMAIL_URL, {
@@ -2160,15 +2225,66 @@ async function sendJobEmail(){
   render();
   showToast(fromEmail ? 'Email sent.' : 'Opened in Gmail — logged to activity.');
 }
+var activeViewEmailId = null;
 function openEmailViewModal(emailId){
   var e = jobEmails.find(function(x){ return x.id===emailId; });
   if (!e) return;
-  document.getElementById('email-view-title').textContent = 'Email ' + e.step_number + (e.sent_at ? ' — ' + new Date(e.sent_at).toLocaleString() : '');
+  activeViewEmailId = emailId;
+  document.getElementById('email-view-title').textContent = 'Email ' + e.step_number + (e.template_name ? ' — ' + e.template_name : '') + (e.sent_at ? ' — ' + new Date(e.sent_at).toLocaleString() : '');
   document.getElementById('email-view-meta').textContent = 'To ' + (e.sent_to||'—') + (e.sent_from_email ? ' · from ' + e.sent_from_email : '') + (e.sent_by ? ' · by ' + e.sent_by : '');
   document.getElementById('email-view-body').innerHTML = e.body_html || '<em>No content saved.</em>';
+  renderEmailViewReplyBox(e);
+  var checkBtn = document.getElementById('email-view-checkreply-btn');
+  checkBtn.style.display = (e.gmail_thread_id && e.sent_from_email) ? 'inline-block' : 'none';
+  checkBtn.textContent = 'Check for reply';
+  checkBtn.disabled = false;
   document.getElementById('email-view-modal').classList.add('open');
 }
-function closeEmailViewModal(){ document.getElementById('email-view-modal').classList.remove('open'); }
+function closeEmailViewModal(){ document.getElementById('email-view-modal').classList.remove('open'); activeViewEmailId = null; }
+function renderEmailViewReplyBox(e){
+  var box = document.getElementById('email-view-reply-box');
+  if (!box) return;
+  if (e.reply_received) {
+    box.innerHTML = '<div class="email-reply-box">&#8617; Replied' + (e.reply_at ? (' ' + new Date(e.reply_at).toLocaleString()) : '') + (e.reply_snippet ? ('<div class="email-reply-snippet">' + esc(e.reply_snippet) + '</div>') : '') + '</div>';
+  } else if (e.gmail_thread_id) {
+    box.innerHTML = '<div class="email-reply-box muted">No reply detected yet.</div>';
+  } else {
+    box.innerHTML = '';
+  }
+}
+async function checkEmailReply(){
+  if (!activeViewEmailId) return;
+  var e = jobEmails.find(function(x){ return x.id===activeViewEmailId; });
+  if (!e || !e.gmail_thread_id || !e.sent_from_email) return;
+  var btn = document.getElementById('email-view-checkreply-btn');
+  btn.disabled = true; var orig = btn.textContent; btn.textContent = 'Checking…';
+  try {
+    var res = await fetch(GREC_SEND_EMAIL_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({action:'check_reply', google_email:e.sent_from_email, thread_id:e.gmail_thread_id, gmail_thread_id:e.gmail_thread_id})
+    });
+    var data = await res.json();
+    console.log('check_reply response', data);
+    var hasReply = !!(data.has_reply || data.replied || data.reply_found || (data.reply && (data.reply.snippet || data.reply.date || true)));
+    var snippet = data.reply_snippet || data.snippet || (data.reply && data.reply.snippet) || null;
+    var replyAt = data.reply_at || data.date || (data.reply && data.reply.date) || null;
+    if (hasReply) {
+      var upd = { reply_received:true, reply_snippet: snippet||null, reply_at: replyAt ? new Date(replyAt).toISOString() : new Date().toISOString() };
+      var updRes = await sb.from('job_emails').update(upd).eq('id', e.id);
+      if (updRes.error) { showToast('Reply found, but could not save: ' + updRes.error.message); }
+      else { Object.assign(e, upd); showToast('Reply found.'); }
+    } else {
+      showToast('No reply yet.');
+    }
+    renderEmailViewReplyBox(e);
+    render();
+  } catch(err) {
+    console.error(err);
+    showToast('Could not check for reply — see console.');
+  }
+  btn.disabled = false; btn.textContent = orig;
+}
 // ── Email settings modal (Gmail pool + template editor) ──
 function openEmailSettingsModal(){
   loadGmailPool().then(renderGmailPoolInEmailSettings);
@@ -2180,35 +2296,114 @@ function renderEmailTemplatesSettings(){
   var body = document.getElementById('email-templates-body');
   var h = '';
   EMAIL_STEPS.forEach(function(step){
-    var t = emailTemplates[step.n] || {};
+    var list = templatesForStep(step.n);
     h += '<div class="email-tmpl-block">';
     h += '<div class="email-tmpl-title">Email ' + step.n + ': ' + esc(step.label) + '</div>';
-    h += '<div class="modal-row"><div class="modal-label">Subject</div><input type="text" class="modal-input" id="tmpl-subject-' + step.n + '" value="' + esc(t.subject||'') + '"></div>';
-    h += '<div class="modal-row"><div class="modal-label">Body</div>';
-    h += '<div class="rte-toolbar">';
-    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'bold\')" title="Bold"><b>B</b></button>';
-    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'italic\')" title="Italic"><i>I</i></button>';
-    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'insertUnorderedList\')" title="Bullet list">&bull;&equiv;</button>';
-    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'insertOrderedList\')" title="Numbered list">1&equiv;</button>';
-    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'removeFormat\')" title="Clear formatting">Tx</button>';
+    h += '<div class="email-tmpl-list" id="tmpl-list-' + step.n + '">';
+    if (!list.length) {
+      h += '<div style="font-size:12px;color:#aaa;margin-bottom:6px;">No templates saved yet for this step.</div>';
+    } else {
+      list.forEach(function(t){
+        h += '<div class="email-tmpl-item' + (t.is_default?' is-default':'') + '">';
+        h += '<span class="email-tmpl-name">' + esc(t.name) + (t.is_default ? ' <span class="gmail-default-tag">Default</span>' : '') + '</span>';
+        h += '<div class="email-tmpl-item-btns">';
+        h += '<button class="ms-doc-btn" onclick="editTemplateInline(' + step.n + ',\'' + t.id + '\')">Edit</button>';
+        if (!t.is_default) h += '<button class="ms-doc-btn" onclick="setDefaultTemplate(' + step.n + ',\'' + t.id + '\')">Set default</button>';
+        h += '<button class="ms-doc-btn danger" onclick="deleteTemplate(' + step.n + ',\'' + t.id + '\')">Delete</button>';
+        h += '</div></div>';
+      });
+    }
     h += '</div>';
-    h += '<div class="rte-editor" contenteditable="true" id="tmpl-body-' + step.n + '">' + (t.body_html||'') + '</div></div>';
-    h += '<button class="modal-save" style="margin-top:6px;" onclick="saveEmailTemplate(' + step.n + ')">Save</button>';
+    h += '<button class="ms-doc-btn" onclick="addTemplateInline(' + step.n + ')">+ Add template for this step</button>';
+    h += '<div class="email-tmpl-editor-box" id="tmpl-editor-' + step.n + '" style="display:none;"></div>';
     h += '</div>';
   });
   body.innerHTML = h;
 }
-async function saveEmailTemplate(step){
-  var stepInfo = EMAIL_STEPS.find(function(s){return s.n===step;}) || {};
+function templateEditorHTML(step, t){
+  var idAttr = t ? t.id : 'new';
+  var name = t ? t.name : '';
+  var subject = t ? (t.subject||'') : '';
+  var bodyHtml = t ? (t.body_html||'') : '';
+  var isDefault = t ? !!t.is_default : (templatesForStep(step).length === 0);
+  var h = '';
+  h += '<div class="modal-row"><div class="modal-label">Template name</div><input type="text" class="modal-input" id="tmpl-name-' + step + '" placeholder="e.g. Retrofit, New Construction, Replacement" value="' + esc(name) + '"></div>';
+  h += '<div class="modal-row"><div class="modal-label">Subject</div><input type="text" class="modal-input" id="tmpl-subject-' + step + '" value="' + esc(subject) + '"></div>';
+  h += '<div class="modal-row"><div class="modal-label">Body</div>';
+  h += '<div class="rte-toolbar">';
+  h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step + '\',\'bold\')" title="Bold"><b>B</b></button>';
+  h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step + '\',\'italic\')" title="Italic"><i>I</i></button>';
+  h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step + '\',\'insertUnorderedList\')" title="Bullet list">&bull;&equiv;</button>';
+  h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step + '\',\'insertOrderedList\')" title="Numbered list">1&equiv;</button>';
+  h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step + '\',\'removeFormat\')" title="Clear formatting">Tx</button>';
+  h += '</div>';
+  h += '<div class="rte-editor" contenteditable="true" id="tmpl-body-' + step + '">' + bodyHtml + '</div></div>';
+  h += '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#555;margin:8px 0;"><input type="checkbox" id="tmpl-default-' + step + '"' + (isDefault?' checked':'') + '> Set as default for this step</label>';
+  h += '<div class="modal-btns" style="margin-top:4px;">';
+  h += '<button class="modal-cancel" onclick="cancelTemplateInline(' + step + ')">Cancel</button>';
+  h += '<button class="modal-save" onclick="saveTemplateInline(' + step + ',\'' + idAttr + '\')">Save</button>';
+  h += '</div>';
+  return h;
+}
+function addTemplateInline(step){
+  var box = document.getElementById('tmpl-editor-' + step);
+  box.innerHTML = templateEditorHTML(step, null);
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function editTemplateInline(step, id){
+  var t = templatesForStep(step).find(function(x){ return String(x.id)===String(id); });
+  if (!t) return;
+  var box = document.getElementById('tmpl-editor-' + step);
+  box.innerHTML = templateEditorHTML(step, t);
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function cancelTemplateInline(step){
+  var box = document.getElementById('tmpl-editor-' + step);
+  box.style.display = 'none';
+  box.innerHTML = '';
+}
+async function saveTemplateInline(step, idAttr){
+  var name = document.getElementById('tmpl-name-'+step).value.trim();
   var subject = document.getElementById('tmpl-subject-'+step).value.trim();
   var bodyHtml = document.getElementById('tmpl-body-'+step).innerHTML;
-  var r = await sb.from('email_templates').upsert({
-    step_number: step, label: stepInfo.label, subject: subject, body_html: bodyHtml,
-    updated_by: currentUser.name, updated_at: new Date().toISOString()
-  }, { onConflict: 'step_number' }).select().single();
+  var makeDefault = document.getElementById('tmpl-default-'+step).checked;
+  if (!name) { showToast('Give the template a name.'); return; }
+  var isNew = (idAttr === 'new');
+  var payload = { step_number: step, name: name, subject: subject, body_html: bodyHtml, is_default: makeDefault, updated_by: currentUser.name, updated_at: new Date().toISOString() };
+  var r;
+  if (isNew) {
+    r = await sb.from('email_templates').insert(payload).select().single();
+  } else {
+    r = await sb.from('email_templates').update(payload).eq('id', idAttr).select().single();
+  }
   if (r.error) { showToast('Could not save template: ' + r.error.message); return; }
-  emailTemplates[step] = r.data;
-  showToast('Template ' + step + ' saved.');
+  if (makeDefault) {
+    var others = templatesForStep(step).filter(function(t){ return String(t.id)!==String(r.data.id); }).map(function(t){ return t.id; });
+    if (others.length) await sb.from('email_templates').update({ is_default:false }).in('id', others);
+  }
+  await loadEmailTemplates();
+  cancelTemplateInline(step);
+  renderEmailTemplatesSettings();
+  showToast('Template saved.');
+}
+async function setDefaultTemplate(step, id){
+  var others = templatesForStep(step).filter(function(t){ return String(t.id)!==String(id); }).map(function(t){ return t.id; });
+  if (others.length) await sb.from('email_templates').update({ is_default:false }).in('id', others);
+  var r = await sb.from('email_templates').update({ is_default:true }).eq('id', id);
+  if (r.error) { showToast('Could not set default: ' + r.error.message); return; }
+  await loadEmailTemplates();
+  renderEmailTemplatesSettings();
+  showToast('Default template updated.');
+}
+async function deleteTemplate(step, id){
+  if (!confirm('Delete this template? Emails already sent from it are unaffected.')) return;
+  var r = await sb.from('email_templates').delete().eq('id', id);
+  if (r.error) { showToast('Could not delete: ' + r.error.message); return; }
+  await loadEmailTemplates();
+  renderEmailTemplatesSettings();
+  showToast('Template deleted.');
 }
 init();
 // ── REAL-TIME + AUTO REFRESH ──────────────────────────
