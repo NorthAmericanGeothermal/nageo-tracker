@@ -78,6 +78,29 @@ tr:last-child td{border-bottom:none;}
 .equip-label{font-size:11px;color:#888;white-space:nowrap;}
 .equip-input{flex:1;font-size:13px;padding:6px 10px;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;color:#1a1a1a;font-family:inherit;}
 .equip-input:focus{outline:none;border-color:#2563eb;}
+.email-section{padding:12px 16px;border-bottom:0.5px solid #f0f0f0;background:#fafaf8;}
+.email-section-title{font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:8px;display:block;}
+.email-steps-list{display:flex;flex-direction:column;gap:6px;}
+.email-step-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid #e5e5e5;border-radius:8px;background:#fff;flex-wrap:wrap;}
+.email-step-row.sent{border-color:#86efac;background:#f0fdf4;}
+.email-step-label{flex:1;font-size:12.5px;color:#1a1a1a;min-width:140px;}
+.email-step-status{font-size:11px;color:#aaa;white-space:nowrap;}
+.email-step-status.sent-tag{color:#16a34a;font-weight:500;}
+.email-step-btns{display:flex;gap:6px;flex-shrink:0;}
+.rte-toolbar{display:flex;gap:6px;margin-bottom:8px;}
+.rte-toolbar button{width:28px;height:26px;border-radius:6px;border:0.5px solid #ddd;background:#f9f9f7;color:#1a1a1a;cursor:pointer;font-size:12px;font-family:inherit;}
+.rte-toolbar button:hover{background:#f4f4f0;}
+.rte-editor{min-height:110px;max-height:260px;overflow-y:auto;border:0.5px solid #ddd;border-radius:8px;background:#f9f9f7;color:#1a1a1a;padding:10px 12px;font-size:13px;line-height:1.5;}
+.rte-editor:focus{outline:none;border-color:#2563eb;}
+.rte-editor ul,.rte-editor ol{padding-left:20px;margin:6px 0;}
+.rte-editor p{margin:6px 0;}
+.email-merge-hint{font-size:11px;color:#aaa;margin-bottom:12px;}
+.email-merge-hint code{background:#f4f4f0;padding:1px 5px;border-radius:4px;}
+.email-tmpl-block{border:0.5px solid #e5e5e5;border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+.email-tmpl-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#1a1a1a;}
+.gmail-row-email{font-size:13px;font-weight:600;color:#1a1a1a;}
+.gmail-row-sub{font-size:11px;color:#aaa;margin-top:2px;}
+.gmail-default-tag{font-size:10px;font-weight:600;color:#16a34a;background:#dcfce7;padding:3px 8px;border-radius:999px;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
 .ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}.ms-row.scheduled-row{border-color:#93c5fd;background:#eff6ff;}
@@ -331,6 +354,7 @@ tr:last-child td{border-bottom:none;}
     <div class="topbar-logo">NAGeo <span>Tracker</span></div>
     <button class="sync-btn" onclick="syncHCP()">&#8635; Sync HCP</button>
     <button class="sync-btn" onclick="printReport()" style="border-color:#16a34a;color:#16a34a;">&#128438; Print report</button>
+    <button class="sync-btn" onclick="openEmailSettingsModal()" style="border-color:#059669;color:#059669;">&#9993; Email settings</button>
     <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
     <div class="topbar-user">Signed in as <strong id="topbar-name"></strong></div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
@@ -370,6 +394,65 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 </div>
+<div class="modal-bg" id="email-compose-modal">
+  <div class="modal" style="width:580px;max-width:95vw;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="email-compose-title">Send Email</div>
+    <div class="modal-row">
+      <div class="modal-label">Sending as</div>
+      <select class="modal-input" id="email-from-select" onchange="onEmailFromChange()"></select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">To</div>
+      <input type="text" class="modal-input" id="email-to-input" placeholder="customer@email.com">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Subject</div>
+      <input type="text" class="modal-input" id="email-subject-input">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Message</div>
+      <div class="rte-toolbar">
+        <button type="button" onclick="rteCmd('email-body-editor','bold')" title="Bold"><b>B</b></button>
+        <button type="button" onclick="rteCmd('email-body-editor','italic')" title="Italic"><i>I</i></button>
+        <button type="button" onclick="rteCmd('email-body-editor','insertUnorderedList')" title="Bullet list">&bull;&equiv;</button>
+        <button type="button" onclick="rteCmd('email-body-editor','insertOrderedList')" title="Numbered list">1&equiv;</button>
+        <button type="button" onclick="rteCmd('email-body-editor','removeFormat')" title="Clear formatting">Tx</button>
+      </div>
+      <div class="rte-editor" contenteditable="true" id="email-body-editor"></div>
+    </div>
+    <div style="font-size:12px;color:#888;margin-top:4px;" id="email-send-note"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeEmailComposeModal()">Cancel</button>
+      <button class="modal-save" id="email-send-btn" onclick="sendJobEmail()">Send Email</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="email-view-modal">
+  <div class="modal" style="width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="email-view-title">Sent Email</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px;" id="email-view-meta"></div>
+    <div class="rte-editor" id="email-view-body" style="cursor:default;"></div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeEmailViewModal()">Close</button></div>
+  </div>
+</div>
+<div class="modal-bg" id="email-settings-modal">
+  <div class="modal" style="width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title">Email Settings</div>
+    <div class="email-tmpl-title">Gmail Accounts</div>
+    <div class="email-merge-hint">Any connected account can be used by anyone signed into the Tracker &mdash; pick your own default below. Shared with the GRECs tool (same connection).</div>
+    <div id="email-gmail-pool-list" style="margin-bottom:10px;"></div>
+    <div class="modal-btns" style="justify-content:flex-start;margin-top:0;margin-bottom:1.4rem;">
+      <button class="modal-cancel" onclick="connectGmail()">+ Connect Gmail</button>
+      <button class="modal-cancel" onclick="loadGmailPool().then(renderGmailPoolInEmailSettings)">&#8635; Refresh</button>
+    </div>
+    <div class="email-tmpl-title">Email Templates</div>
+    <div class="email-merge-hint">Use <code>{{name}}</code> anywhere below and it'll be swapped for the customer's name when composing. Editing here only changes the starting point for future sends.</div>
+    <div id="email-templates-body"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeEmailSettingsModal()">Close</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="job-modal">
   <div class="modal job-modal-box">
     <div class="job-modal-header">
@@ -397,6 +480,19 @@ var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard
 var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [], allDocuments = [];
 var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
 var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
+// ── Email milestone — own tables (email_templates, job_emails), reuses the
+// same shared Gmail pool / send function the GRECs tool already set up.
+var EMAIL_STEPS = [
+  {n:1, label:'Hi, thanks'},
+  {n:2, label:"What's next"},
+  {n:3, label:'Almost there'},
+  {n:4, label:'Done'},
+  {n:5, label:"What's next"}
+];
+var emailTemplates = {}, jobEmails = [], gmailPool = [];
+var GREC_SEND_EMAIL_URL = 'https://hpgwwegjsxyxovdattoc.supabase.co/functions/v1/grec-send-email';
+var GOOGLE_CLIENT_ID = "924555050056-jp3k8vpo89tb14vfghjqefrb1aaik21e.apps.googleusercontent.com";
+var GOOGLE_OAUTH_REDIRECT_URI = SUPABASE_URL + "/functions/v1/lead-gmail-oauth";
 async function init() {
   var saved = localStorage.getItem('nageo_user');
   if (saved) { currentUser = JSON.parse(saved); showApp(); }
@@ -443,6 +539,8 @@ async function showApp() {
   document.getElementById('topbar-name').textContent = currentUser.name;
   await loadSettings();
   await loadAll();
+  await loadEmailTemplates();
+  await loadGmailPool();
   startRealtime();
 }
 async function loadAll() {
@@ -450,9 +548,11 @@ async function loadAll() {
   var r2 = await sb.from('milestones').select('*').order('index');
   var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
   var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
+  var r5 = await sb.from('job_emails').select('*').order('sent_at',{ascending:false});
   var rawJobs = r1.data || [], allMS = r2.data || [];
   activityLog = r3.data || [];
   allDocuments = r4.data || [];
+  jobEmails = r5.data || [];
   var allJobs = rawJobs.map(function(j) {
     return Object.assign({},j,{
       hcp_notes: j.hcp_notes||[],
@@ -584,6 +684,12 @@ async function syncHCP() {
           updatePayload.customer_id = freshId;
           needsUpdate = true;
         }
+        var freshEmail = c.email || (Array.isArray(c.emails) ? c.emails[0] : '') || '';
+        if (freshEmail && !existing.email) {
+          existing.email = freshEmail;
+          updatePayload.email = freshEmail;
+          needsUpdate = true;
+        }
         if (needsUpdate) {
           await sb.from('jobs').update(updatePayload).eq('id',existing.id);
           updated++;
@@ -625,7 +731,8 @@ async function importCustomer(c, addr, sortOrder) {
     var ct = typeof ctags[ti]==='string'?ctags[ti]:(ctags[ti].name||'');
     if(ct.length===5 && !isNaN(ct)){ customerId = ct; break; }
   }
-  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,customer_id:customerId,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
+  var customerEmail = c.email || (Array.isArray(c.emails) ? c.emails[0] : '') || '';
+  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,customer_id:customerId,email:customerEmail,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
   if (r.data) {
     r.data.milestones=MS.map(function(_,mi){return {job_id:r.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
     r.data.hcp_notes=hcpNotes;
@@ -857,10 +964,12 @@ function renderCardHTML(j){
     if(isComplete(j)) html+='<span class="pill pill-done">&#10003; Complete</span>';
     html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
     html+='<div class="card-body '+(isOpen?'open':'')+'">';
+    html += renderEmailSteps(j);
     html+='<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
     html+='<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="'+(j.equipment||'')+'" onchange="saveJobField(\''+j.id+'\',\'equipment\',this.value)"></div>';
 
     html+='<div class="equip-section"><span class="equip-label" style="color:#aaa"># Customer ID</span><input type="text" class="equip-input" data-job="'+j.id+'" placeholder="5-digit HCP ID" value="'+(j.customer_id||'')+'" onchange="saveCustomerId(this)" maxlength="5" style="max-width:100px;"></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" onchange="saveJobField(\''+j.id+'\',\'email\',this.value.trim())"></div>';
     html+='<div class="ms-list">';
     j.milestones.forEach(function(m,i){
       var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
@@ -1886,6 +1995,221 @@ document.addEventListener('mouseout', function(e) {
     if (tip) tip.style.display = 'none';
   }
 });
+// ══════════════════════════════════════════════════════════
+// EMAIL MILESTONE — 5 numbered templated emails per job, sent through the
+// shared Gmail pool (same gmail_accounts table + grec-send-email function
+// the GRECs tool already uses; no new Edge Function needed since that one
+// never referenced anything GREC-specific).
+// ══════════════════════════════════════════════════════════
+async function loadEmailTemplates(){
+  var r = await sb.from('email_templates').select('*');
+  emailTemplates = {};
+  (r.data||[]).forEach(function(t){ emailTemplates[t.step_number] = t; });
+}
+function jobEmailsFor(jobId, step){
+  return jobEmails.filter(function(e){ return e.job_id===jobId && e.step_number===step; });
+}
+function renderEmailSteps(j){
+  var h = '<div class="email-section"><span class="email-section-title">&#9993; Emails</span><div class="email-steps-list">';
+  EMAIL_STEPS.forEach(function(step){
+    var sent = jobEmailsFor(j.id, step.n).slice().sort(function(a,b){ return new Date(b.sent_at)-new Date(a.sent_at); });
+    var last = sent[0];
+    h += '<div class="email-step-row'+(last?' sent':'')+'">';
+    h += '<span class="email-step-label">Email '+step.n+': '+esc(step.label)+'</span>';
+    h += '<span class="email-step-status'+(last?' sent-tag':'')+'">'+(last ? ('&#10003; Sent '+(last.sent_at ? new Date(last.sent_at).toLocaleDateString() : '')) : 'Not sent')+'</span>';
+    h += '<div class="email-step-btns">';
+    if(last) h += '<button class="sbtn" onclick="openEmailViewModal(\''+last.id+'\')">View</button>';
+    h += '<button class="sbtn" onclick="openEmailComposeModal(\''+j.id+'\','+step.n+')">'+(last?'Resend':'Send')+'</button>';
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mergeText(str, j){ return String(str||'').replace(/\{\{\s*name\s*\}\}/gi, (j&&j.name)||'there'); }
+function mergeHtml(str, j){ return String(str||'').replace(/\{\{\s*name\s*\}\}/gi, esc((j&&j.name)||'there')); }
+function rteCmd(targetId, cmd){
+  document.getElementById(targetId).focus();
+  document.execCommand(cmd, false, null);
+}
+function htmlToPlainForGmail(html){
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  div.querySelectorAll('li').forEach(function(li){ li.insertAdjacentText('beforebegin', '- '); li.insertAdjacentText('afterend', '\n'); });
+  div.querySelectorAll('p,div,br').forEach(function(el){ el.insertAdjacentText('afterend', '\n'); });
+  var text = div.textContent || '';
+  return text.replace(/\n{3,}/g, '\n\n').trim();
+}
+// ── Shared Gmail pool ──
+async function loadGmailPool(){
+  try {
+    var res = await fetch(GREC_SEND_EMAIL_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({action:'list_pool'})
+    });
+    var data = await res.json();
+    gmailPool = (data && data.accounts) || [];
+  } catch(e) { gmailPool = []; }
+}
+function connectGmail(){
+  var params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_OAUTH_REDIRECT_URI,
+    response_type: 'code',
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.metadata https://www.googleapis.com/auth/gmail.send',
+    state: currentUser ? currentUser.id : ''
+  });
+  window.open('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(), '_blank');
+  showToast('Complete the Google sign-in in the new tab, then come back and click Refresh.');
+}
+async function setDefaultGmail(email){
+  if (!currentUser) return;
+  var r = await sb.from('users').update({ default_gmail_email: email }).eq('id', currentUser.id);
+  if (r.error) { showToast('Could not save default: ' + r.error.message); return; }
+  currentUser.default_gmail_email = email;
+  localStorage.setItem('nageo_user', JSON.stringify(currentUser));
+  renderGmailPoolInEmailSettings();
+  showToast('Default Gmail set to ' + email + '.');
+}
+function renderGmailPoolInEmailSettings(){
+  var el = document.getElementById('email-gmail-pool-list');
+  if (!el) return;
+  if (!gmailPool.length) { el.innerHTML = '<div style="font-size:12px;color:#aaa;">No Gmail accounts connected yet.</div>'; return; }
+  el.innerHTML = gmailPool.map(function(a){
+    var isDefault = currentUser && currentUser.default_gmail_email === a.google_email;
+    return '<div class="ms-doc-item" style="padding:8px 10px;"><span class="gmail-row-email" style="flex:1">'+esc(a.google_email)
+      + '<div class="gmail-row-sub">'+esc(a.status)+'</div></span>'
+      + (isDefault ? '<span class="gmail-default-tag">Your default</span>' : '<button class="ms-doc-btn" onclick="setDefaultGmail(\''+esc(a.google_email)+'\')">Set as my default</button>')
+      + '</div>';
+  }).join('');
+}
+// ── Compose / send ──
+var activeEmailCompose = null;
+function openEmailComposeModal(jobId, step){
+  var j = installs.find(function(x){return x.id===jobId;}) || archivedJobs.find(function(x){return x.id===jobId;});
+  if (!j) return;
+  activeEmailCompose = { jobId: jobId, step: step };
+  var stepInfo = EMAIL_STEPS.find(function(s){return s.n===step;}) || {};
+  var tmpl = emailTemplates[step] || {};
+  document.getElementById('email-compose-title').textContent = 'Send Email ' + step + ' — ' + j.name;
+  document.getElementById('email-to-input').value = j.email || '';
+  document.getElementById('email-subject-input').value = mergeText(tmpl.subject||'', j);
+  document.getElementById('email-body-editor').innerHTML = mergeHtml(tmpl.body_html||'', j);
+  populateEmailFromSelect();
+  onEmailFromChange();
+  document.getElementById('email-compose-modal').classList.add('open');
+}
+function closeEmailComposeModal(){
+  document.getElementById('email-compose-modal').classList.remove('open');
+  activeEmailCompose = null;
+}
+function populateEmailFromSelect(){
+  var sel = document.getElementById('email-from-select');
+  var options = gmailPool.map(function(a){ return '<option value="'+esc(a.google_email)+'">'+esc(a.google_email)+'</option>'; });
+  options.push('<option value="">Open in Gmail manually (no account selected)</option>');
+  sel.innerHTML = options.join('');
+  var preferred = (currentUser && currentUser.default_gmail_email && gmailPool.some(function(a){return a.google_email===currentUser.default_gmail_email;}))
+    ? currentUser.default_gmail_email
+    : (gmailPool[0] ? gmailPool[0].google_email : '');
+  sel.value = preferred;
+}
+function onEmailFromChange(){
+  var note = document.getElementById('email-send-note');
+  var btn = document.getElementById('email-send-btn');
+  var val = document.getElementById('email-from-select').value;
+  if (val) { note.textContent = 'Sends directly through ' + val + '.'; btn.textContent = 'Send Email'; }
+  else { note.textContent = 'Opens a pre-filled Gmail compose window instead — review and click Send yourself in Gmail.'; btn.textContent = 'Open in Gmail →'; }
+}
+async function sendJobEmail(){
+  if (!activeEmailCompose) return;
+  var jobId = activeEmailCompose.jobId, step = activeEmailCompose.step;
+  var to = document.getElementById('email-to-input').value.trim();
+  var subject = document.getElementById('email-subject-input').value.trim();
+  var bodyHtml = document.getElementById('email-body-editor').innerHTML;
+  var fromEmail = document.getElementById('email-from-select').value;
+  if (!to) { showToast('Enter a "To" email address.'); return; }
+  var btn = document.getElementById('email-send-btn');
+  btn.disabled = true; var origText = btn.textContent; btn.textContent = 'Sending…';
+  var row = { job_id: jobId, step_number: step, sent_to: to, sent_from_email: fromEmail||null, subject: subject, body_html: bodyHtml, sent_by: currentUser.name, sent_at: new Date().toISOString() };
+  if (fromEmail) {
+    try {
+      var res = await fetch(GREC_SEND_EMAIL_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+        body:JSON.stringify({action:'send', google_email:fromEmail, to:to, subject:subject, html_body:bodyHtml})
+      });
+      var data = await res.json();
+      if (!res.ok || data.error) { showToast('Send failed: ' + (data.error||'unknown error')); btn.disabled=false; btn.textContent=origText; return; }
+      row.gmail_thread_id = data.gmail_thread_id || null;
+      row.gmail_message_id = data.gmail_message_id || null;
+    } catch(e) { showToast('Send failed — see console.'); console.error(e); btn.disabled=false; btn.textContent=origText; return; }
+  } else {
+    var plain = htmlToPlainForGmail(bodyHtml);
+    var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(to) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(plain);
+    window.open(gmailUrl, '_blank');
+  }
+  var ins = await sb.from('job_emails').insert(row).select().single();
+  if (ins.data) jobEmails.unshift(ins.data);
+  var stepInfo = EMAIL_STEPS.find(function(s){return s.n===step;}) || {};
+  await logActivity(jobId, 'Sent Email ' + step + ' (' + stepInfo.label + ')');
+  btn.disabled = false; btn.textContent = origText;
+  closeEmailComposeModal();
+  render();
+  showToast(fromEmail ? 'Email sent.' : 'Opened in Gmail — logged to activity.');
+}
+function openEmailViewModal(emailId){
+  var e = jobEmails.find(function(x){ return x.id===emailId; });
+  if (!e) return;
+  document.getElementById('email-view-title').textContent = 'Email ' + e.step_number + (e.sent_at ? ' — ' + new Date(e.sent_at).toLocaleString() : '');
+  document.getElementById('email-view-meta').textContent = 'To ' + (e.sent_to||'—') + (e.sent_from_email ? ' · from ' + e.sent_from_email : '') + (e.sent_by ? ' · by ' + e.sent_by : '');
+  document.getElementById('email-view-body').innerHTML = e.body_html || '<em>No content saved.</em>';
+  document.getElementById('email-view-modal').classList.add('open');
+}
+function closeEmailViewModal(){ document.getElementById('email-view-modal').classList.remove('open'); }
+// ── Email settings modal (Gmail pool + template editor) ──
+function openEmailSettingsModal(){
+  loadGmailPool().then(renderGmailPoolInEmailSettings);
+  renderEmailTemplatesSettings();
+  document.getElementById('email-settings-modal').classList.add('open');
+}
+function closeEmailSettingsModal(){ document.getElementById('email-settings-modal').classList.remove('open'); }
+function renderEmailTemplatesSettings(){
+  var body = document.getElementById('email-templates-body');
+  var h = '';
+  EMAIL_STEPS.forEach(function(step){
+    var t = emailTemplates[step.n] || {};
+    h += '<div class="email-tmpl-block">';
+    h += '<div class="email-tmpl-title">Email ' + step.n + ': ' + esc(step.label) + '</div>';
+    h += '<div class="modal-row"><div class="modal-label">Subject</div><input type="text" class="modal-input" id="tmpl-subject-' + step.n + '" value="' + esc(t.subject||'') + '"></div>';
+    h += '<div class="modal-row"><div class="modal-label">Body</div>';
+    h += '<div class="rte-toolbar">';
+    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'bold\')" title="Bold"><b>B</b></button>';
+    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'italic\')" title="Italic"><i>I</i></button>';
+    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'insertUnorderedList\')" title="Bullet list">&bull;&equiv;</button>';
+    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'insertOrderedList\')" title="Numbered list">1&equiv;</button>';
+    h += '<button type="button" onclick="rteCmd(\'tmpl-body-' + step.n + '\',\'removeFormat\')" title="Clear formatting">Tx</button>';
+    h += '</div>';
+    h += '<div class="rte-editor" contenteditable="true" id="tmpl-body-' + step.n + '">' + (t.body_html||'') + '</div></div>';
+    h += '<button class="modal-save" style="margin-top:6px;" onclick="saveEmailTemplate(' + step.n + ')">Save</button>';
+    h += '</div>';
+  });
+  body.innerHTML = h;
+}
+async function saveEmailTemplate(step){
+  var stepInfo = EMAIL_STEPS.find(function(s){return s.n===step;}) || {};
+  var subject = document.getElementById('tmpl-subject-'+step).value.trim();
+  var bodyHtml = document.getElementById('tmpl-body-'+step).innerHTML;
+  var r = await sb.from('email_templates').upsert({
+    step_number: step, label: stepInfo.label, subject: subject, body_html: bodyHtml,
+    updated_by: currentUser.name, updated_at: new Date().toISOString()
+  }, { onConflict: 'step_number' }).select().single();
+  if (r.error) { showToast('Could not save template: ' + r.error.message); return; }
+  emailTemplates[step] = r.data;
+  showToast('Template ' + step + ' saved.');
+}
 init();
 // ── REAL-TIME + AUTO REFRESH ──────────────────────────
 var realtimeChannel = null;
@@ -1930,9 +2254,11 @@ async function silentRefresh() {
     var r2 = await sb.from('milestones').select('*').order('index');
     var r3 = await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(500);
     var r4 = await sb.from('documents').select('*').order('created_at',{ascending:false});
+    var r5 = await sb.from('job_emails').select('*').order('sent_at',{ascending:false});
     var rawJobs = r1.data || [], allMS = r2.data || [];
     activityLog = r3.data || [];
     allDocuments = r4.data || [];
+    jobEmails = r5.data || [];
     var allJobs = rawJobs.map(function(j) {
       return Object.assign({},j,{
         hcp_notes: j.hcp_notes||[],
