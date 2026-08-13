@@ -265,6 +265,7 @@ tr:last-child td{border-bottom:none;}
 .log-when{font-size:11px;color:#aaa;white-space:nowrap;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
+#email-compose-modal,#email-view-modal,#email-settings-modal{z-index:220;}
 .modal{background:#fff;border-radius:14px;padding:1.5rem;width:420px;max-width:95vw;}
 .job-modal-box{width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:0;}
 .job-modal-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:0.5px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:2;border-radius:14px 14px 0 0;}
@@ -497,7 +498,8 @@ var MS = ['Equipment ordered','Equipment delivered','Permits pulled','Drilling /
 var SCHEDULED_MS = [1,3,4,5,6,7];
 var MS_SHORT = ['Eq.ord','Eq.del','Permits','Drilling','Install','Startup','Yard','Inspect','Complete'];
 var currentUser = null, users = [], installs = [], archivedJobs = [], activityLog = [], allDocuments = [];
-var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set();
+var openCards = new Set(), openMS = new Set(), openNotes = new Set(), showDel = new Set(), showArchive = new Set(), openEmails = new Set();
+function toggleEmails(id){ if(openEmails.has(id))openEmails.delete(id);else openEmails.add(id);render(); }
 var currentView = 'overview', selectedUserId = null, dragId = null, dragOverId = null;
 // ── Email milestone — own tables (email_templates, job_emails), reuses the
 // same shared Gmail pool / send function the GRECs tool already set up.
@@ -709,6 +711,12 @@ async function syncHCP() {
           updatePayload.email = freshEmail;
           needsUpdate = true;
         }
+        var freshPhone = c.mobile_number || c.home_number || c.work_number || c.phone || (Array.isArray(c.phones) ? c.phones[0] : '') || '';
+        if (freshPhone && !existing.phone) {
+          existing.phone = freshPhone;
+          updatePayload.phone = freshPhone;
+          needsUpdate = true;
+        }
         if (needsUpdate) {
           await sb.from('jobs').update(updatePayload).eq('id',existing.id);
           updated++;
@@ -751,7 +759,8 @@ async function importCustomer(c, addr, sortOrder) {
     if(ct.length===5 && !isNaN(ct)){ customerId = ct; break; }
   }
   var customerEmail = c.email || (Array.isArray(c.emails) ? c.emails[0] : '') || '';
-  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,customer_id:customerId,email:customerEmail,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
+  var customerPhone = c.mobile_number || c.home_number || c.work_number || c.phone || (Array.isArray(c.phones) ? c.phones[0] : '') || '';
+  var r = await sb.from('jobs').insert({hcp_job_id:hcpId,name:fullName,address:addrStr,equipment:'',hcp_notes:hcpNotes,customer_id:customerId,email:customerEmail,phone:customerPhone,sort_order:sortOrder,updated_at:new Date().toISOString()}).select().single();
   if (r.data) {
     r.data.milestones=MS.map(function(_,mi){return {job_id:r.data.id,index:mi,state:'none',date:'',notes:'',pinned_note:null};});
     r.data.hcp_notes=hcpNotes;
@@ -989,6 +998,7 @@ function renderCardHTML(j){
 
     html+='<div class="equip-section"><span class="equip-label" style="color:#aaa"># Customer ID</span><input type="text" class="equip-input" data-job="'+j.id+'" placeholder="5-digit HCP ID" value="'+(j.customer_id||'')+'" onchange="saveCustomerId(this)" maxlength="5" style="max-width:100px;"></div>';
     html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" onchange="saveJobField(\''+j.id+'\',\'email\',this.value.trim())"></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><input type="tel" class="equip-input" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" onchange="saveJobField(\''+j.id+'\',\'phone\',this.value.trim())"></div>';
     html+='<div class="ms-list">';
     j.milestones.forEach(function(m,i){
       var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
@@ -2040,7 +2050,11 @@ function jobEmailsFor(jobId, step){
   return jobEmails.filter(function(e){ return e.job_id===jobId && e.step_number===step; });
 }
 function renderEmailSteps(j){
-  var h = '<div class="email-section"><span class="email-section-title">&#9993; Emails</span><div class="email-steps-list">';
+  var isOpen = openEmails.has(j.id);
+  var sentCount = EMAIL_STEPS.filter(function(step){ return jobEmailsFor(j.id, step.n).length > 0; }).length;
+  var h = '<div class="email-section">';
+  h += '<div class="notes-hdr" onclick="toggleEmails(\''+j.id+'\')"><span class="notes-title" style="font-size:12px;font-weight:600;color:#1a1a1a;">&#9993; Emails ('+sentCount+'/'+EMAIL_STEPS.length+' sent)</span><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
+  h += '<div class="email-steps-list" style="display:'+(isOpen?'flex':'none')+';margin-top:8px;">';
   EMAIL_STEPS.forEach(function(step){
     var sent = jobEmailsFor(j.id, step.n).slice().sort(function(a,b){ return new Date(b.sent_at)-new Date(a.sent_at); });
     var last = sent[0];
