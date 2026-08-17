@@ -2162,18 +2162,20 @@ function equipmentSpecLines(j, plain){
   var specs = normalizeSpecs(j.equipment_specs);
   var lines = [];
   if (specs.tonnage && specs.tonnage.trim()) lines.push('Tonnage: ' + esc(specs.tonnage.trim()));
-  specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).forEach(function(u){
+  var unitStrs = specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).map(function(u){
     var bits = [];
     if (u.qty && String(u.qty).trim()) bits.push(esc(String(u.qty).trim()) + 'x');
     if (u.unit && u.unit.trim()) bits.push(esc(u.unit.trim()));
-    lines.push('Unit: ' + bits.join(' '));
+    return bits.join(' ');
   });
-  specs.accessories.filter(function(a){ return (a.name&&a.name.trim())||(a.qty&&String(a.qty).trim()); }).forEach(function(a){
+  if (unitStrs.length) lines.push((unitStrs.length===1?'Unit':'Units') + ': ' + unitStrs.join(', '));
+  var accStrs = specs.accessories.filter(function(a){ return (a.name&&a.name.trim())||(a.qty&&String(a.qty).trim()); }).map(function(a){
     var bits = [];
     if (a.qty && String(a.qty).trim()) bits.push(esc(String(a.qty).trim()) + 'x');
     if (a.name && a.name.trim()) bits.push(esc(a.name.trim()));
-    lines.push('Accessory: ' + bits.join(' '));
+    return bits.join(' ');
   });
+  if (accStrs.length) lines.push((accStrs.length===1?'Accessory':'Accessories') + ': ' + accStrs.join(', '));
   return lines;
 }
 function equipmentSummary(j){
