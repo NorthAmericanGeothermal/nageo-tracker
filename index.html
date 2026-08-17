@@ -111,6 +111,10 @@ tr:last-child td{border-bottom:none;}
 .email-reply-box{font-size:12px;padding:8px 10px;border-radius:8px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;margin-bottom:10px;}
 .email-reply-box.muted{border-color:#e5e5e5;background:#f9f9f7;color:#aaa;}
 .email-reply-snippet{margin-top:4px;font-size:11.5px;color:#555;font-style:italic;}
+.email-reply-from{font-size:11px;color:#1d4ed8;margin-top:2px;font-weight:400;}
+.email-reply-body{margin-top:8px;background:#fff;border:0.5px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;color:#1a1a1a;max-height:220px;overflow-y:auto;}
+.email-thread-link{display:inline-block;margin-top:8px;font-size:11.5px;color:#2563eb;text-decoration:none;font-weight:500;}
+.email-thread-link:hover{text-decoration:underline;}
 .inline-save-row{display:flex;gap:6px;align-items:center;}
 .inline-save-row input{flex:1;min-width:0;}
 .inline-save-btn{font-size:11px;padding:6px 10px;border-radius:6px;border:0.5px solid #ddd;background:#f4f4f0;color:#bbb;cursor:not-allowed;flex-shrink:0;white-space:nowrap;font-family:inherit;transition:background 0.15s,color 0.15s,border-color 0.15s;}
@@ -2461,13 +2465,21 @@ function closeEmailViewModal(){ document.getElementById('email-view-modal').clas
 function renderEmailViewReplyBox(e){
   var box = document.getElementById('email-view-reply-box');
   if (!box) return;
+  var html = '';
   if (e.reply_received) {
-    box.innerHTML = '<div class="email-reply-box">&#8617; Replied' + (e.reply_at ? (' ' + new Date(e.reply_at).toLocaleString()) : '') + (e.reply_snippet ? ('<div class="email-reply-snippet">' + esc(e.reply_snippet) + '</div>') : '') + '</div>';
+    html += '<div class="email-reply-box">&#8617; Replied' + (e.reply_at ? (' ' + new Date(e.reply_at).toLocaleString()) : '');
+    if (e.reply_from) html += '<div class="email-reply-from">From: ' + esc(e.reply_from) + '</div>';
+    var body = e.reply_body || e.reply_snippet;
+    if (body) html += '<div class="email-reply-body">' + esc(body).replace(/\n/g,'<br>') + '</div>';
+    html += '</div>';
   } else if (e.gmail_thread_id) {
-    box.innerHTML = '<div class="email-reply-box muted">No reply detected yet.</div>';
-  } else {
-    box.innerHTML = '';
+    html += '<div class="email-reply-box muted">No reply detected yet.</div>';
   }
+  if (e.gmail_thread_id && e.sent_from_email) {
+    var threadUrl = 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(e.sent_from_email) + '#all/' + encodeURIComponent(e.gmail_thread_id);
+    html += '<a class="email-thread-link" href="' + threadUrl + '" target="_blank" rel="noopener">View full thread in Gmail &#8599;</a>';
+  }
+  box.innerHTML = html;
 }
 async function checkEmailReply(){
   if (!activeViewEmailId) return;
@@ -2483,16 +2495,20 @@ async function checkEmailReply(){
     });
     var data = await res.json();
     console.log('check_reply response', data);
-    var hasReply = !!(data.has_reply || data.replied || data.reply_found || (data.reply && (data.reply.snippet || data.reply.date || true)));
-    var snippet = data.reply_snippet || data.snippet || (data.reply && data.reply.snippet) || null;
-    var replyAt = data.reply_at || data.date || (data.reply && data.reply.date) || null;
+    var r = data.reply || data;
+    var hasReply = !!(data.has_reply || data.replied || data.reply_found || (data.reply && (r.snippet || r.date || r.body || r.body_html || true)));
+    var snippet = r.reply_snippet || r.snippet || null;
+    var replyAt = r.reply_at || r.date || r.received_at || null;
+    var fromAddr = r.reply_from || r.from || r.sender || null;
+    var bodyHtml = r.reply_body_html || r.body_html || r.html || null;
+    var bodyPlain = r.reply_body || r.body || r.text || (bodyHtml ? htmlToPlainForGmail(bodyHtml) : null) || snippet || null;
     if (hasReply) {
-      var upd = { reply_received:true, reply_snippet: snippet||null, reply_at: replyAt ? new Date(replyAt).toISOString() : new Date().toISOString() };
+      var upd = { reply_received:true, reply_snippet: snippet||null, reply_body: bodyPlain||null, reply_from: fromAddr||null, reply_at: replyAt ? new Date(replyAt).toISOString() : new Date().toISOString() };
       var updRes = await sb.from('job_emails').update(upd).eq('id', e.id);
       if (updRes.error) { showToast('Reply found, but could not save: ' + updRes.error.message); }
       else { Object.assign(e, upd); showToast('Reply found.'); }
     } else {
-      showToast('No reply yet.');
+      showToast('No reply yet. If this seems wrong, check the browser console for the raw response — the field names may need adjusting.');
     }
     renderEmailViewReplyBox(e);
     render();
