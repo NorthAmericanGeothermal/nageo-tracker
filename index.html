@@ -9,20 +9,20 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#f5f5f2;
-  --border:#e8e8e4;
-  --border-soft:#eeeeea;
+  --bg:#efeee8;
+  --border:#e2e2dc;
+  --border-soft:#e8e8e2;
   --text-muted:#8a8a85;
   --accent:#2563eb;
   --accent-dark:#1d4ed8;
-  --shadow-sm:0 1px 2px rgba(20,20,15,0.05), 0 1px 6px rgba(20,20,15,0.04);
-  --shadow-md:0 6px 20px rgba(20,20,15,0.07), 0 2px 6px rgba(20,20,15,0.05);
-  --shadow-lg:0 24px 60px -14px rgba(20,20,15,0.25), 0 10px 26px rgba(20,20,15,0.12);
+  --shadow-sm:0 1px 3px rgba(20,20,15,0.07), 0 3px 10px rgba(20,20,15,0.06);
+  --shadow-md:0 10px 28px rgba(20,20,15,0.11), 0 3px 8px rgba(20,20,15,0.07);
+  --shadow-lg:0 30px 70px -16px rgba(20,20,15,0.32), 0 14px 32px rgba(20,20,15,0.16);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:#1a1a1a;min-height:100vh;-webkit-font-smoothing:antialiased;}
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
 .login-card{background:#fff;border-radius:20px;border:0.5px solid var(--border);padding:2.25rem 2rem;width:340px;max-width:90vw;text-align:center;box-sizing:border-box;overflow:hidden;box-shadow:var(--shadow-lg);}
-.login-logo{font-size:22px;font-weight:600;margin-bottom:4px;}.login-logo span{color:#2563eb;}
+.login-logo{font-size:23px;font-weight:700;margin-bottom:4px;letter-spacing:-0.01em;}.login-logo span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .login-sub{font-size:13px;color:#888;margin-bottom:2rem;}
 .user-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem;}
 .user-btn{padding:12px;border:0.5px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#1a1a1a;transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;}
@@ -30,11 +30,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pin-row{display:flex;gap:8px;margin-bottom:1rem;}
 .pin-input{width:100%;max-width:100%;padding:10px 14px;border:0.5px solid #ddd;border-radius:8px;font-size:16px;text-align:center;letter-spacing:6px;background:#f9f9f7;margin-bottom:1rem;box-sizing:border-box;-webkit-appearance:none;}
 .pin-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.12);}
-.login-btn{width:100%;max-width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box;-webkit-appearance:none;box-shadow:0 4px 12px rgba(37,99,235,0.25);transition:background 0.15s,box-shadow 0.15s;}
-.login-btn:hover{background:#1d4ed8;box-shadow:0 6px 16px rgba(37,99,235,0.3);}.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
+.login-btn{width:100%;max-width:100%;padding:12px;background:linear-gradient(135deg,#2563eb,#4338ca);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box;-webkit-appearance:none;box-shadow:0 4px 14px rgba(37,99,235,0.3);transition:box-shadow 0.15s,transform 0.1s;}
+.login-btn:hover{box-shadow:0 6px 18px rgba(37,99,235,0.38);}.login-btn:active{transform:translateY(1px);}.login-error{font-size:12px;color:#dc2626;margin-top:8px;}
 #app{display:none;}
 .topbar{background:#fff;border-bottom:0.5px solid var(--border-soft);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(20,20,15,0.05);}
-.topbar-logo{font-size:15px;font-weight:600;flex:1;}.topbar-logo span{color:#2563eb;}
+.topbar-logo{font-size:15.5px;font-weight:700;flex:1;letter-spacing:-0.01em;}.topbar-logo span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .topbar-user{font-size:12px;color:#888;}.topbar-user strong{color:#1a1a1a;}
 .logout-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ddd;border-radius:999px;background:#fff;cursor:pointer;color:#888;transition:background 0.15s;}
 .logout-btn:hover{background:#f4f4f0;}
@@ -73,15 +73,15 @@ tr:last-child td{border-bottom:none;}
 .dot-wrap .tip{display:none;position:fixed;background:#1a1a1a;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;white-space:normal;width:280px;z-index:500;line-height:1.6;text-align:left;pointer-events:none;transform:translateX(-50%);}.dot-wrap .tip.tip-down{bottom:auto;top:calc(100% + 6px);}
 .dot-wrap .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}.dot-wrap .tip.tip-right::after{display:none;}.dot-wrap .tip.tip-down::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#1a1a1a;}
 /* tooltip display handled by JS */
-.installs{display:flex;flex-direction:column;gap:14px;}
-.card{background:#fff;border:0.5px solid var(--border-soft);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow 0.15s,border-color 0.15s;}
-.card:hover{box-shadow:var(--shadow-md);}
+.installs{display:flex;flex-direction:column;gap:16px;}
+.card{background:#fff;border:0.5px solid var(--border-soft);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow 0.2s,border-color 0.2s,transform 0.2s;}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
 .card.drag-over{border:1.5px solid #2563eb;background:#eff6ff;}.card.dragging{opacity:0.4;}
 .card-header{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;}
 .card-header:hover{background:#fafaf8;}
 .drag-handle{cursor:grab;color:#ccc;font-size:18px;padding:0 2px;flex-shrink:0;user-select:none;}
 .drag-handle:hover{color:#888;}
-.avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.35);}
 .card-meta{flex:1;min-width:0;}.card-name{font-size:14px;font-weight:600;color:#1a1a1a;}
 .card-addr{font-size:12px;color:#888;margin-top:1px;}.card-equip{font-size:11px;color:#2563eb;margin-top:2px;}
 .card-pills{display:flex;gap:6px;align-items:center;flex-shrink:0;}
@@ -130,6 +130,12 @@ tr:last-child td{border-bottom:none;}
 .email-reply-body{margin-top:8px;background:#fff;border:0.5px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;color:#1a1a1a;max-height:220px;overflow-y:auto;}
 .email-thread-link{display:inline-block;margin-top:8px;font-size:11.5px;color:#2563eb;text-decoration:none;font-weight:500;}
 .email-thread-link:hover{text-decoration:underline;}
+.email-thread{margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;}
+.email-thread-msg{background:#fff;border:0.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;}
+.email-thread-msg-hdr{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.email-thread-msg-from{font-size:12px;font-weight:700;color:#1a1a1a;}
+.email-thread-msg-date{font-size:10.5px;color:#aaa;white-space:nowrap;}
+.email-thread-msg-body{font-size:13px;line-height:1.5;color:#1a1a1a;}
 .inline-save-row{display:flex;gap:6px;align-items:center;}
 .inline-save-row input{flex:1;min-width:0;}
 .inline-save-btn{font-size:11px;padding:6px 10px;border-radius:6px;border:0.5px solid #ddd;background:#f4f4f0;color:#bbb;cursor:not-allowed;flex-shrink:0;white-space:nowrap;font-family:inherit;transition:background 0.15s,color 0.15s,border-color 0.15s;}
@@ -202,7 +208,7 @@ tr:last-child td{border-bottom:none;}
 .danger-zone-row{padding:8px 16px;border-top:0.5px solid #f0f0f0;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
 .lease-badge{font-size:10px;padding:3px 9px;border-radius:999px;background:#d1fae5;color:#059669;font-weight:700;}
 .lease-overview-badge{font-size:9px;padding:2px 7px;border-radius:999px;background:#d1fae5;color:#059669;font-weight:700;margin-left:4px;vertical-align:middle;}
-.nc-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fafaf8;}
+.nc-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#eff6ff;}
 .nc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .nc-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
 .nc-badge{font-size:10px;padding:3px 9px;border-radius:999px;background:#dbeafe;color:#2563eb;font-weight:700;}
@@ -222,7 +228,7 @@ tr:last-child td{border-bottom:none;}
 .repl-overview-badge{font-size:9px;padding:2px 7px;border-radius:999px;background:#fef9c3;color:#854d0e;font-weight:700;margin-left:4px;vertical-align:middle;}
 .add-repl-btn{font-size:12px;padding:5px 12px;border:0.5px solid #ca8a04;border-radius:8px;background:#fff;color:#ca8a04;cursor:pointer;font-family:inherit;}
 .add-repl-btn:hover{background:#fef9c3;}
-.repl-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fefef0;}
+.repl-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#fffbeb;}
 .docs-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;}
 .docs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .docs-title{font-size:12px;font-weight:600;color:#1a1a1a;}
@@ -271,7 +277,7 @@ tr:last-child td{border-bottom:none;}
 .repl-badge{font-size:10px;padding:3px 9px;border-radius:999px;background:#fef9c3;color:#854d0e;font-weight:700;}
 .add-duct-btn{font-size:12px;padding:5px 12px;border:0.5px solid #7c3aed;border-radius:8px;background:#fff;color:#7c3aed;cursor:pointer;font-family:inherit;}
 .add-duct-btn:hover{background:#f3e8ff;}
-.duct-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#faf8ff;}
+.duct-section{padding:14px 16px;border-top:0.5px solid #f0f0f0;background:#f5f0ff;}
 .duct-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .duct-title{font-size:12px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:6px;}
 .duct-badge{font-size:10px;padding:3px 9px;border-radius:999px;background:#f3e8ff;color:#7c3aed;font-weight:700;}
@@ -324,8 +330,8 @@ tr:last-child td{border-bottom:none;}
 .modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;}
 .modal-cancel{padding:8px 16px;border:0.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit;color:#777;transition:background 0.15s;}
 .modal-cancel:hover{background:#f4f4f0;}
-.modal-save{padding:8px 18px;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;box-shadow:0 1px 2px rgba(37,99,235,0.15),0 4px 10px rgba(37,99,235,0.2);transition:background 0.15s,box-shadow 0.15s,transform 0.1s;}
-.modal-save:hover{background:#1d4ed8;box-shadow:0 2px 4px rgba(37,99,235,0.2),0 6px 14px rgba(37,99,235,0.25);}
+.modal-save{padding:9px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#2563eb,#4338ca);color:#fff;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2),0 6px 16px rgba(37,99,235,0.28);transition:box-shadow 0.15s,transform 0.1s;}
+.modal-save:hover{box-shadow:0 3px 6px rgba(37,99,235,0.25),0 8px 20px rgba(37,99,235,0.32);}
 .modal-save:active{transform:translateY(1px);}
 .add-btn{margin-top:1rem;width:100%;padding:11px;background:#fff;border:0.5px dashed #ccc;border-radius:12px;color:#888;cursor:pointer;font-size:13px;font-family:inherit;}
 .add-btn:hover{background:#f4f4f0;color:#1a1a1a;}
@@ -2489,16 +2495,30 @@ function renderEmailViewReplyBox(e){
   var html = '';
   if (e.reply_received) {
     html += '<div class="email-reply-box">&#8617; Replied' + (e.reply_at ? (' ' + new Date(e.reply_at).toLocaleString()) : '');
-    if (e.reply_from) html += '<div class="email-reply-from">From: ' + esc(e.reply_from) + '</div>';
-    var body = e.reply_body || e.reply_snippet;
-    if (body) html += '<div class="email-reply-body">' + esc(body).replace(/\n/g,'<br>') + '</div>';
+    if (Array.isArray(e.reply_thread) && e.reply_thread.length) {
+      html += '<div class="email-thread">';
+      e.reply_thread.forEach(function(msg){
+        html += '<div class="email-thread-msg">';
+        html += '<div class="email-thread-msg-hdr">';
+        if (msg.from) html += '<span class="email-thread-msg-from">' + esc(msg.from) + '</span>';
+        if (msg.date) html += '<span class="email-thread-msg-date">' + new Date(msg.date).toLocaleString() + '</span>';
+        html += '</div>';
+        html += '<div class="email-thread-msg-body">' + esc(msg.body||'').replace(/\n/g,'<br>') + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      if (e.reply_from) html += '<div class="email-reply-from">From: ' + esc(e.reply_from) + '</div>';
+      var body = e.reply_body || e.reply_snippet;
+      if (body) html += '<div class="email-reply-body">' + esc(body).replace(/\n/g,'<br>') + '</div>';
+    }
     html += '</div>';
   } else if (e.gmail_thread_id) {
     html += '<div class="email-reply-box muted">No reply detected yet.</div>';
   }
   if (e.gmail_thread_id && e.sent_from_email) {
     var threadUrl = 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(e.sent_from_email) + '#all/' + encodeURIComponent(e.gmail_thread_id);
-    html += '<a class="email-thread-link" href="' + threadUrl + '" target="_blank" rel="noopener">View full thread in Gmail &#8599;</a>';
+    html += '<a class="email-thread-link" href="' + threadUrl + '" target="_blank" rel="noopener">Open in Gmail (formatting, attachments) &#8599;</a>';
   }
   box.innerHTML = html;
 }
@@ -2523,8 +2543,23 @@ async function checkEmailReply(){
     var fromAddr = r.reply_from || r.from || r.sender || null;
     var bodyHtml = r.reply_body_html || r.body_html || r.html || null;
     var bodyPlain = r.reply_body || r.body || r.text || (bodyHtml ? htmlToPlainForGmail(bodyHtml) : null) || snippet || null;
+    // Some check_reply implementations return the whole thread (multiple
+    // messages) rather than just the latest reply — pick up on that if present.
+    var rawThread = data.thread || data.messages || r.thread || r.messages || null;
+    var thread = null;
+    if (Array.isArray(rawThread) && rawThread.length) {
+      thread = rawThread.map(function(msg){
+        var mBodyHtml = msg.body_html || msg.html || null;
+        var mBody = msg.body || msg.text || msg.snippet || (mBodyHtml ? htmlToPlainForGmail(mBodyHtml) : '') || '';
+        return {
+          from: msg.from || msg.sender || '',
+          date: msg.date || msg.received_at || msg.sent_at || '',
+          body: mBody
+        };
+      });
+    }
     if (hasReply) {
-      var upd = { reply_received:true, reply_snippet: snippet||null, reply_body: bodyPlain||null, reply_from: fromAddr||null, reply_at: replyAt ? new Date(replyAt).toISOString() : new Date().toISOString() };
+      var upd = { reply_received:true, reply_snippet: snippet||null, reply_body: bodyPlain||null, reply_from: fromAddr||null, reply_thread: thread, reply_at: replyAt ? new Date(replyAt).toISOString() : new Date().toISOString() };
       var updRes = await sb.from('job_emails').update(upd).eq('id', e.id);
       if (updRes.error) { showToast('Reply found, but could not save: ' + updRes.error.message); }
       else { Object.assign(e, upd); showToast('Reply found.'); }
