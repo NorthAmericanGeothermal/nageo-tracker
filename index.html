@@ -146,18 +146,21 @@ tr:last-child td{border-bottom:none;}
 .email-tmpl-item-btns{display:flex;gap:5px;flex-shrink:0;}
 .email-tmpl-editor-box{border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:6px;background:var(--surface-alt);}
 .email-reply-tag{color:var(--accent-text);font-weight:500;}
-.email-reply-box{font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--accent-text);background:var(--accent-tint);color:var(--accent-text);margin-bottom:10px;}
-.email-reply-box.muted{border-color:var(--border);background:var(--surface-alt);color:var(--muted);}
-.email-reply-snippet{margin-top:4px;font-size:11.5px;color:var(--muted-2);font-style:italic;}
-.email-reply-from{font-size:11px;color:var(--accent-text);margin-top:2px;font-weight:400;}
-.email-reply-body{margin-top:8px;background:var(--surface);border:1px solid var(--accent-text);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;color:var(--ink);max-height:220px;overflow-y:auto;}
-.email-thread{margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;}
-.email-thread-msg{background:var(--surface);border:1px solid var(--accent-text);border-radius:10px;padding:10px 12px;}
-.email-thread-msg-hdr{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
-.email-thread-msg-from{font-size:12px;font-weight:700;color:var(--ink);}
-.email-thread-msg-date{font-size:10.5px;color:var(--muted);white-space:nowrap;}
-.email-thread-msg-body{font-size:13px;line-height:1.5;color:var(--ink);}
-.email-frame-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;margin-top:8px;max-height:600px;overflow-y:auto;}
+.email-reply-box{font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);color:var(--muted);margin-bottom:10px;}
+.thread-tiles{display:flex;flex-direction:column;gap:8px;}
+.thread-tile{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+.thread-tile-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;user-select:none;}
+.thread-tile-hdr:hover{background:var(--surface-alt);}
+.tile-badge{font-size:9.5px;font-weight:800;letter-spacing:0.4px;padding:3px 8px;border-radius:999px;flex-shrink:0;}
+.tile-badge-sent{background:var(--accent-tint);color:var(--accent-text);}
+.tile-badge-received{background:var(--success-tint);color:var(--success-text);}
+.tile-who{flex:1;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.tile-date{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.tile-chevron{font-size:11px;color:var(--muted);transition:transform 0.15s;flex-shrink:0;}
+.thread-tile.open .tile-chevron{transform:rotate(180deg);}
+.thread-tile-body{max-height:0;overflow:hidden;transition:max-height 0.2s ease;}
+.thread-tile.open .thread-tile-body{max-height:650px;overflow-y:auto;padding:0 12px 12px 12px;}
+.email-frame-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;max-height:600px;overflow-y:auto;}
 .fe-frame{width:100%;border:none;display:block;background:#fff;min-height:40px;}
 .inline-save-row{display:flex;gap:6px;align-items:center;}
 .inline-save-row input{flex:1;min-width:0;}
@@ -519,8 +522,6 @@ tr:last-child td{border-bottom:none;}
     <div class="modal-title" id="email-view-title">Sent Email</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="email-view-meta"></div>
     <div id="email-view-reply-box"></div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);margin:14px 0 6px 0;">Sent message</div>
-    <div class="email-frame-card" style="margin-top:0;"><iframe class="fe-frame" id="email-view-body-frame" sandbox="allow-popups allow-same-origin" title="Email content"></iframe></div>
     <div class="modal-btns">
       <button class="modal-cancel" id="email-view-checkreply-btn" onclick="checkEmailReply()" style="display:none;">Check for reply</button>
       <button class="modal-cancel" onclick="closeEmailViewModal()">Close</button>
@@ -2504,7 +2505,6 @@ function openEmailViewModal(emailId){
   activeViewEmailId = emailId;
   document.getElementById('email-view-title').textContent = 'Email ' + e.step_number + (e.template_name ? ' — ' + e.template_name : '') + (e.sent_at ? ' — ' + new Date(e.sent_at).toLocaleString() : '');
   document.getElementById('email-view-meta').textContent = 'To ' + (e.sent_to||'—') + (e.sent_from_email ? ' · from ' + e.sent_from_email : '') + (e.sent_by ? ' · by ' + e.sent_by : '');
-  fillEmailFrame(document.getElementById('email-view-body-frame'), e.body_html);
   renderEmailViewReplyBox(e);
   var checkBtn = document.getElementById('email-view-checkreply-btn');
   checkBtn.style.display = (e.gmail_thread_id && e.sent_from_email) ? 'inline-block' : 'none';
@@ -2541,52 +2541,67 @@ function fillEmailFrame(iframe, htmlContent){
   };
   iframe.setAttribute('srcdoc', doc);
 }
+function toggleThreadTile(hdrEl){
+  var tile = hdrEl.closest('.thread-tile');
+  if (tile) tile.classList.toggle('open');
+}
 function renderEmailViewReplyBox(e){
   var box = document.getElementById('email-view-reply-box');
   if (!box) return;
-  var html = '';
+  // Build one tile per message in the conversation: what we sent, plus
+  // whatever the reply check turned up (either a single latest reply, or —
+  // if the source ever provides one — a full list of individual messages).
+  var tiles = [{
+    kind: 'sent',
+    who: e.sent_to || '—',
+    date: e.sent_at,
+    html: e.body_html,
+    text: null
+  }];
   if (e.reply_received) {
-    html += '<div class="email-reply-box">&#8617; Replied' + (e.reply_at ? (' ' + new Date(e.reply_at).toLocaleString()) : '') + '</div>';
     if (Array.isArray(e.reply_thread) && e.reply_thread.length) {
-      html += '<div class="email-thread">';
-      e.reply_thread.forEach(function(msg, idx){
-        html += '<div class="email-thread-msg">';
-        html += '<div class="email-thread-msg-hdr">';
-        if (msg.from) html += '<span class="email-thread-msg-from">' + esc(msg.from) + '</span>';
-        if (msg.date) html += '<span class="email-thread-msg-date">' + new Date(msg.date).toLocaleString() + '</span>';
-        html += '</div>';
-        if (msg.bodyHtml) {
-          html += '<div class="email-frame-card" style="margin-top:0;"><iframe class="fe-frame" id="email-thread-frame-' + idx + '" sandbox="allow-popups allow-same-origin" title="Reply"></iframe></div>';
-        } else {
-          html += '<div class="email-thread-msg-body">' + esc(msg.body||'').replace(/\n/g,'<br>') + '</div>';
-        }
-        html += '</div>';
+      e.reply_thread.forEach(function(msg){
+        tiles.push({ kind:'received', who: msg.from || 'Customer', date: msg.date, html: msg.bodyHtml, text: msg.body });
       });
-      html += '</div>';
     } else {
-      if (e.reply_from) html += '<div class="email-reply-from">From: ' + esc(e.reply_from) + '</div>';
-      if (e.reply_body_html) {
-        html += '<div class="email-frame-card"><iframe class="fe-frame" id="email-reply-frame" sandbox="allow-popups allow-same-origin" title="Reply"></iframe></div>';
-      } else {
-        var body = e.reply_body || e.reply_snippet;
-        if (body) {
-          html += '<div class="email-reply-body">' + esc(body).replace(/\n/g,'<br>') + '</div>';
-        } else {
-          html += '<div class="email-reply-body" style="color:var(--muted);font-style:italic;">A reply was detected, but no message text came back from the reply check. Open the browser console (F12) after clicking &ldquo;Check for reply&rdquo; to see the raw response &mdash; the field names may need adjusting.</div>';
-        }
-      }
+      tiles.push({ kind:'received', who: e.reply_from || 'Customer', date: e.reply_at, html: e.reply_body_html, text: e.reply_body || e.reply_snippet });
     }
-  } else if (e.gmail_thread_id) {
-    html += '<div class="email-reply-box muted">No reply detected yet.</div>';
   }
+  var html = '';
+  if (!e.reply_received && e.gmail_thread_id) {
+    html += '<div class="email-reply-box">No reply detected yet.</div>';
+  }
+  html += '<div class="thread-tiles">';
+  tiles.forEach(function(t, idx){
+    var isSent = t.kind === 'sent';
+    var badgeLabel = isSent ? 'SENT' : 'RECEIVED';
+    var badgeClass = isSent ? 'tile-badge-sent' : 'tile-badge-received';
+    var dateStr = t.date ? new Date(t.date).toLocaleString() : '';
+    var openLast = idx === tiles.length - 1;
+    var hasVisibleContent = !!(t.html && t.html.trim()) || !!(t.text && t.text.trim());
+    html += '<div class="thread-tile' + (openLast ? ' open' : '') + '" data-idx="' + idx + '">';
+    html += '<div class="thread-tile-hdr" onclick="toggleThreadTile(this)">';
+    html += '<span class="tile-badge ' + badgeClass + '">' + badgeLabel + '</span>';
+    html += '<span class="tile-who">' + esc(t.who || '—') + '</span>';
+    html += '<span class="tile-date">' + dateStr + '</span>';
+    html += '<span class="tile-chevron">&#9662;</span>';
+    html += '</div>';
+    html += '<div class="thread-tile-body">';
+    if (hasVisibleContent) {
+      html += '<div class="email-frame-card"><iframe class="fe-frame" id="thread-frame-' + idx + '" sandbox="allow-popups allow-same-origin" title="Message"></iframe></div>';
+    } else {
+      html += '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:10px 0;">No message content available' + (isSent ? '.' : ' from the reply check &mdash; open the browser console (F12) after clicking &ldquo;Check for reply&rdquo; to see the raw response.') + '</div>';
+    }
+    html += '</div></div>';
+  });
+  html += '</div>';
   box.innerHTML = html;
-  if (Array.isArray(e.reply_thread) && e.reply_thread.length) {
-    e.reply_thread.forEach(function(msg, idx){
-      if (msg.bodyHtml) fillEmailFrame(document.getElementById('email-thread-frame-' + idx), msg.bodyHtml);
-    });
-  } else if (e.reply_body_html) {
-    fillEmailFrame(document.getElementById('email-reply-frame'), e.reply_body_html);
-  }
+  tiles.forEach(function(t, idx){
+    var frame = document.getElementById('thread-frame-' + idx);
+    if (!frame) return;
+    var content = (t.html && t.html.trim()) ? t.html : (t.text ? esc(t.text).replace(/\n/g,'<br>') : '');
+    fillEmailFrame(frame, content);
+  });
 }
 async function checkEmailReply(){
   if (!activeViewEmailId) return;
