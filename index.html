@@ -904,12 +904,16 @@ function updateStats(){
   document.getElementById('s-complete').textContent=installs.filter(function(j){return isComplete(j);}).length;
 }
 function setView(v){
+  var changed = currentView !== v;
   currentView=v;
   ['overview','cards','log','archived','docs'].forEach(function(n){
     document.getElementById('view-'+n).style.display=v===n?'block':'none';
     document.getElementById('btn-'+n).className='vbtn'+(v===n?' active':'');
   });
   document.getElementById('add-job-btn').style.display=(v==='log'||v==='archived'||v==='docs')?'none':'block';
+  // render() only rebuilds the currently-active tab (for performance with lots
+  // of jobs) — make sure the tab we just switched into is actually up to date.
+  if (changed) render();
 }
 function renderOverviewTable(jobsList){
   if(!jobsList.length){return '<div class="overview-wrap"><div class="empty">No installs in this category.</div></div>';}
@@ -920,7 +924,10 @@ function renderOverviewTable(jobsList){
     // Build full tooltip content
     var tipParts = [];
     var specLines = equipmentSpecLines(j);
-    if(specLines.length) tipParts.push('<strong>Equipment:</strong><br>'+specLines.join('<br>'));
+    if(specLines.length){
+      tipParts.push('&#9881; <strong>Equipment</strong>');
+      specLines.forEach(function(line){ tipParts.push('&nbsp;&nbsp;'+line); });
+    }
     if(j.duct){
       var dLine = '&#128274; <strong>Ductwork</strong>';
       if(j.duct_notes&&j.duct_notes.trim()) dLine += ': '+j.duct_notes;
@@ -1210,7 +1217,18 @@ function loadMoreLog(){
   logPage += 50;
   renderLog();
 }
-function render(){updateStats();renderOverview();renderCards();renderLog();renderArchived();renderDocsTab();renderMobileTiles();renderJobModal();}
+function render(){
+  // Only rebuild the tab that's actually on screen — with a lot of jobs, the
+  // Overview/Cards/Archived/Log/Docs builders are each expensive HTML rebuilds,
+  // and there's no point paying for 6 of them when only 1 is visible.
+  updateStats();
+  if (currentView==='overview') { renderOverview(); renderMobileTiles(); }
+  else if (currentView==='cards') renderCards();
+  else if (currentView==='log') renderLog();
+  else if (currentView==='archived') renderArchived();
+  else if (currentView==='docs') renderDocsTab();
+  renderJobModal(); // cheap no-op unless the job modal is actually open
+}
 var activeModalJob = null;
 function openJobModal(jobId){
   activeModalJob = jobId;
@@ -2139,7 +2157,7 @@ function normalizeSpecs(specs){
 function equipmentSpecLines(j, plain){
   var specs = normalizeSpecs(j.equipment_specs);
   var lines = [];
-  if (specs.tonnage && specs.tonnage.trim()) lines.push((plain?'':'<strong>Tonnage:</strong> ') + esc(specs.tonnage.trim()));
+  if (specs.tonnage && specs.tonnage.trim()) lines.push('Tonnage: ' + esc(specs.tonnage.trim()));
   specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).forEach(function(u){
     var bits = [];
     if (u.qty && String(u.qty).trim()) bits.push(esc(String(u.qty).trim()) + 'x');
