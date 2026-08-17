@@ -120,13 +120,16 @@ tr:last-child td{border-bottom:none;}
 .jobspecs-btn{width:100%;text-align:left;background:#f9f9f7;border:0.5px solid #e5e5e5;border-radius:8px;padding:9px 12px;font-size:13px;color:#1a1a1a;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .jobspecs-btn:hover{background:#f4f4f0;}
 .jobspecs-btn .jobspecs-summary{color:#888;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.jobspecs-row{border:0.5px solid #e5e5e5;border-radius:8px;padding:10px 12px;margin-bottom:10px;position:relative;background:#fafaf8;}
-.jobspecs-row-num{font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;}
-.jobspecs-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-.jobspecs-remove{position:absolute;top:8px;right:8px;font-size:11px;padding:3px 8px;border-radius:5px;border:0.5px solid #fca5a5;color:#dc2626;background:#fff;cursor:pointer;font-family:inherit;}
-.jobspecs-remove:hover{background:#fee2e2;}
-.jobspecs-add-btn{font-size:12px;padding:8px 12px;border-radius:8px;border:1px dashed #ccc;background:#fff;color:#555;cursor:pointer;font-family:inherit;width:100%;margin-bottom:10px;}
+.jobspecs-add-btn{font-size:12px;padding:8px 12px;border-radius:8px;border:1px dashed #ccc;background:#fff;color:#555;cursor:pointer;font-family:inherit;width:100%;margin-bottom:14px;}
 .jobspecs-add-btn:hover{background:#f9f9f7;}
+.jobspecs-section-label{font-size:12px;font-weight:600;color:#1a1a1a;margin:14px 0 8px;}
+.jobspecs-section-label:first-of-type{margin-top:0;}
+.jobspecs-list-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.jobspecs-list-row .modal-input{margin:0;}
+.jobspecs-list-row .js-qty{flex:0 0 70px;}
+.jobspecs-list-row .js-name{flex:1;min-width:0;}
+.jobspecs-row-remove{flex-shrink:0;width:28px;height:34px;border-radius:6px;border:0.5px solid #fca5a5;color:#dc2626;background:#fff;cursor:pointer;font-family:inherit;font-size:16px;line-height:1;}
+.jobspecs-row-remove:hover{background:#fee2e2;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
 .ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}.ms-row.scheduled-row{border-color:#93c5fd;background:#eff6ff;}
@@ -492,9 +495,13 @@ tr:last-child td{border-bottom:none;}
 <div class="modal-bg" id="jobspecs-modal">
   <div class="modal" style="width:520px;max-width:95vw;max-height:88vh;overflow-y:auto;">
     <div class="modal-title" id="jobspecs-title">Job Specs</div>
-    <div class="email-merge-hint">Add one entry per unit. Accessories is optional &mdash; leave it blank if there aren't any.</div>
-    <div id="jobspecs-rows"></div>
-    <button type="button" class="jobspecs-add-btn" onclick="addJobSpecRow()">+ Add another unit</button>
+    <div class="modal-row"><div class="modal-label">Tonnage</div><input type="text" class="modal-input" id="jobspecs-tonnage" placeholder="e.g. 5 Tons"></div>
+    <div class="jobspecs-section-label">Units</div>
+    <div id="jobspecs-units"></div>
+    <button type="button" class="jobspecs-add-btn" onclick="addUnitRow()">+ Add another unit</button>
+    <div class="jobspecs-section-label">Accessories</div>
+    <div id="jobspecs-accessories"></div>
+    <button type="button" class="jobspecs-add-btn" onclick="addAccessoryRow()">+ Add another accessory</button>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeJobSpecsModal()">Cancel</button>
       <button class="modal-save" id="jobspecs-save-btn" onclick="saveJobSpecs()">Save</button>
@@ -1022,7 +1029,7 @@ function renderCardHTML(j){
     html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
     html+='<div class="card-body '+(isOpen?'open':'')+'">';
     html += renderEmailSteps(j);
-    html+='<div class="equip-section"><button type="button" class="jobspecs-btn" onclick="openJobSpecsModal(\''+j.id+'\')"><span>&#9881; Job Specs'+(j.equipment_specs&&j.equipment_specs.length?' ('+j.equipment_specs.length+')':'')+'</span><span class="jobspecs-summary">'+(equipmentSummary(j)||'Add tonnage &amp; unit info &rarr;')+'</span></button></div>';
+    html+='<div class="equip-section"><button type="button" class="jobspecs-btn" onclick="openJobSpecsModal(\''+j.id+'\')"><span>&#9881; Job Specs</span><span class="jobspecs-summary">'+(equipmentSummary(j)||'Add tonnage, units &amp; accessories &rarr;')+'</span></button></div>';
 
     html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><div class="inline-save-row"><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'email\',ip.value.trim()).then(function(){showToast(\'Email saved.\');markSaved(b);})">Save</button></div></div>';
     html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><div class="inline-save-row"><input type="tel" class="equip-input" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'phone\',ip.value.trim()).then(function(){showToast(\'Phone saved.\');markSaved(b);})">Save</button></div></div>';
@@ -2119,42 +2126,61 @@ function markSaved(btn){
     if (btn && btn.classList.contains('saved')) { btn.classList.remove('saved'); btn.textContent = 'Save'; }
   }, 1500);
 }
-// ── Job Specs (structured equipment: tonnage / unit / accessories, unlimited entries) ──
+// ── Job Specs (one tonnage per job, plus two independent unlimited lists:
+// Units {unit,qty} and Accessories {name,qty}) ──
+function normalizeSpecs(specs){
+  if (!specs || Array.isArray(specs)) return { tonnage:'', units:[], accessories:[] }; // old array shape or empty
+  return {
+    tonnage: specs.tonnage || '',
+    units: Array.isArray(specs.units) ? specs.units : [],
+    accessories: Array.isArray(specs.accessories) ? specs.accessories : []
+  };
+}
 function equipmentSpecLines(j, plain){
-  var specs = Array.isArray(j.equipment_specs) ? j.equipment_specs : [];
-  var multi = specs.length > 1;
-  return specs.map(function(s, si){
+  var specs = normalizeSpecs(j.equipment_specs);
+  var lines = [];
+  if (specs.tonnage && specs.tonnage.trim()) lines.push((plain?'':'<strong>Tonnage:</strong> ') + esc(specs.tonnage.trim()));
+  specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).forEach(function(u){
     var bits = [];
-    if (s.tonnage && s.tonnage.trim()) bits.push(esc(s.tonnage.trim()));
-    if (s.unit && s.unit.trim()) bits.push(esc(s.unit.trim()));
-    var label = multi ? ('Unit ' + (si+1) + ': ') : '';
-    var line = label + (bits.length ? bits.join(plain ? ' — ' : ' &mdash; ') : '—');
-    if (s.accessories && s.accessories.trim()) {
-      line += plain ? (' (Accessories: ' + s.accessories.trim() + ')') : ('<br>&nbsp;&nbsp;Accessories: ' + esc(s.accessories.trim()));
-    }
-    return line;
+    if (u.qty && String(u.qty).trim()) bits.push(esc(String(u.qty).trim()) + 'x');
+    if (u.unit && u.unit.trim()) bits.push(esc(u.unit.trim()));
+    lines.push('Unit: ' + bits.join(' '));
   });
+  specs.accessories.filter(function(a){ return (a.name&&a.name.trim())||(a.qty&&String(a.qty).trim()); }).forEach(function(a){
+    var bits = [];
+    if (a.qty && String(a.qty).trim()) bits.push(esc(String(a.qty).trim()) + 'x');
+    if (a.name && a.name.trim()) bits.push(esc(a.name.trim()));
+    lines.push('Accessory: ' + bits.join(' '));
+  });
+  return lines;
 }
 function equipmentSummary(j){
-  var specs = Array.isArray(j.equipment_specs) ? j.equipment_specs : [];
-  if (!specs.length) return '';
-  var first = specs[0];
+  var specs = normalizeSpecs(j.equipment_specs);
+  var units = specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); });
+  if (!specs.tonnage && !units.length) return '';
   var bits = [];
-  if (first.tonnage && first.tonnage.trim()) bits.push(first.tonnage.trim());
-  if (first.unit && first.unit.trim()) bits.push(first.unit.trim());
-  var s = bits.length ? bits.join(' — ') : 'Specs added';
-  if (specs.length > 1) s += ' +' + (specs.length - 1) + ' more';
-  return s;
+  if (specs.tonnage) bits.push(specs.tonnage.trim());
+  if (units.length) {
+    var u0 = units[0];
+    var ub = ((u0.qty?String(u0.qty).trim()+'x ':'') + (u0.unit?u0.unit.trim():'')).trim();
+    if (units.length > 1) ub += ' +' + (units.length-1) + ' more';
+    if (ub) bits.push(ub);
+  }
+  return bits.join(' — ') || 'Specs added';
 }
-var activeJobSpecs = null; // {jobId, rows:[{tonnage,unit,accessories}]}
+var activeJobSpecs = null; // {jobId, tonnage, units:[{unit,qty}], accessories:[{name,qty}]}
 function openJobSpecsModal(jobId){
   var j = installs.find(function(x){return x.id===jobId;}) || archivedJobs.find(function(x){return x.id===jobId;});
   if (!j) return;
-  var rows = (Array.isArray(j.equipment_specs) && j.equipment_specs.length)
-    ? j.equipment_specs.map(function(s){ return { tonnage:s.tonnage||'', unit:s.unit||'', accessories:s.accessories||'' }; })
-    : [{ tonnage:'', unit:'', accessories:'' }];
-  activeJobSpecs = { jobId: jobId, rows: rows };
+  var specs = normalizeSpecs(j.equipment_specs);
+  activeJobSpecs = {
+    jobId: jobId,
+    tonnage: specs.tonnage,
+    units: specs.units.length ? specs.units.map(function(u){return {unit:u.unit||'',qty:u.qty||''};}) : [{unit:'',qty:''}],
+    accessories: specs.accessories.length ? specs.accessories.map(function(a){return {name:a.name||'',qty:a.qty||''};}) : [{name:'',qty:''}]
+  };
   document.getElementById('jobspecs-title').textContent = 'Job Specs — ' + j.name;
+  document.getElementById('jobspecs-tonnage').value = activeJobSpecs.tonnage;
   renderJobSpecsRows();
   document.getElementById('jobspecs-modal').classList.add('open');
 }
@@ -2164,54 +2190,71 @@ function closeJobSpecsModal(){
 }
 function syncJobSpecsFromInputs(){
   if (!activeJobSpecs) return;
-  var container = document.getElementById('jobspecs-rows');
-  var rowEls = container.querySelectorAll('.jobspecs-row');
-  activeJobSpecs.rows = Array.prototype.map.call(rowEls, function(rowEl){
-    return {
-      tonnage: rowEl.querySelector('.js-tonnage').value.trim(),
-      unit: rowEl.querySelector('.js-unit').value.trim(),
-      accessories: rowEl.querySelector('.js-accessories').value.trim()
-    };
+  activeJobSpecs.tonnage = document.getElementById('jobspecs-tonnage').value.trim();
+  var unitEls = document.getElementById('jobspecs-units').querySelectorAll('.jobspecs-list-row');
+  activeJobSpecs.units = Array.prototype.map.call(unitEls, function(row){
+    return { unit: row.querySelector('.js-name').value.trim(), qty: row.querySelector('.js-qty').value.trim() };
+  });
+  var accEls = document.getElementById('jobspecs-accessories').querySelectorAll('.jobspecs-list-row');
+  activeJobSpecs.accessories = Array.prototype.map.call(accEls, function(row){
+    return { name: row.querySelector('.js-name').value.trim(), qty: row.querySelector('.js-qty').value.trim() };
   });
 }
 function renderJobSpecsRows(){
-  var container = document.getElementById('jobspecs-rows');
-  var h = '';
-  activeJobSpecs.rows.forEach(function(r, i){
-    h += '<div class="jobspecs-row">';
-    if (activeJobSpecs.rows.length > 1) h += '<button type="button" class="jobspecs-remove" onclick="removeJobSpecRow(' + i + ')">Remove</button>';
-    h += '<div class="jobspecs-row-num">Unit ' + (i+1) + '</div>';
-    h += '<div class="jobspecs-row-grid">';
-    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Tonnage</div><input type="text" class="modal-input js-tonnage" placeholder="e.g. 5 Tons" value="' + esc(r.tonnage) + '"></div>';
-    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Unit / quantity</div><input type="text" class="modal-input js-unit" placeholder="e.g. 1 - W5WZ060" value="' + esc(r.unit) + '"></div>';
-    h += '</div>';
-    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Accessories (optional)</div><input type="text" class="modal-input js-accessories" placeholder="e.g. 4 humidifiers" value="' + esc(r.accessories) + '"></div>';
-    h += '</div>';
+  var uh = '';
+  activeJobSpecs.units.forEach(function(u, i){
+    uh += '<div class="jobspecs-list-row">';
+    uh += '<input type="text" class="modal-input js-name" placeholder="e.g. W5WZ060" value="' + esc(u.unit) + '">';
+    uh += '<input type="text" class="modal-input js-qty" placeholder="Qty" value="' + esc(u.qty) + '">';
+    if (activeJobSpecs.units.length > 1) uh += '<button type="button" class="jobspecs-row-remove" onclick="removeUnitRow(' + i + ')">&times;</button>';
+    uh += '</div>';
   });
-  container.innerHTML = h;
+  document.getElementById('jobspecs-units').innerHTML = uh;
+  var ah = '';
+  activeJobSpecs.accessories.forEach(function(a, i){
+    ah += '<div class="jobspecs-list-row">';
+    ah += '<input type="text" class="modal-input js-name" placeholder="e.g. Humidifier" value="' + esc(a.name) + '">';
+    ah += '<input type="text" class="modal-input js-qty" placeholder="Qty" value="' + esc(a.qty) + '">';
+    if (activeJobSpecs.accessories.length > 1) ah += '<button type="button" class="jobspecs-row-remove" onclick="removeAccessoryRow(' + i + ')">&times;</button>';
+    ah += '</div>';
+  });
+  document.getElementById('jobspecs-accessories').innerHTML = ah;
 }
-function addJobSpecRow(){
+function addUnitRow(){
   syncJobSpecsFromInputs();
-  activeJobSpecs.rows.push({ tonnage:'', unit:'', accessories:'' });
+  activeJobSpecs.units.push({ unit:'', qty:'' });
   renderJobSpecsRows();
 }
-function removeJobSpecRow(i){
+function removeUnitRow(i){
   syncJobSpecsFromInputs();
-  activeJobSpecs.rows.splice(i, 1);
-  if (!activeJobSpecs.rows.length) activeJobSpecs.rows.push({ tonnage:'', unit:'', accessories:'' });
+  activeJobSpecs.units.splice(i, 1);
+  if (!activeJobSpecs.units.length) activeJobSpecs.units.push({ unit:'', qty:'' });
+  renderJobSpecsRows();
+}
+function addAccessoryRow(){
+  syncJobSpecsFromInputs();
+  activeJobSpecs.accessories.push({ name:'', qty:'' });
+  renderJobSpecsRows();
+}
+function removeAccessoryRow(i){
+  syncJobSpecsFromInputs();
+  activeJobSpecs.accessories.splice(i, 1);
+  if (!activeJobSpecs.accessories.length) activeJobSpecs.accessories.push({ name:'', qty:'' });
   renderJobSpecsRows();
 }
 async function saveJobSpecs(){
   if (!activeJobSpecs) return;
   syncJobSpecsFromInputs();
-  var cleaned = activeJobSpecs.rows.filter(function(r){ return r.tonnage || r.unit || r.accessories; });
+  var cleanedUnits = activeJobSpecs.units.filter(function(u){ return u.unit || u.qty; });
+  var cleanedAcc = activeJobSpecs.accessories.filter(function(a){ return a.name || a.qty; });
+  var specsObj = { tonnage: activeJobSpecs.tonnage, units: cleanedUnits, accessories: cleanedAcc };
   var jobId = activeJobSpecs.jobId;
   var btn = document.getElementById('jobspecs-save-btn');
   btn.disabled = true; var orig = btn.textContent; btn.textContent = 'Saving…';
-  await sb.from('jobs').update({ equipment_specs: cleaned, updated_at: new Date().toISOString() }).eq('id', jobId);
+  await sb.from('jobs').update({ equipment_specs: specsObj, updated_at: new Date().toISOString() }).eq('id', jobId);
   var inst = installs.find(function(j){return j.id===jobId;});
-  if (inst) inst.equipment_specs = cleaned;
-  await logActivity(jobId, 'Updated job specs (' + cleaned.length + ' unit' + (cleaned.length===1?'':'s') + ')');
+  if (inst) inst.equipment_specs = specsObj;
+  await logActivity(jobId, 'Updated job specs');
   btn.disabled = false; btn.textContent = orig;
   closeJobSpecsModal();
   render();
