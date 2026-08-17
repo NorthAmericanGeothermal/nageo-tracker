@@ -2519,10 +2519,20 @@ function fillEmailFrame(iframe, htmlContent){
   // our page), so it intentionally uses plain literal colors here rather
   // than our app's var(--...) custom properties, which would not resolve
   // inside the iframe's own isolated stylesheet.
-  var inner = htmlContent && htmlContent.trim() ? htmlContent : '<em style="color:#888;">No content received.</em>';
-  var doc = '<!DOCTYPE html><html><head><meta charset="utf-8">'
-    + '<style>*{box-sizing:border-box;}body{margin:0;padding:10px 12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.55;color:#1a1a1a;background:#fff;word-wrap:break-word;overflow-wrap:break-word;}img{max-width:100%;height:auto;}a{color:#2563eb;}table{max-width:100%;}</style>'
-    + '</head><body>' + inner + '</body></html>';
+  var trimmed = htmlContent && htmlContent.trim();
+  var doc;
+  if (!trimmed) {
+    doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:10px 12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;color:#888;background:#fff;}</style></head><body><em>No content received.</em></body></html>';
+  } else if (/^\s*<!DOCTYPE html|^\s*<html/i.test(trimmed)) {
+    // Some reply sources (e.g. Gmail fetch) hand back a full standalone
+    // HTML document already (own <head>/<style>) — use it as-is rather
+    // than nesting it inside another <html>/<body>.
+    doc = trimmed;
+  } else {
+    doc = '<!DOCTYPE html><html><head><meta charset="utf-8">'
+      + '<style>*{box-sizing:border-box;}body{margin:0;padding:10px 12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.55;color:#1a1a1a;background:#fff;word-wrap:break-word;overflow-wrap:break-word;}img{max-width:100%;height:auto;}a{color:#2563eb;}table{max-width:100%;}</style>'
+      + '</head><body>' + trimmed + '</body></html>';
+  }
   iframe.onload = function(){
     try {
       var h = iframe.contentWindow.document.body.scrollHeight;
@@ -2598,13 +2608,14 @@ async function checkEmailReply(){
     if (r && r.reply && typeof r.reply === 'object') r = r.reply;
     var hasReply = !!(data.has_reply || data.replied || data.reply_found || data.found || r.has_reply || r.replied || r.found
       || (data.reply && typeof data.reply === 'object')
-      || r.snippet || r.reply_snippet || r.body || r.body_html || r.reply_body || r.reply_body_html || r.text || r.html
+      || r.snippet || r.reply_snippet || r.body || r.body_html || r.reply_body || r.reply_body_html || r.text || r.html || r.latest_html
+      || (r.message_count && r.message_count > 1) || (data.message_count && data.message_count > 1)
       || (Array.isArray(data.thread) && data.thread.length > 1) || (Array.isArray(data.messages) && data.messages.length > 1)
       || (Array.isArray(r.thread) && r.thread.length > 1) || (Array.isArray(r.messages) && r.messages.length > 1));
     var snippet = r.reply_snippet || r.snippet || data.reply_snippet || data.snippet || null;
-    var replyAt = r.reply_at || r.date || r.received_at || r.receivedAt || r.internalDate || data.reply_at || null;
-    var fromAddr = r.reply_from || r.from || r.sender || r.replyFrom || data.reply_from || null;
-    var bodyHtml = r.reply_body_html || r.body_html || r.html || r.replyBodyHtml || r.htmlBody || data.reply_body_html || null;
+    var replyAt = r.latest_at || r.reply_at || r.date || r.received_at || r.receivedAt || r.internalDate || data.reply_at || null;
+    var fromAddr = r.latest_from || r.reply_from || r.from || r.sender || r.replyFrom || data.reply_from || null;
+    var bodyHtml = r.latest_html || r.reply_body_html || r.body_html || r.html || r.replyBodyHtml || r.htmlBody || data.reply_body_html || null;
     var bodyPlain = r.reply_body || r.body || r.text || r.replyBody || r.snippet || data.reply_body || (bodyHtml ? htmlToPlainForGmail(bodyHtml) : null) || snippet || null;
     // Some check_reply implementations return the whole thread (multiple
     // messages) rather than just the latest reply — pick up on that if present.
