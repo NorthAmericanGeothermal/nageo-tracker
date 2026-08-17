@@ -111,6 +111,22 @@ tr:last-child td{border-bottom:none;}
 .email-reply-box{font-size:12px;padding:8px 10px;border-radius:8px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;margin-bottom:10px;}
 .email-reply-box.muted{border-color:#e5e5e5;background:#f9f9f7;color:#aaa;}
 .email-reply-snippet{margin-top:4px;font-size:11.5px;color:#555;font-style:italic;}
+.inline-save-row{display:flex;gap:6px;align-items:center;}
+.inline-save-row input{flex:1;min-width:0;}
+.inline-save-btn{font-size:11px;padding:6px 10px;border-radius:6px;border:0.5px solid #ddd;background:#f4f4f0;color:#bbb;cursor:not-allowed;flex-shrink:0;white-space:nowrap;font-family:inherit;transition:background 0.15s,color 0.15s,border-color 0.15s;}
+.inline-save-btn.dirty{background:#2563eb;border-color:#2563eb;color:#fff;cursor:pointer;}
+.inline-save-btn.dirty:hover{background:#1d4ed8;}
+.inline-save-btn.saved{background:#16a34a;border-color:#16a34a;color:#fff;cursor:default;}
+.jobspecs-btn{width:100%;text-align:left;background:#f9f9f7;border:0.5px solid #e5e5e5;border-radius:8px;padding:9px 12px;font-size:13px;color:#1a1a1a;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.jobspecs-btn:hover{background:#f4f4f0;}
+.jobspecs-btn .jobspecs-summary{color:#888;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jobspecs-row{border:0.5px solid #e5e5e5;border-radius:8px;padding:10px 12px;margin-bottom:10px;position:relative;background:#fafaf8;}
+.jobspecs-row-num{font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;}
+.jobspecs-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.jobspecs-remove{position:absolute;top:8px;right:8px;font-size:11px;padding:3px 8px;border-radius:5px;border:0.5px solid #fca5a5;color:#dc2626;background:#fff;cursor:pointer;font-family:inherit;}
+.jobspecs-remove:hover{background:#fee2e2;}
+.jobspecs-add-btn{font-size:12px;padding:8px 12px;border-radius:8px;border:1px dashed #ccc;background:#fff;color:#555;cursor:pointer;font-family:inherit;width:100%;margin-bottom:10px;}
+.jobspecs-add-btn:hover{background:#f9f9f7;}
 .ms-list{padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .ms-row{border:0.5px solid #e5e5e5;border-radius:8px;overflow:hidden;}
 .ms-row.done-row{border-color:#86efac;background:#f0fdf4;}.ms-row.inprog-row{border-color:#fde047;}.ms-row.delayed-row{border-color:#fca5a5;}.ms-row.na-row{border-color:#ddd;background:#f9f9f7;}.ms-row.scheduled-row{border-color:#93c5fd;background:#eff6ff;}
@@ -265,7 +281,7 @@ tr:last-child td{border-bottom:none;}
 .log-when{font-size:11px;color:#aaa;white-space:nowrap;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
-#email-compose-modal,#email-view-modal,#email-settings-modal{z-index:220;}
+#email-compose-modal,#email-view-modal,#email-settings-modal,#jobspecs-modal{z-index:220;}
 .modal{background:#fff;border-radius:14px;padding:1.5rem;width:420px;max-width:95vw;}
 .job-modal-box{width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:0;}
 .job-modal-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:0.5px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:2;border-radius:14px 14px 0 0;}
@@ -470,6 +486,18 @@ tr:last-child td{border-bottom:none;}
     <div id="email-templates-body"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeEmailSettingsModal()">Close</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="jobspecs-modal">
+  <div class="modal" style="width:520px;max-width:95vw;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="jobspecs-title">Job Specs</div>
+    <div class="email-merge-hint">Add one entry per unit. Accessories is optional &mdash; leave it blank if there aren't any.</div>
+    <div id="jobspecs-rows"></div>
+    <button type="button" class="jobspecs-add-btn" onclick="addJobSpecRow()">+ Add another unit</button>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeJobSpecsModal()">Cancel</button>
+      <button class="modal-save" id="jobspecs-save-btn" onclick="saveJobSpecs()">Save</button>
     </div>
   </div>
 </div>
@@ -884,7 +912,8 @@ function renderOverviewTable(jobsList){
   jobsList.forEach(function(j){
     // Build full tooltip content
     var tipParts = [];
-    if(j.equipment) tipParts.push('<strong>Equipment:</strong> '+j.equipment);
+    var specLines = equipmentSpecLines(j);
+    if(specLines.length) tipParts.push('<strong>Equipment:</strong><br>'+specLines.join('<br>'));
     if(j.duct){
       var dLine = '&#128274; <strong>Ductwork</strong>';
       if(j.duct_notes&&j.duct_notes.trim()) dLine += ': '+j.duct_notes;
@@ -985,7 +1014,7 @@ function renderCardHTML(j){
     html+='<span class="drag-handle" draggable="true" ondragstart="dragStart(event,\''+j.id+'\')" ondragend="dragEnd(event)" onclick="event.stopPropagation()" title="Drag to reorder">&#8942;</span>';
     html+='<div class="avatar">'+initials(j.name)+'</div>';
     html+='<div class="card-meta"><div class="card-name">'+j.name+'</div><div class="card-addr">'+(j.address||'')+'</div>';
-    if(j.equipment) html+='<div class="card-equip">&#9881; '+j.equipment+'</div>';
+    if(equipmentSummary(j)) html+='<div class="card-equip">&#9881; '+esc(equipmentSummary(j))+'</div>';
     html+='</div>';
     html+='<div class="card-pills"><span class="pill pill-prog">'+progressLabel(j)+'</span>';
     if(hasDelay(j)) html+='<span class="pill pill-delayed">! Delayed</span>';
@@ -993,12 +1022,10 @@ function renderCardHTML(j){
     html+='</div><span class="chevron '+(isOpen?'open':'')+'">&#9662;</span></div>';
     html+='<div class="card-body '+(isOpen?'open':'')+'">';
     html += renderEmailSteps(j);
-    html+='<div class="equip-section"><span class="equip-label">&#9881; Equipment</span>';
-    html+='<input type="text" class="equip-input" placeholder="e.g. 1 - W7AV048 1 - W7SZ042" value="'+(j.equipment||'')+'" onchange="saveJobField(\''+j.id+'\',\'equipment\',this.value)"></div>';
+    html+='<div class="equip-section"><button type="button" class="jobspecs-btn" onclick="openJobSpecsModal(\''+j.id+'\')"><span>&#9881; Job Specs'+(j.equipment_specs&&j.equipment_specs.length?' ('+j.equipment_specs.length+')':'')+'</span><span class="jobspecs-summary">'+(equipmentSummary(j)||'Add tonnage &amp; unit info &rarr;')+'</span></button></div>';
 
-    html+='<div class="equip-section"><span class="equip-label" style="color:#aaa"># Customer ID</span><input type="text" class="equip-input" data-job="'+j.id+'" placeholder="5-digit HCP ID" value="'+(j.customer_id||'')+'" onchange="saveCustomerId(this)" maxlength="5" style="max-width:100px;"></div>';
-    html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" onchange="saveJobField(\''+j.id+'\',\'email\',this.value.trim())"></div>';
-    html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><input type="tel" class="equip-input" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" onchange="saveJobField(\''+j.id+'\',\'phone\',this.value.trim())"></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><div class="inline-save-row"><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'email\',ip.value.trim()).then(function(){showToast(\'Email saved.\');markSaved(b);})">Save</button></div></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><div class="inline-save-row"><input type="tel" class="equip-input" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'phone\',ip.value.trim()).then(function(){showToast(\'Phone saved.\');markSaved(b);})">Save</button></div></div>';
     html+='<div class="ms-list">';
     j.milestones.forEach(function(m,i){
       var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
@@ -1063,12 +1090,11 @@ function renderCardHTML(j){
     });
     html+='</div>';
     if(j.hcp_notes&&j.hcp_notes.length){
-      html+='<div class="notes-section"><div class="notes-hdr" onclick="toggleNotes(\''+j.id+'\')"><span class="notes-title">&#128203; HCP notes ('+j.hcp_notes.length+') &mdash; pin to equipment or milestone</span><span class="chevron '+(notesOpen?'open':'')+'">&#9662;</span></div>';
+      html+='<div class="notes-section"><div class="notes-hdr" onclick="toggleNotes(\''+j.id+'\')"><span class="notes-title">&#128203; HCP notes ('+j.hcp_notes.length+') &mdash; pin to milestone</span><span class="chevron '+(notesOpen?'open':'')+'">&#9662;</span></div>';
       html+='<div class="notes-body '+(notesOpen?'open':'')+'">';
       j.hcp_notes.forEach(function(note){
-        var isPE=j.pinned_equip_note===note.id, pmi=j.milestones.findIndex(function(m){return m.pinned_note===note.id;});
+        var pmi=j.milestones.findIndex(function(m){return m.pinned_note===note.id;});
         html+='<div class="note-item"><span class="note-text">'+note.text+'</span><div class="note-actions">';
-        html+='<button class="pin-btn '+(isPE?'pinned':'')+'" onclick="pinToEquip(\''+j.id+'\',\''+note.id+'\')">&#9881; '+(isPE?'Pinned to equip.':'Pin to equipment')+'</button>';
         html+='<select class="pin-select" onchange="pinToMS(\''+j.id+'\',\''+note.id+'\',this.value)"><option value="">Pin to milestone&hellip;</option>';
         MS.forEach(function(name,i){html+='<option value="'+i+'" '+(pmi===i?'selected':'')+'>'+name+'</option>';});
         html+='</select></div></div>';
@@ -1214,15 +1240,6 @@ function setState(jobId,idx,state){
   saveMilestone(jobId,idx,{state:state,date:date,notes:state==='na'?'':m.notes});
 }
 function setMSField(jobId,idx,field,val){saveMilestone(jobId,idx,{[field]:val});}
-async function pinToEquip(jobId,noteId){
-  var inst=installs.find(function(j){return j.id===jobId;});
-  var isPinned=inst.pinned_equip_note===noteId;
-  inst.pinned_equip_note=isPinned?null:noteId;
-  if(!isPinned){var note=inst.hcp_notes.find(function(n){return n.id===noteId;});if(note)inst.equipment=note.text;}
-  await sb.from('jobs').update({pinned_equip_note:inst.pinned_equip_note,equipment:inst.equipment,updated_at:new Date().toISOString()}).eq('id',jobId);
-  await logActivity(jobId,isPinned?'Unpinned equipment note':'Pinned note to equipment');
-  render();
-}
 async function pinToMS(jobId,noteId,msIdx){
   if(msIdx==='')return;
   var inst=installs.find(function(j){return j.id===jobId;});
@@ -1299,24 +1316,24 @@ function renderNC(j) {
   h += '<div class="nc-item"><div class="nc-item-header">';
   h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="oven_done" '+(nc.oven_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Oven hood specs</span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="oven_notes" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="oven_notes" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += renderMiniDropZone(id,'nc-oven',ovenDocs)+'</div>';
   // accessories
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="accessories" placeholder="List accessories..." value="'+(nc.accessories||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="accessories" placeholder="List accessories..." value="'+(nc.accessories||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += renderMiniDropZone(id,'nc-acc',accDocs)+'</div>';
   // bath fans
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
   h += '<div class="nc-label-small">Specs / details</div>';
-  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="'+id+'" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += '<div class="inline-save-row" style="margin-bottom:5px"><input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += '<div class="nc-label-small">Who is supplying?</div>';
-  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_supplier" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_supplier" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += renderMiniDropZone(id,'nc-bath',bathDocs)+'</div>';
   // electrical
   h += '<div class="nc-item"><div class="nc-item-header">';
   h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="elec_done" '+(nc.elec_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Electrical requirements</span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'').replace(/"/g,'&quot;')+'" onchange="saveNCText(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += renderMiniDropZone(id,'nc-elec',elecDocs)+'</div>';
   h += '</div>';
   return h;
@@ -1325,7 +1342,7 @@ function renderDuct(j) {
   var ductDocs = allDocuments.filter(function(d){ return d.job_id===j.id && docCat(d)==='duct'; });
   var h = '<div class="duct-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="duct_notes" placeholder="Ductwork notes..." value="'+(j.duct_notes||'').replace(/"/g,'&quot;')+'" onchange="saveDuctNotes(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="duct_notes" placeholder="Ductwork notes..." value="'+(j.duct_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveDuctNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += renderMiniDropZone(j.id,'duct',ductDocs);
   h += '</div>';
   return h;
@@ -1333,7 +1350,7 @@ function renderDuct(j) {
 function renderRepl(j) {
   var h = '<div class="repl-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" onchange="saveReplNotes(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveReplNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += '</div>';
   return h;
 }
@@ -1353,7 +1370,7 @@ function saveReplNotes(el) {
 function renderLease(j) {
   var h = '<div class="duct-section" style="background:#f0fdfa;">';
   h += '<div class="duct-header"><span class="duct-title">&#128220; Lease <span class="lease-badge">LEASE</span></span></div>';
-  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="lease_notes" placeholder="Lease notes, company, term..." value="'+(j.lease_notes||'').replace(/"/g,'&quot;')+'" onchange="saveLeaseNotes(this)">';
+  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="lease_notes" placeholder="Lease notes, company, term..." value="'+(j.lease_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveLeaseNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
   h += '</div>';
   return h;
 }
@@ -1438,7 +1455,7 @@ function openMobileDetail(jobId) {
   var body = document.getElementById('mobile-detail-body');
   var h = '';
   if (j.address) h += '<div class="mobile-detail-addr">'+j.address+'</div>';
-  if (j.equipment) h += '<div class="mobile-detail-equip">&#9881; '+j.equipment+'</div>';
+  if (equipmentSummary(j)) h += '<div class="mobile-detail-equip">&#9881; '+esc(equipmentSummary(j))+'</div>';
   // milestones
   h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">';
   j.milestones.forEach(function(m,i) {
@@ -1533,7 +1550,7 @@ function renderArchived() {
     html += '<div class="avatar" style="background:#f4f4f0;color:#aaa;">'+initials(j.name)+'</div>';
     html += '<div class="card-meta"><div class="archived-name">'+j.name+'</div>';
     if(j.address) html += '<div class="archived-addr">'+j.address+'</div>';
-    if(j.equipment) html += '<div class="archived-equip">&#9881; '+j.equipment+'</div>';
+    if(equipmentSummary(j)) html += '<div class="archived-equip">&#9881; '+esc(equipmentSummary(j))+'</div>';
     html += '</div>';
     html += '<div class="archived-pills">';
     html += '<span class="pill pill-prog" style="color:#bbb">'+done+'/'+total+'</span>';
@@ -1548,7 +1565,7 @@ function renderArchived() {
     // expandable detail - read only
     if(isOpen){
       html += '<div style="border-top:0.5px solid #f0f0f0;padding:14px 16px;">';
-      if(j.equipment) html += '<div style="font-size:12px;color:#2563eb;margin-bottom:12px;">&#9881; '+j.equipment+'</div>';
+      if(equipmentSpecLines(j).length) html += '<div style="font-size:12px;color:#2563eb;margin-bottom:12px;">&#9881; '+equipmentSpecLines(j).join('<br>')+'</div>';
       html += '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">';
       j.milestones.forEach(function(m,i){
         var statusColor = m.state==='done'?'#16a34a':m.state==='inprog'?'#ca8a04':m.state==='delayed'?'#dc2626':m.state==='scheduled'?'#2563eb':m.state==='na'?'#888':'#ccc';
@@ -1917,7 +1934,7 @@ function printReport() {
     html += '<div class="job-header">';
     html += '<div class="job-name">' + j.name + '</div>';
     html += '<div class="job-addr">' + (j.address || '') + '</div>';
-    if (j.equipment) html += '<div class="job-equip">Equipment: ' + j.equipment + '</div>';
+    if (equipmentSpecLines(j, true).length) html += '<div class="job-equip">Equipment: ' + equipmentSpecLines(j, true).join(' | ') + '</div>';
     html += '</div>';
     html += '<hr class="divider">';
     html += '<div class="section-title">Milestone progress</div>';
@@ -2075,6 +2092,131 @@ function renderEmailSteps(j){
   return h;
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// ── Explicit "Save" button pattern for typed fields (no more silent auto-save
+// on blur — you click Save, the button confirms it went through) ──
+function armSave(el){
+  var btn = el.parentElement.querySelector('.inline-save-btn');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.classList.remove('saved');
+  btn.classList.add('dirty');
+  btn.textContent = 'Save';
+}
+function saveKeyHandler(el, ev){
+  if (ev.key === 'Enter') {
+    ev.preventDefault();
+    var btn = el.parentElement.querySelector('.inline-save-btn');
+    if (btn && !btn.disabled) btn.click();
+  }
+}
+function markSaved(btn){
+  if (!btn) return;
+  btn.classList.remove('dirty');
+  btn.classList.add('saved');
+  btn.textContent = 'Saved ✓';
+  btn.disabled = true;
+  setTimeout(function(){
+    if (btn && btn.classList.contains('saved')) { btn.classList.remove('saved'); btn.textContent = 'Save'; }
+  }, 1500);
+}
+// ── Job Specs (structured equipment: tonnage / unit / accessories, unlimited entries) ──
+function equipmentSpecLines(j, plain){
+  var specs = Array.isArray(j.equipment_specs) ? j.equipment_specs : [];
+  var multi = specs.length > 1;
+  return specs.map(function(s, si){
+    var bits = [];
+    if (s.tonnage && s.tonnage.trim()) bits.push(esc(s.tonnage.trim()));
+    if (s.unit && s.unit.trim()) bits.push(esc(s.unit.trim()));
+    var label = multi ? ('Unit ' + (si+1) + ': ') : '';
+    var line = label + (bits.length ? bits.join(plain ? ' — ' : ' &mdash; ') : '—');
+    if (s.accessories && s.accessories.trim()) {
+      line += plain ? (' (Accessories: ' + s.accessories.trim() + ')') : ('<br>&nbsp;&nbsp;Accessories: ' + esc(s.accessories.trim()));
+    }
+    return line;
+  });
+}
+function equipmentSummary(j){
+  var specs = Array.isArray(j.equipment_specs) ? j.equipment_specs : [];
+  if (!specs.length) return '';
+  var first = specs[0];
+  var bits = [];
+  if (first.tonnage && first.tonnage.trim()) bits.push(first.tonnage.trim());
+  if (first.unit && first.unit.trim()) bits.push(first.unit.trim());
+  var s = bits.length ? bits.join(' — ') : 'Specs added';
+  if (specs.length > 1) s += ' +' + (specs.length - 1) + ' more';
+  return s;
+}
+var activeJobSpecs = null; // {jobId, rows:[{tonnage,unit,accessories}]}
+function openJobSpecsModal(jobId){
+  var j = installs.find(function(x){return x.id===jobId;}) || archivedJobs.find(function(x){return x.id===jobId;});
+  if (!j) return;
+  var rows = (Array.isArray(j.equipment_specs) && j.equipment_specs.length)
+    ? j.equipment_specs.map(function(s){ return { tonnage:s.tonnage||'', unit:s.unit||'', accessories:s.accessories||'' }; })
+    : [{ tonnage:'', unit:'', accessories:'' }];
+  activeJobSpecs = { jobId: jobId, rows: rows };
+  document.getElementById('jobspecs-title').textContent = 'Job Specs — ' + j.name;
+  renderJobSpecsRows();
+  document.getElementById('jobspecs-modal').classList.add('open');
+}
+function closeJobSpecsModal(){
+  document.getElementById('jobspecs-modal').classList.remove('open');
+  activeJobSpecs = null;
+}
+function syncJobSpecsFromInputs(){
+  if (!activeJobSpecs) return;
+  var container = document.getElementById('jobspecs-rows');
+  var rowEls = container.querySelectorAll('.jobspecs-row');
+  activeJobSpecs.rows = Array.prototype.map.call(rowEls, function(rowEl){
+    return {
+      tonnage: rowEl.querySelector('.js-tonnage').value.trim(),
+      unit: rowEl.querySelector('.js-unit').value.trim(),
+      accessories: rowEl.querySelector('.js-accessories').value.trim()
+    };
+  });
+}
+function renderJobSpecsRows(){
+  var container = document.getElementById('jobspecs-rows');
+  var h = '';
+  activeJobSpecs.rows.forEach(function(r, i){
+    h += '<div class="jobspecs-row">';
+    if (activeJobSpecs.rows.length > 1) h += '<button type="button" class="jobspecs-remove" onclick="removeJobSpecRow(' + i + ')">Remove</button>';
+    h += '<div class="jobspecs-row-num">Unit ' + (i+1) + '</div>';
+    h += '<div class="jobspecs-row-grid">';
+    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Tonnage</div><input type="text" class="modal-input js-tonnage" placeholder="e.g. 5 Tons" value="' + esc(r.tonnage) + '"></div>';
+    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Unit / quantity</div><input type="text" class="modal-input js-unit" placeholder="e.g. 1 - W5WZ060" value="' + esc(r.unit) + '"></div>';
+    h += '</div>';
+    h += '<div class="modal-row" style="margin:0;"><div class="modal-label">Accessories (optional)</div><input type="text" class="modal-input js-accessories" placeholder="e.g. 4 humidifiers" value="' + esc(r.accessories) + '"></div>';
+    h += '</div>';
+  });
+  container.innerHTML = h;
+}
+function addJobSpecRow(){
+  syncJobSpecsFromInputs();
+  activeJobSpecs.rows.push({ tonnage:'', unit:'', accessories:'' });
+  renderJobSpecsRows();
+}
+function removeJobSpecRow(i){
+  syncJobSpecsFromInputs();
+  activeJobSpecs.rows.splice(i, 1);
+  if (!activeJobSpecs.rows.length) activeJobSpecs.rows.push({ tonnage:'', unit:'', accessories:'' });
+  renderJobSpecsRows();
+}
+async function saveJobSpecs(){
+  if (!activeJobSpecs) return;
+  syncJobSpecsFromInputs();
+  var cleaned = activeJobSpecs.rows.filter(function(r){ return r.tonnage || r.unit || r.accessories; });
+  var jobId = activeJobSpecs.jobId;
+  var btn = document.getElementById('jobspecs-save-btn');
+  btn.disabled = true; var orig = btn.textContent; btn.textContent = 'Saving…';
+  await sb.from('jobs').update({ equipment_specs: cleaned, updated_at: new Date().toISOString() }).eq('id', jobId);
+  var inst = installs.find(function(j){return j.id===jobId;});
+  if (inst) inst.equipment_specs = cleaned;
+  await logActivity(jobId, 'Updated job specs (' + cleaned.length + ' unit' + (cleaned.length===1?'':'s') + ')');
+  btn.disabled = false; btn.textContent = orig;
+  closeJobSpecsModal();
+  render();
+  showToast('Job specs saved.');
+}
 function mergeText(str, j){ return String(str||'').replace(/\{\{\s*name\s*\}\}/gi, (j&&j.name)||'there'); }
 function mergeHtml(str, j){ return String(str||'').replace(/\{\{\s*name\s*\}\}/gi, esc((j&&j.name)||'there')); }
 function rteCmd(targetId, cmd){
