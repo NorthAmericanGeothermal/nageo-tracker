@@ -162,12 +162,6 @@ tr:last-child td{border-bottom:none;}
 .thread-tile.open .thread-tile-body{max-height:650px;overflow-y:auto;padding:0 12px 12px 12px;}
 .email-frame-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;max-height:600px;overflow-y:auto;}
 .fe-frame{width:100%;border:none;display:block;background:#fff;min-height:40px;}
-.inline-save-row{display:flex;gap:6px;align-items:center;}
-.inline-save-row input{flex:1;min-width:0;}
-.inline-save-btn{font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-alt);color:var(--muted);cursor:not-allowed;flex-shrink:0;white-space:nowrap;font-family:inherit;transition:background 0.15s,color 0.15s,border-color 0.15s;}
-.inline-save-btn.dirty{background:var(--accent);border-color:var(--accent);color:#fff;cursor:pointer;}
-.inline-save-btn.dirty:hover{background:var(--accent-dark);}
-.inline-save-btn.saved{background:var(--success-text);border-color:var(--success-text);color:#fff;cursor:default;}
 .jobspecs-btn{width:100%;text-align:left;background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .jobspecs-btn:hover{background:var(--surface-alt);}
 .jobspecs-btn .jobspecs-summary{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -340,9 +334,16 @@ tr:last-child td{border-bottom:none;}
 .modal{background:var(--surface);border-radius:18px;padding:1.5rem;width:420px;max-width:95vw;box-shadow:var(--shadow-lg);}
 .job-modal-box{width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:0;}
 .job-modal-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border-soft);position:sticky;top:0;background:var(--surface);z-index:2;border-radius:18px 18px 0 0;}
-.job-modal-title{font-size:15px;font-weight:600;color:var(--ink);}
+.job-modal-title{font-size:15px;font-weight:600;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .job-modal-close{font-size:24px;line-height:1;background:none;border:none;color:var(--muted);cursor:pointer;padding:0 4px;}
 .job-modal-close:hover{color:var(--ink);}
+.job-modal-savestate{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;}
+.job-modal-savestate.saving{color:var(--accent-text);}
+.job-modal-savestate.saving::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent-text);margin-right:5px;animation:jmPulse 1s infinite;}
+.job-modal-savestate.saved{color:var(--success-text);}
+.job-modal-savestate.saved::before{content:'\2713';margin-right:4px;}
+.job-modal-savestate.error{color:var(--danger-text);}
+@keyframes jmPulse{0%,100%{opacity:1;}50%{opacity:0.25;}}
 .job-modal-box .card{border:none;border-radius:0;}
 @media (max-width:600px){
   .job-modal-box{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0;}
@@ -566,7 +567,10 @@ tr:last-child td{border-bottom:none;}
   <div class="modal job-modal-box">
     <div class="job-modal-header">
       <span class="job-modal-title" id="job-modal-title"></span>
-      <button class="job-modal-close" onclick="closeJobModal()">&times;</button>
+      <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+        <span class="job-modal-savestate" id="job-modal-savestate"></span>
+        <button class="job-modal-close" onclick="closeJobModal()">&times;</button>
+      </div>
     </div>
     <div id="job-modal-body"></div>
   </div>
@@ -977,7 +981,7 @@ function renderOverviewTable(jobsList){
   jobsList.forEach(function(j){
     // Build full tooltip content
     var tipParts = [];
-    var specLines = equipmentSpecLines(j);
+    var specLines = equipmentSpecLines(j, false, true);
     if(specLines.length){
       tipParts.push('&#9881; <strong>Equipment</strong>');
       specLines.forEach(function(line){ tipParts.push('&nbsp;&nbsp;'+line); });
@@ -1092,8 +1096,8 @@ function renderCardHTML(j){
     html += renderEmailSteps(j);
     html+='<div class="equip-section"><button type="button" class="jobspecs-btn" onclick="openJobSpecsModal(\''+j.id+'\')"><span>&#9881; Job Specs</span><span class="jobspecs-summary">'+(equipmentSummary(j)||'Add tonnage, units &amp; accessories &rarr;')+'</span></button></div>';
 
-    html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><div class="inline-save-row"><input type="email" class="equip-input" placeholder="customer@email.com" value="'+esc(j.email||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'email\',ip.value.trim()).then(function(){showToast(\'Email saved.\');markSaved(b);})">Save</button></div></div>';
-    html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><div class="inline-save-row"><input type="tel" class="equip-input" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="var ip=this.parentElement.querySelector(\'input\'),b=this;this.disabled=true;this.textContent=\'Saving\\u2026\';saveJobField(\''+j.id+'\',\'phone\',ip.value.trim()).then(function(){showToast(\'Phone saved.\');markSaved(b);})">Save</button></div></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9993; Email</span><input type="email" class="equip-input" data-job="'+j.id+'" placeholder="customer@email.com" value="'+esc(j.email||'')+'" onchange="autoSaveEmail(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"></div>';
+    html+='<div class="equip-section"><span class="equip-label">&#9742; Phone</span><input type="tel" class="equip-input" data-job="'+j.id+'" placeholder="(555) 555-5555" value="'+esc(j.phone||'')+'" onchange="autoSavePhone(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"></div>';
     html+='<div class="ms-list">';
     j.milestones.forEach(function(m,i){
       var key=j.id+'-'+i, msOpen=openMS.has(key), pt=m.pinned_note?getNoteText(j,m.pinned_note):null;
@@ -1288,6 +1292,8 @@ function openJobModal(jobId){
   activeModalJob = jobId;
   openCards.add(jobId);
   document.getElementById('job-modal').classList.add('open');
+  var st = document.getElementById('job-modal-savestate');
+  if (st) { st.textContent = ''; st.className = 'job-modal-savestate'; }
   renderJobModal();
 }
 function closeJobModal(){
@@ -1380,7 +1386,7 @@ function saveNCCheck(el) {
   saveNC(el.dataset.job, el.dataset.field, el.checked);
 }
 function saveNCText(el) {
-  saveNC(el.dataset.job, el.dataset.field, el.value);
+  return saveNC(el.dataset.job, el.dataset.field, el.value);
 }
 function renderNC(j) {
   var nc = j.nc_data || {};
@@ -1395,24 +1401,24 @@ function renderNC(j) {
   h += '<div class="nc-item"><div class="nc-item-header">';
   h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="oven_done" '+(nc.oven_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Oven hood specs</span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="oven_notes" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="oven_notes" placeholder="Specs, model, notes..." value="'+(nc.oven_notes||'').replace(/"/g,'&quot;')+'" onchange="autoSaveNCText(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += renderMiniDropZone(id,'nc-oven',ovenDocs)+'</div>';
   // accessories
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Accessories</span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="accessories" placeholder="List accessories..." value="'+(nc.accessories||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="accessories" placeholder="List accessories..." value="'+(nc.accessories||'').replace(/"/g,'&quot;')+'" onchange="autoSaveNCText(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += renderMiniDropZone(id,'nc-acc',accDocs)+'</div>';
   // bath fans
   h += '<div class="nc-item"><div class="nc-item-header"><span class="nc-item-label">Bath fans</span></div>';
   h += '<div class="nc-label-small">Specs / details</div>';
-  h += '<div class="inline-save-row" style="margin-bottom:5px"><input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" style="margin-bottom:5px" data-job="'+id+'" data-field="bath_fan_specs" placeholder="Fan specs, quantity, model..." value="'+(nc.bath_fan_specs||'').replace(/"/g,'&quot;')+'" onchange="autoSaveNCText(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += '<div class="nc-label-small">Who is supplying?</div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_supplier" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="bath_fan_supplier" placeholder="Supplier name..." value="'+(nc.bath_fan_supplier||'').replace(/"/g,'&quot;')+'" onchange="autoSaveNCText(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += renderMiniDropZone(id,'nc-bath',bathDocs)+'</div>';
   // electrical
   h += '<div class="nc-item"><div class="nc-item-header">';
   h += '<input type="checkbox" class="nc-check" data-job="'+id+'" data-field="elec_done" '+(nc.elec_done?'checked':'')+' onchange="saveNCCheck(this)">';
   h += '<span class="nc-item-label">Electrical requirements</span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+id+'" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveNCText(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+id+'" data-field="elec_notes" placeholder="Electrical notes, requirements..." value="'+(nc.elec_notes||'').replace(/"/g,'&quot;')+'" onchange="autoSaveNCText(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += renderMiniDropZone(id,'nc-elec',elecDocs)+'</div>';
   h += '</div>';
   return h;
@@ -1421,7 +1427,7 @@ function renderDuct(j) {
   var ductDocs = allDocuments.filter(function(d){ return d.job_id===j.id && docCat(d)==='duct'; });
   var h = '<div class="duct-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128274; Ductwork <span class="duct-badge">DUCT</span></span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="duct_notes" placeholder="Ductwork notes..." value="'+(j.duct_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveDuctNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="duct_notes" placeholder="Ductwork notes..." value="'+(j.duct_notes||'').replace(/"/g,'&quot;')+'" onchange="autoSaveDuctNotes(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += renderMiniDropZone(j.id,'duct',ductDocs);
   h += '</div>';
   return h;
@@ -1429,7 +1435,7 @@ function renderDuct(j) {
 function renderRepl(j) {
   var h = '<div class="repl-section">';
   h += '<div class="duct-header"><span class="duct-title">&#128260; Replacement <span class="repl-badge">REPL</span></span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveReplNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="repl_notes" placeholder="Replacement notes..." value="'+(j.repl_notes||'').replace(/"/g,'&quot;')+'" onchange="autoSaveReplNotes(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += '</div>';
   return h;
 }
@@ -1444,12 +1450,12 @@ async function toggleRepl(jobId) {
 function saveReplNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.repl_notes = el.value;
-  sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+  return sb.from('jobs').update({repl_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
 function renderLease(j) {
   var h = '<div class="duct-section" style="background:var(--success-tint);">';
   h += '<div class="duct-header"><span class="duct-title">&#128220; Lease <span class="lease-badge">LEASE</span></span></div>';
-  h += '<div class="inline-save-row"><input type="text" class="nc-input" data-job="'+j.id+'" data-field="lease_notes" placeholder="Lease notes, company, term..." value="'+(j.lease_notes||'').replace(/"/g,'&quot;')+'" oninput="armSave(this)" onkeydown="saveKeyHandler(this,event)"><button type="button" class="inline-save-btn" disabled onclick="saveLeaseNotes(this.parentElement.querySelector(\'input\'));markSaved(this);">Save</button></div>';
+  h += '<input type="text" class="nc-input" data-job="'+j.id+'" data-field="lease_notes" placeholder="Lease notes, company, term..." value="'+(j.lease_notes||'').replace(/"/g,'&quot;')+'" onchange="autoSaveLeaseNotes(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">';
   h += '</div>';
   return h;
 }
@@ -1464,12 +1470,12 @@ async function toggleLease(jobId) {
 function saveLeaseNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.lease_notes = el.value;
-  sb.from('jobs').update({lease_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+  return sb.from('jobs').update({lease_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
 function saveDuctNotes(el) {
   var inst = installs.find(function(j){return j.id===el.dataset.job;});
   inst.duct_notes = el.value;
-  sb.from('jobs').update({duct_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
+  return sb.from('jobs').update({duct_notes:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.job);
 }
 async function toggleDuct(jobId) {
   var inst = installs.find(function(j){return j.id===jobId;});
@@ -2171,32 +2177,58 @@ function renderEmailSteps(j){
   return h;
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-// ── Explicit "Save" button pattern for typed fields (no more silent auto-save
-// on blur — you click Save, the button confirms it went through) ──
-function armSave(el){
-  var btn = el.parentElement.querySelector('.inline-save-btn');
-  if (!btn) return;
-  btn.disabled = false;
-  btn.classList.remove('saved');
-  btn.classList.add('dirty');
-  btn.textContent = 'Save';
+// ── Auto-save for typed fields — no more per-field Save buttons. Fields
+// save themselves as soon as you leave them (blur, or Enter), and a single
+// status pill in the sticky job-modal header (next to the name, so it never
+// scrolls out of view) reports Saving… / Saved for whichever field just went. ──
+var jmSaveStateTimer = null;
+function jmShowSaving(){
+  var el = document.getElementById('job-modal-savestate');
+  if (!el) return;
+  clearTimeout(jmSaveStateTimer);
+  el.textContent = 'Saving…';
+  el.className = 'job-modal-savestate saving';
 }
-function saveKeyHandler(el, ev){
-  if (ev.key === 'Enter') {
-    ev.preventDefault();
-    var btn = el.parentElement.querySelector('.inline-save-btn');
-    if (btn && !btn.disabled) btn.click();
-  }
+function jmShowSaved(){
+  var el = document.getElementById('job-modal-savestate');
+  if (!el) return;
+  el.textContent = 'Saved';
+  el.className = 'job-modal-savestate saved';
+  clearTimeout(jmSaveStateTimer);
+  jmSaveStateTimer = setTimeout(function(){
+    if (el && el.classList.contains('saved')) { el.textContent = ''; el.className = 'job-modal-savestate'; }
+  }, 1600);
 }
-function markSaved(btn){
-  if (!btn) return;
-  btn.classList.remove('dirty');
-  btn.classList.add('saved');
-  btn.textContent = 'Saved ✓';
-  btn.disabled = true;
-  setTimeout(function(){
-    if (btn && btn.classList.contains('saved')) { btn.classList.remove('saved'); btn.textContent = 'Save'; }
-  }, 1500);
+function jmShowError(err){
+  var el = document.getElementById('job-modal-savestate');
+  console.error(err);
+  if (!el) return;
+  el.textContent = 'Save failed';
+  el.className = 'job-modal-savestate error';
+}
+function autoSaveEmail(el){
+  jmShowSaving();
+  saveJobField(el.dataset.job, 'email', el.value.trim()).then(jmShowSaved).catch(jmShowError);
+}
+function autoSavePhone(el){
+  jmShowSaving();
+  saveJobField(el.dataset.job, 'phone', el.value.trim()).then(jmShowSaved).catch(jmShowError);
+}
+function autoSaveNCText(el){
+  jmShowSaving();
+  Promise.resolve(saveNCText(el)).then(jmShowSaved).catch(jmShowError);
+}
+function autoSaveDuctNotes(el){
+  jmShowSaving();
+  Promise.resolve(saveDuctNotes(el)).then(jmShowSaved).catch(jmShowError);
+}
+function autoSaveReplNotes(el){
+  jmShowSaving();
+  Promise.resolve(saveReplNotes(el)).then(jmShowSaved).catch(jmShowError);
+}
+function autoSaveLeaseNotes(el){
+  jmShowSaving();
+  Promise.resolve(saveLeaseNotes(el)).then(jmShowSaved).catch(jmShowError);
 }
 // ── Job Specs (one tonnage per job, plus two independent unlimited lists:
 // Units {unit,qty} and Accessories {name,qty}) ──
@@ -2208,24 +2240,40 @@ function normalizeSpecs(specs){
     accessories: Array.isArray(specs.accessories) ? specs.accessories : []
   };
 }
-function equipmentSpecLines(j, plain){
+function equipmentSpecLines(j, plain, expand){
+  // "expand" returns one line per individual unit/accessory (for the
+  // overview tooltip) instead of a single comma-joined summary line.
   var specs = normalizeSpecs(j.equipment_specs);
   var lines = [];
   if (specs.tonnage && specs.tonnage.trim()) lines.push('Tonnage: ' + esc(specs.tonnage.trim()));
   var unitStrs = specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).map(function(u){
     var bits = [];
-    if (u.qty && String(u.qty).trim()) bits.push(esc(String(u.qty).trim()) + 'x');
     if (u.unit && u.unit.trim()) bits.push(esc(u.unit.trim()));
+    if (u.qty && String(u.qty).trim()) bits.push('&times;' + esc(String(u.qty).trim()));
     return bits.join(' ');
   });
-  if (unitStrs.length) lines.push((unitStrs.length===1?'Unit':'Units') + ': ' + unitStrs.join(', '));
+  if (unitStrs.length) {
+    if (expand) {
+      lines.push((unitStrs.length===1?'Unit':'Units') + ':');
+      unitStrs.forEach(function(s){ lines.push('&nbsp;&nbsp;' + s); });
+    } else {
+      lines.push((unitStrs.length===1?'Unit':'Units') + ': ' + unitStrs.join(', '));
+    }
+  }
   var accStrs = specs.accessories.filter(function(a){ return (a.name&&a.name.trim())||(a.qty&&String(a.qty).trim()); }).map(function(a){
     var bits = [];
-    if (a.qty && String(a.qty).trim()) bits.push(esc(String(a.qty).trim()) + 'x');
     if (a.name && a.name.trim()) bits.push(esc(a.name.trim()));
+    if (a.qty && String(a.qty).trim()) bits.push('&times;' + esc(String(a.qty).trim()));
     return bits.join(' ');
   });
-  if (accStrs.length) lines.push((accStrs.length===1?'Accessory':'Accessories') + ': ' + accStrs.join(', '));
+  if (accStrs.length) {
+    if (expand) {
+      lines.push((accStrs.length===1?'Accessory':'Accessories') + ':');
+      accStrs.forEach(function(s){ lines.push('&nbsp;&nbsp;' + s); });
+    } else {
+      lines.push((accStrs.length===1?'Accessory':'Accessories') + ': ' + accStrs.join(', '));
+    }
+  }
   return lines;
 }
 function equipmentSummary(j){
@@ -2236,7 +2284,7 @@ function equipmentSummary(j){
   if (specs.tonnage) bits.push(specs.tonnage.trim());
   if (units.length) {
     var u0 = units[0];
-    var ub = ((u0.qty?String(u0.qty).trim()+'x ':'') + (u0.unit?u0.unit.trim():'')).trim();
+    var ub = ((u0.unit?u0.unit.trim():'') + (u0.qty?' ×'+String(u0.qty).trim():'')).trim();
     if (units.length > 1) ub += ' +' + (units.length-1) + ' more';
     if (ub) bits.push(ub);
   }
