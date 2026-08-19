@@ -2248,9 +2248,9 @@ function equipmentSpecLines(j, plain, expand){
   if (specs.tonnage && specs.tonnage.trim()) lines.push('Tonnage: ' + esc(specs.tonnage.trim()));
   var unitStrs = specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); }).map(function(u){
     var bits = [];
+    if (u.qty && String(u.qty).trim()) bits.push(esc(String(u.qty).trim()));
     if (u.unit && u.unit.trim()) bits.push(esc(u.unit.trim()));
-    if (u.qty && String(u.qty).trim()) bits.push('&times;' + esc(String(u.qty).trim()));
-    return bits.join(' ');
+    return bits.join(' &ndash; ');
   });
   if (unitStrs.length) {
     if (expand) {
@@ -2262,9 +2262,9 @@ function equipmentSpecLines(j, plain, expand){
   }
   var accStrs = specs.accessories.filter(function(a){ return (a.name&&a.name.trim())||(a.qty&&String(a.qty).trim()); }).map(function(a){
     var bits = [];
+    if (a.qty && String(a.qty).trim()) bits.push(esc(String(a.qty).trim()));
     if (a.name && a.name.trim()) bits.push(esc(a.name.trim()));
-    if (a.qty && String(a.qty).trim()) bits.push('&times;' + esc(String(a.qty).trim()));
-    return bits.join(' ');
+    return bits.join(' &ndash; ');
   });
   if (accStrs.length) {
     if (expand) {
@@ -2284,7 +2284,10 @@ function equipmentSummary(j){
   if (specs.tonnage) bits.push(specs.tonnage.trim());
   if (units.length) {
     var u0 = units[0];
-    var ub = ((u0.unit?u0.unit.trim():'') + (u0.qty?' ×'+String(u0.qty).trim():'')).trim();
+    var ubBits = [];
+    if (u0.qty && String(u0.qty).trim()) ubBits.push(String(u0.qty).trim());
+    if (u0.unit && u0.unit.trim()) ubBits.push(u0.unit.trim());
+    var ub = ubBits.join(' – ');
     if (units.length > 1) ub += ' +' + (units.length-1) + ' more';
     if (ub) bits.push(ub);
   }
