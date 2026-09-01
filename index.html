@@ -2281,7 +2281,10 @@ function equipmentSummary(j){
   var units = specs.units.filter(function(u){ return (u.unit&&u.unit.trim())||(u.qty&&String(u.qty).trim()); });
   if (!specs.tonnage && !units.length) return '';
   var bits = [];
-  if (specs.tonnage) bits.push(specs.tonnage.trim());
+  if (specs.tonnage) {
+    var tn = specs.tonnage.trim();
+    bits.push(/ton/i.test(tn) ? tn : tn + ' Tons');
+  }
   if (units.length) {
     var u0 = units[0];
     var ubBits = [];
